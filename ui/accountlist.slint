@@ -1,0 +1,61 @@
+import { ListView } from "std-widgets.slint";
+
+export struct UiAccount {
+    name: string,
+    image: image,
+    teacher: string,
+}
+
+component AccountWidget {
+    in property <string> name: "Name";
+    in property <image> image: @image-url("assets/icon/account.svg");
+    in property <string> teacher: "Teacher";
+    HorizontalLayout {
+        HorizontalLayout{
+            alignment: start;
+            Image {
+                min-height: 32px;
+                min-width: 32px;
+                preferred-height: 32px;
+                preferred-width: 32px;
+                source: image;
+            }
+        }
+        HorizontalLayout{
+            alignment: center;
+            VerticalLayout {
+                alignment: center;
+                name-text:= Text {
+                    horizontal-alignment: left;
+                    text: name;
+                }
+                Text {
+                    horizontal-alignment: left;
+                    font-size: 10px;
+                    text: teacher;
+                    color: gray;
+                }
+            }
+        }
+    }
+}
+export component AccountList {
+    in property <[UiAccount]> accounts: [
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+        {name: "Name", image: @image-url("assets/icon/account.svg"), teacher: "Teacher"},
+    ];
+    ListView {
+        for account in accounts: AccountWidget {
+            name: account.name;
+            image: account.image;
+            teacher: account.teacher;
+        }
+    }
+}
