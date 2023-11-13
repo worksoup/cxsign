@@ -1,4 +1,4 @@
-# 超星签到 api 整理
+# X星签到 api 整理
 ## 登陆页
 - 链接：`http://passport2.chaoxing.com/mlogin?fid=&newversion=true&refer=http%3A%2F%2Fi.chaoxing.com`
 - 方法：`GET`
