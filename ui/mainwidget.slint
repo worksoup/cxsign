@@ -1,0 +1,31 @@
+component WidgetBar {
+    callback switch-to-home-page <=> home-bar.clicked;
+    callback switch-to-acc-page <=> acc-bar.clicked;
+    in property <length> size;
+    height: size;
+    HorizontalLayout {
+        home-bar:= TouchArea {
+            home-icon:= Image {
+                source: @image-url("assets/icon/home.svg");
+            }
+        }
+        acc-bar:= TouchArea {
+            acc-icon:= Image {
+                source: @image-url("assets/icon/acc.svg");
+            }
+        }
+    }
+}
+
+
+component HomeWidget {
+}
+
+export component MainWidget {
+    VerticalLayout {
+        HomeWidget {}
+        WidgetBar {
+            size: parent.height * 0.1;
+        }
+    }
+}

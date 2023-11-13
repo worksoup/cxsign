@@ -1,0 +1,16 @@
+
+import { GroupBox , Button} from "std-widgets.slint";
+import { LoginWidget } from "loginwidget.slint";
+import { UiCourse } from "courselist.slint";
+
+export component MainWindow inherits Window {
+    callback login(string,string);
+    in property <bool> login-page: true;
+    in-out property <bool> login-page-enabled: true;
+    if login-page: login-widget:= LoginWidget {
+        enabled: login-page-enabled;
+        clicked => {
+            login(login-widget.uname, login-widget.pwd);
+        }
+    }
+}
