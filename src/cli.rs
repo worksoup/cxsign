@@ -132,12 +132,12 @@ async fn qrcode_sign_(
             }
         }
     };
-    if let Some(addr) = location {
+    if let Some(ref pos) = pos {
+        let pos = Address::parse_str(pos);
+        s.qrcode_sign(&enc, &pos, session).await
+    } else if let Some(addr) = location {
         let poss = db.get_poss();
         let pos = &poss[&addr].1;
-        s.qrcode_sign(&enc, &pos, session).await
-    } else if let Some(ref pos) = pos {
-        let pos = Address::parse_str(pos);
         s.qrcode_sign(&enc, &pos, session).await
     } else {
         let mut fail_msg = String::from("未查询到有效的位置信息，二维码签到失败！");
@@ -173,12 +173,12 @@ async fn location_sign_(
     location: Option<i64>,
     pos: &Option<String>,
 ) -> Result<SignState, reqwest::Error> {
-    if let Some(addr) = location {
+    if let Some(ref pos) = pos {
+        let pos = Address::parse_str(pos);
+        s.location_sign(&pos, session).await
+    } else if let Some(addr) = location {
         let poss = db.get_poss();
         let pos = &poss[&addr].1;
-        s.location_sign(&pos, session).await
-    } else if let Some(ref pos) = pos {
-        let pos = Address::parse_str(pos);
         s.location_sign(&pos, session).await
     } else {
         let mut fail_msg = String::new();
