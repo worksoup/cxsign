@@ -185,6 +185,11 @@ impl Hash for SignSession {
         self.get_stu_name().hash(state);
     }
 }
+#[derive(Deserialize)]
+struct LoginR {
+    mes: String,
+    status: bool,
+}
 
 impl SignSession {
     pub async fn load<P: AsRef<std::path::Path>>(cookies_dir: P) -> Result<Self, reqwest::Error> {
@@ -235,7 +240,13 @@ impl SignSession {
         let client = ClientBuilder::new()
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()?;
-        let _response = utils::api::login(&client, uname, pwd).await?;
+        let response = utils::api::login(&client, uname, pwd).await?;
+        let LoginR { mes, status } = response.json().await.unwrap();
+        if status{
+            println!("{mes}");
+        }else{
+            panic!("{mes}");
+        }
         {
             // Write store back to disk
             let mut writer = std::fs::File::create(CONFIG_DIR.join(uname.to_string() + ".json"))
@@ -271,7 +282,14 @@ impl SignSession {
         let client = ClientBuilder::new()
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()?;
-        let _response = utils::api::login_enc(&client, uname, enc_pwd).await?;
+        let response = utils::api::login_enc(&client, uname, enc_pwd).await?;
+        /// TODO: 存疑
+        let LoginR { mes, status } = response.json().await.unwrap();
+        if status{
+            println!("{mes}");
+        }else{
+            panic!("{mes}");
+        }
         let store = {
             let s = cookie_store.clone();
             let s = s.lock().unwrap();
