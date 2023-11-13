@@ -2,24 +2,25 @@ use crate::sign_session::course::Course;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Response};
 
+pub static UA: &'static str = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 (schild:eaf4fb193ec970c0a9775e2a27b0232b) (device:iPhone11,2) Language/zh-Hans com.ssreader.ChaoXingStudy/ChaoXingStudy_3_6.0.2_ios_phone_202209281930_99 (@Kalimdor)_1665876591620212942";
+
 // 登陆页
 static LOGIN_PAGE: &'static str =
     "http://passport2.chaoxing.com/mlogin?fid=&newversion=true&refer=http%3A%2F%2Fi.chaoxing.com";
+#[allow(unused)]
 pub async fn login_page(client: &Client) -> Result<Response, reqwest::Error> {
     Ok(client.get(LOGIN_PAGE).send().await?)
 }
 // 明文密码登陆
 static LOGIN: &'static str = "https://passport2-api.chaoxing.com/v11/loginregister";
 pub async fn login(client: &Client, uname: &str, pwd: &str) -> Result<Response, reqwest::Error> {
-    let body =
-        format!("code={pwd}&cx_xxt_passport=json&uname={uname}&loginType=1&roleSelect=true");
+    let body = format!("code={pwd}&cx_xxt_passport=json&uname={uname}&loginType=1&roleSelect=true");
     let url = {
         let mut str = String::from(LOGIN);
         str.push_str("?");
         str.push_str(body.as_str());
         str
     };
-    println!("{url}");
     Ok(client.get(url).send().await?)
 }
 // 非明文密码登陆
@@ -103,10 +104,15 @@ pub async fn qrcode_sign(
     fid: &str,
 ) -> Result<Response, reqwest::Error> {
     let url = PPT_SIGN;
-    let url = format!(
-        r#"{url}?enc={enc}&name={stu_name}&activeId={active_id}&uid={uid}&clientip=&location={{"result":"1","address":"{address}","latitude":{lat},"longitude":{lon},"altitude":{altitude}}}&latitude=-1&longitude=-1&fid={fid}&appType=15"#
+    let location = format!(
+        r#"{{"result":"1","address":"{address}","latitude":{lat},"longitude":{lon},"altitude":{altitude}}}"#
     );
-    println!("{url}");
+    let location =
+        percent_encoding::utf8_percent_encode(&location, percent_encoding::NON_ALPHANUMERIC)
+            .to_string();
+    let url = format!(
+        r#"{url}?enc={enc}&name={stu_name}&activeId={active_id}&uid={uid}&clientip=&location={location}&latitude=-1&longitude=-1&fid={fid}&appType=15"#
+    );
     Ok(client.get(url).send().await?)
 }
 pub async fn location_sign(
@@ -123,46 +129,24 @@ pub async fn location_sign(
     let url = format!("{url}?name={stu_name}&address={address}&activeId={active_id}&uid={uid}&clientip=&latitude={lat}&longitude={lon}&fid={fid}&appType=15&ifTiJiao=1");
     Ok(client.get(url).send().await?)
 }
+pub async fn signcode_sign(
+    client: &Client,
+    active_id: &str,
+    uid: &str,
+    fid: &str,
+    stu_name: &str,
+    signcode: &str,
+) -> Result<Response, reqwest::Error> {
+    let url = PPT_SIGN;
+    let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&latitude=-1&longitude=-1&appType=15&fid={fid}&name={stu_name}&signCode={signcode}");
+    Ok(client.get(url).send().await?)
+}
 // 签到信息获取
 static PPT_ACTIVE_INFO: &'static str =
     "https://mobilelearn.chaoxing.com/v2/apis/active/getPPTActiveInfo";
 pub async fn ppt_active_info(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     let r = client
         .get(String::from(PPT_ACTIVE_INFO) + "?activeId=" + active_id)
-        .send()
-        .await?;
-    Ok(r)
-}
-// 获取课程
-static COURSE_LIST: &'static str = "http://mooc1-1.chaoxing.com/visit/courselistdata";
-pub async fn course_list(client: &Client) -> Result<Response, reqwest::Error> {
-    let body = "courseType=1&courseFolderId=0&courseFolderSize=0";
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        reqwest::header::ACCEPT,
-        r#"text/html, */*; q=0.01"#.parse().unwrap(),
-    );
-    headers.insert(
-        reqwest::header::ACCEPT_ENCODING,
-        "gzip, deflate".parse().unwrap(),
-    );
-    headers.insert(
-        reqwest::header::ACCEPT_LANGUAGE,
-        "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
-            .parse()
-            .unwrap(),
-    );
-    headers.insert(
-        "Content-Type",
-        r#"application/x-www-form-urlencoded; charset=UTF-8;"#
-            .parse()
-            .unwrap(),
-    );
-    // headers.insert("Cookie", format!("_uid={}; _d={_d}; vc3={vc3}", self.uid).parse().unwrap());
-    let r = client
-        .post(COURSE_LIST)
-        .headers(headers)
-        .body(body)
         .send()
         .await?;
     Ok(r)
@@ -239,7 +223,6 @@ pub async fn pan_upload(
         .text("puid", uid.to_string());
     let url = PAN_UPLOAD;
     let url = format!("{url}?_from=mobilelearn&_token={token}");
-    println!("{url}");
     Ok(client.post(url).multipart(form_data).send().await?)
 }
 // web 聊天页
@@ -306,4 +289,15 @@ pub async fn chat_group_location_sign(
     };
     let url = PPT_SIGN;
     Ok(client.post(url).headers(headers).body(body).send().await?)
+}
+pub async fn chat_group_signcode_sign(
+    client: &Client,
+    active_id: &str,
+    uid: &str,
+    signcode: &str,
+) -> Result<Response, reqwest::Error> {
+    eprintln!("`chat_group_signcode_sign` 该函数需要测试！");
+    let url = CHAT_GROUP_SIGN;
+    let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&signCode={signcode}");
+    Ok(client.get(url).send().await?)
 }

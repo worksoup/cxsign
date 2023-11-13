@@ -47,8 +47,8 @@ impl Photo {
             .unwrap();
         Self { object_id }
     }
-    pub async fn from_file(session: &SignSession, path_buf: PathBuf) -> Self {
-        let mut f = File::open(&path_buf).unwrap();
+    pub async fn from_file(session: &SignSession, path_buf: &PathBuf) -> Self {
+        let mut f = File::open(path_buf).unwrap();
         let file_name = path_buf.file_name().unwrap().to_str().unwrap();
         let size = f.metadata().unwrap().len() as usize;
         let mut buffer = vec![0u8; size];

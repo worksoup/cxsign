@@ -1,16 +1,33 @@
 
 import { GroupBox , Button} from "std-widgets.slint";
 import { LoginWidget } from "loginwidget.slint";
+import { MainWidget } from "mainwidget.slint";
 import { UiCourse } from "courselist.slint";
+import { UiActivity } from "activitylist.slint";
+import { UiAccount } from "accountlist.slint";
+
+export enum MainPage{ login-page, main-page }
 
 export component MainWindow inherits Window {
     callback login(string,string);
-    in property <bool> login-page: true;
-    in-out property <bool> login-page-enabled: true;
-    if login-page: login-widget:= LoginWidget {
-        enabled: login-page-enabled;
+    in-out property <MainPage> page;
+    in property <bool> login-widget-enabled: true;
+    in property <[UiCourse]> courses;
+    in property <[UiActivity]> activities;
+    in property <[UiAccount]> accounts;
+
+    if page==MainPage.login-page: login-widget:= LoginWidget {
+        enabled: login-widget-enabled;
         clicked => {
             login(login-widget.uname, login-widget.pwd);
         }
     }
+    if page==MainPage.main-page: main-widget:= MainWidget {
+        courses: courses;
+        activities: activities;
+        accounts: accounts;
+        width: parent.width;
+        height: parent.height;
+    }
 }
+export { UiCourse, UiActivity, UiAccount }

@@ -2,18 +2,19 @@ use crate::sign_session::activity::activity::{
     Activity, GetActivityR, OtherActivity, SignActivity,
 };
 use crate::sign_session::course::{Course, GetCoursesR};
-use crate::utils;
+use crate::utils::{self, CONFIG_DIR};
+use cookie_store::Cookie;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
-use reqwest::cookie::Cookie;
 use reqwest::{Client, ClientBuilder};
 use serde_derive::Deserialize;
 use std::cmp::Ordering;
+use std::hash::Hash;
 use std::ops::{Deref, Index};
 
-#[allow(non_snake_case)]
+#[allow(non_snake_case, unused)]
 #[derive(Debug)]
-struct UserCookies {
+pub struct UserCookies {
     JSESSIONID: String,
     lv: String,
     fid: String,
@@ -69,7 +70,7 @@ impl UserCookies {
         }
     }
     #[allow(non_snake_case)]
-    pub fn new<'a>(cookies: impl Iterator<Item = Cookie<'a>>) -> Self {
+    pub fn new<'a>(cookies: Vec<Cookie<'a>>) -> Self {
         let mut JSESSIONID = String::new();
         let mut lv = String::new();
         let mut fid = String::new();
@@ -170,7 +171,52 @@ pub struct SignSession {
     cookies: UserCookies,
 }
 
+impl PartialEq for SignSession {
+    fn eq(&self, other: &Self) -> bool {
+        self.get_uid() == other.get_uid()
+    }
+}
+impl Eq for SignSession {}
+
+impl Hash for SignSession {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.get_uid().hash(state);
+        self.get_fid().hash(state);
+        self.get_stu_name().hash(state);
+    }
+}
+
 impl SignSession {
+    pub async fn load<P: AsRef<std::path::Path>>(cookies_dir: P) -> Result<Self, reqwest::Error> {
+        let cookie_store = {
+            let file = std::fs::File::open(cookies_dir)
+                .map(std::io::BufReader::new)
+                .unwrap();
+            // use re-exported version of `CookieStore` for crate compatibility
+            reqwest_cookie_store::CookieStore::load_json(file).unwrap()
+        };
+        let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
+        let cookie_store = std::sync::Arc::new(cookie_store);
+        let cookies = {
+            let store = cookie_store.lock().unwrap();
+            let mut cookies = Vec::new();
+            for c in store.iter_any() {
+                cookies.push(c.to_owned())
+            }
+            cookies
+        };
+        let cookies = UserCookies::new(cookies);
+        let client = Client::builder()
+            .cookie_provider(std::sync::Arc::clone(&cookie_store))
+            .build()
+            .unwrap();
+        let stu_name = Self::get_stu_name_(&client).await?;
+        Ok(SignSession {
+            client,
+            stu_name,
+            cookies,
+        })
+    }
     pub fn get_uid(&self) -> &str {
         &self.cookies._uid
     }
@@ -183,9 +229,31 @@ impl SignSession {
     }
 
     pub async fn login(uname: &str, pwd: &str) -> Result<SignSession, reqwest::Error> {
-        let client = ClientBuilder::new().cookie_store(true).build()?;
-        let response = utils::api::login(&client, uname, pwd).await?;
-        let cookies = UserCookies::new(response.cookies());
+        let cookie_store = reqwest_cookie_store::CookieStore::new(None);
+        let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
+        let cookie_store = std::sync::Arc::new(cookie_store);
+        let client = ClientBuilder::new()
+            .cookie_provider(std::sync::Arc::clone(&cookie_store))
+            .build()?;
+        let _response = utils::api::login(&client, uname, pwd).await?;
+        {
+            // Write store back to disk
+            let mut writer = std::fs::File::create(CONFIG_DIR.join(uname.to_string() + ".json"))
+                .map(std::io::BufWriter::new)
+                .unwrap();
+            let store = cookie_store.lock().unwrap();
+            store.save_json(&mut writer).unwrap();
+        }
+        let store = {
+            let s = cookie_store.clone();
+            let s = s.lock().unwrap();
+            let mut r = Vec::new();
+            for s in s.iter_any() {
+                r.push(s.to_owned());
+            }
+            r
+        };
+        let cookies = UserCookies::new(store);
         // println!("{:?}", response.text().await.unwrap());
         let stu_name = Self::get_stu_name_(&client).await?;
         Ok(SignSession {
@@ -195,10 +263,25 @@ impl SignSession {
         })
     }
 
+    #[allow(unused)]
     pub async fn login_enc(uname: &str, enc_pwd: &str) -> Result<SignSession, reqwest::Error> {
-        let client = ClientBuilder::new().cookie_store(true).build()?;
-        let response = utils::api::login_enc(&client, uname, enc_pwd).await?;
-        let cookies = UserCookies::new(response.cookies());
+        let cookie_store = reqwest_cookie_store::CookieStore::new(None);
+        let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
+        let cookie_store = std::sync::Arc::new(cookie_store);
+        let client = ClientBuilder::new()
+            .cookie_provider(std::sync::Arc::clone(&cookie_store))
+            .build()?;
+        let _response = utils::api::login_enc(&client, uname, enc_pwd).await?;
+        let store = {
+            let s = cookie_store.clone();
+            let s = s.lock().unwrap();
+            let mut r = Vec::new();
+            for s in s.iter_any() {
+                r.push(s.to_owned());
+            }
+            r
+        };
+        let cookies = UserCookies::new(store);
         let stu_name = Self::get_stu_name_(&client).await?;
         Ok(SignSession {
             client,
@@ -214,23 +297,19 @@ impl SignSession {
         for c in r.channelList {
             if let Some(data) = c.content.course {
                 for course in data.data {
-                    if c.key.is_integer() {
+                    if c.key.is_i64() {
                         arr.push(Course::new(
                             course.id,
-                            c.key.as_integer().unwrap(),
-                            course.teacherfactor,
-                            course.imageurl,
-                            course.name,
+                            c.key.as_i64().unwrap(),
+                            course.teacherfactor.as_str(),
+                            course.imageurl.as_str(),
+                            course.name.as_str(),
                         ))
                     }
                 }
             }
         }
         Ok(arr)
-    }
-    pub async fn get_courses2(&self) -> Result<Vec<Course>, reqwest::Error> {
-        let _r = utils::api::course_list(self).await?;
-        todo!()
     }
     async fn get_stu_name_(client: &Client) -> Result<String, reqwest::Error> {
         let r = utils::api::account_manage(client).await?;
@@ -307,21 +386,30 @@ impl SignSession {
         if let Some(data) = r.data {
             for ar in data.activeList {
                 if let Some(other_id) = ar.otherId {
-                    arr.push(Activity::Sign(SignActivity {
-                        id: ar.id.to_string(),
-                        name: ar.nameOne,
-                        course: c.clone(),
-                        other_id,
-                        session: &self,
-                        status: ar.status,
-                        start_time_secs: (ar.startTime / 1000) as i64,
-                    }))
+                    let other_id_i64: i64 = other_id.parse().unwrap();
+                    if other_id_i64 >= 0 && other_id_i64 <= 5 {
+                        arr.push(Activity::Sign(SignActivity {
+                            id: ar.id.to_string(),
+                            name: ar.nameOne,
+                            course: c.clone(),
+                            other_id,
+                            status: ar.status,
+                            start_time_secs: (ar.startTime / 1000) as i64,
+                        }))
+                    } else {
+                        arr.push(Activity::Other(OtherActivity {
+                            id: ar.id.to_string(),
+                            name: ar.nameOne,
+                            course: c.clone(),
+                            status: ar.status,
+                            start_time_secs: (ar.startTime / 1000) as i64,
+                        }))
+                    }
                 } else {
                     arr.push(Activity::Other(OtherActivity {
                         id: ar.id.to_string(),
                         name: ar.nameOne,
                         course: c.clone(),
-                        session: &self,
                         status: ar.status,
                         start_time_secs: (ar.startTime / 1000) as i64,
                     }))
