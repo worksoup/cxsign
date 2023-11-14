@@ -354,7 +354,6 @@ enum PosCmds {
         course: Option<i64>,
         /// 地址名称、经纬度与海拔。
         /// 格式为：`addr/lat/lon/alt`.
-        #[arg(short, long)]
         pos: String,
     },
     /// 删除位置。
