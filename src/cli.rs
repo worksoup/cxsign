@@ -31,9 +31,10 @@ pub async fn add_account(db: &DataBase, uname: String, pwd: Option<String>) {
             .prompt()
             .unwrap()
     };
-    let session = SignSession::login(&uname, &pwd).await.unwrap();
+    let enc_pwd = crate::utils::pwd_des(&pwd);
+    let session = SignSession::login_enc(&uname, &enc_pwd).await.unwrap();
     let name = session.get_stu_name();
-    db.add_account_or(&uname, &pwd, name, DataBase::update_account);
+    db.add_account_or(&uname, &enc_pwd, name, DataBase::update_account);
     let courses = session.get_courses().await.unwrap();
     for c in courses {
         db.add_course_or(&c, |_, _| {});

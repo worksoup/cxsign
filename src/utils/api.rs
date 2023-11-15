@@ -31,7 +31,6 @@ pub async fn login_enc(
     pwd_enc: &str,
 ) -> Result<Response, reqwest::Error> {
     let body = format!("uname={uname}&password={pwd_enc}&fid=-1&t=true&refer=https%253A%252F%252Fi.chaoxing.com&forbidotherlogin=0&validate=");
-    // GET
     let headers = {
         let mut header = HeaderMap::new();
         header.insert(
