@@ -167,6 +167,14 @@ impl SignSession {
             }
             panic!("登录失败！");
         }
+        {
+            // Write store back to disk
+            let mut writer = std::fs::File::create(CONFIG_DIR.join(uname.to_string() + ".json"))
+                .map(std::io::BufWriter::new)
+                .unwrap();
+            let store = cookie_store.lock().unwrap();
+            store.save_json(&mut writer).unwrap();
+        }
         let store = {
             let s = cookie_store.clone();
             let s = s.lock().unwrap();
