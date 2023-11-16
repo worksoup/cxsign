@@ -1,4 +1,4 @@
-pub mod sign_session;
+pub mod session;
 pub mod course;
-pub mod sign_cookies;
+pub mod cookies;
 pub mod activity;

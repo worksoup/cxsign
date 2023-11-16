@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs::File, ops::Deref};
-
-use crate::sign_session::{activity::activity::Address, course::Course};
+use crate::sign_session::course::Course;
 use sqlite::Connection;
+use crate::utils::address::Address;
 
 pub struct DataBase {
     connection: Connection,

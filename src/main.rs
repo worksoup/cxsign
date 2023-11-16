@@ -10,10 +10,9 @@ mod gui;
 mod sign_session;
 mod utils;
 
-use crate::sign_session::activity::activity::Address;
 use clap::{Parser, Subcommand};
 use std::{ops::Deref, path::PathBuf};
-use utils::{sql::DataBase, CONFIG_DIR};
+use utils::{address::Address, sql::DataBase, CONFIG_DIR};
 
 #[tokio::main]
 async fn main() {

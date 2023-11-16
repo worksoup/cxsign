@@ -1,9 +1,6 @@
-use crate::sign_session::activity::activity::{
-    Activity, GetActivityR, OtherActivity, SignActivity,
-};
+use crate::sign_session::activity::activity::{Activity, OtherActivity};
 use crate::sign_session::course::{Course, GetCoursesR};
 use crate::utils::{self, CONFIG_DIR};
-use cookie_store::Cookie;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
 use reqwest::{Client, ClientBuilder};
@@ -12,157 +9,8 @@ use std::cmp::Ordering;
 use std::hash::Hash;
 use std::ops::{Deref, Index};
 
-#[allow(non_snake_case, unused)]
-#[derive(Debug)]
-pub struct UserCookies {
-    JSESSIONID: String,
-    lv: String,
-    fid: String,
-    _uid: String,
-    uf: String,
-    _d: String,
-    UID: String,
-    vc: String,
-    vc2: String,
-    vc3: String,
-    cx_p_token: String,
-    p_auth_token: String,
-    xxtenc: String,
-    DSSTASH_LOG: String,
-    route: String,
-}
-
-impl UserCookies {
-    #[allow(non_snake_case)]
-    fn new_(
-        JSESSIONID: &str,
-        lv: &str,
-        fid: &str,
-        _uid: &str,
-        uf: &str,
-        _d: &str,
-        UID: &str,
-        vc: &str,
-        vc2: &str,
-        vc3: &str,
-        cx_p_token: &str,
-        p_auth_token: &str,
-        xxtenc: &str,
-        DSSTASH_LOG: &str,
-        route: &str,
-    ) -> Self {
-        UserCookies {
-            JSESSIONID: JSESSIONID.into(),
-            lv: lv.into(),
-            fid: fid.into(),
-            _uid: _uid.into(),
-            uf: uf.into(),
-            _d: _d.into(),
-            UID: UID.into(),
-            vc: vc.into(),
-            vc2: vc2.into(),
-            vc3: vc3.into(),
-            cx_p_token: cx_p_token.into(),
-            p_auth_token: p_auth_token.into(),
-            xxtenc: xxtenc.into(),
-            DSSTASH_LOG: DSSTASH_LOG.into(),
-            route: route.into(),
-        }
-    }
-    #[allow(non_snake_case)]
-    pub fn new<'a>(cookies: Vec<Cookie<'a>>) -> Self {
-        let mut JSESSIONID = String::new();
-        let mut lv = String::new();
-        let mut fid = String::new();
-        let mut _uid = String::new();
-        let mut uf = String::new();
-        let mut _d = String::new();
-        let mut UID = String::new();
-        let mut vc = String::new();
-        let mut vc2 = String::new();
-        let mut vc3 = String::new();
-        let mut cx_p_token = String::new();
-        let mut p_auth_token = String::new();
-        let mut xxtenc = String::new();
-        let mut DSSTASH_LOG = String::new();
-        let mut route = String::new();
-        for c in cookies {
-            match c.name() {
-                "JSESSIONID" => {
-                    JSESSIONID = c.value().into();
-                }
-                "lv" => {
-                    lv = c.value().into();
-                }
-                "fid" => {
-                    fid = c.value().into();
-                }
-                "_uid" => {
-                    _uid = c.value().into();
-                }
-                "uf" => {
-                    uf = c.value().into();
-                }
-                "_d" => {
-                    _d = c.value().into();
-                }
-                "UID" => {
-                    UID = c.value().into();
-                }
-                "vc" => {
-                    vc = c.value().into();
-                }
-                "vc2" => {
-                    vc2 = c.value().into();
-                }
-                "vc3" => {
-                    vc3 = c.value().into();
-                }
-                "cx_p_token" => {
-                    cx_p_token = c.value().into();
-                }
-                "p_auth_token" => {
-                    p_auth_token = c.value().into();
-                }
-                "xxtenc" => {
-                    xxtenc = c.value().into();
-                }
-                "DSSTASH_LOG" => {
-                    DSSTASH_LOG = c.value().into();
-                }
-                "route" => {
-                    route = c.value().into();
-                }
-                _ => {
-                    JSESSIONID = c.value().into();
-                }
-            }
-        }
-        UserCookies {
-            JSESSIONID,
-            lv,
-            fid,
-            _uid,
-            uf,
-            _d,
-            UID,
-            vc,
-            vc2,
-            vc3,
-            cx_p_token,
-            p_auth_token,
-            xxtenc,
-            DSSTASH_LOG,
-            route,
-        }
-    }
-}
-
-impl Default for UserCookies {
-    fn default() -> Self {
-        Self::new_("", "", "-1", "", "", "", "", "", "", "", "", "", "", "", "")
-    }
-}
+use super::activity::sign::SignActivity;
+use super::cookies::UserCookies;
 
 #[derive(Debug)]
 pub struct SignSession {
@@ -218,10 +66,10 @@ impl SignSession {
         })
     }
     pub fn get_uid(&self) -> &str {
-        &self.cookies._uid
+        &self.cookies.get_uid()
     }
     pub fn get_fid(&self) -> &str {
-        &self.cookies.fid
+        &self.cookies.get_fid()
     }
 
     pub fn get_stu_name(&self) -> &str {
@@ -243,10 +91,11 @@ impl SignSession {
         }
         let LoginR { mes, status } = response.json().await.unwrap();
         if status {
-            println!("登录成功！");
             println!("{mes:?}");
+            println!("登录成功！");
         } else {
-            panic!("{mes:?}");
+            eprintln!("{mes:?}");
+            panic!("登录失败！");
         }
         {
             // Write store back to disk
@@ -275,7 +124,6 @@ impl SignSession {
         })
     }
 
-    #[allow(unused)]
     pub async fn login_enc(uname: &str, enc_pwd: &str) -> Result<SignSession, reqwest::Error> {
         let cookie_store = reqwest_cookie_store::CookieStore::new(None);
         let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
@@ -298,9 +146,25 @@ impl SignSession {
             msg1,
             msg2,
         } = response.json().await.unwrap();
+        let mut mes = Vec::new();
+        if let Some(url) = url {
+            mes.push(url);
+        }
+        if let Some(msg1) = msg1 {
+            mes.push(msg1);
+        }
+        if let Some(msg2) = msg2 {
+            mes.push(msg2);
+        }
         if status {
+            for mes in mes {
+                println!("{mes:?}");
+            }
             println!("登录成功！");
         } else {
+            for mes in mes {
+                eprintln!("{mes:?}");
+            }
             panic!("登录失败！");
         }
         let store = {
@@ -375,80 +239,9 @@ impl SignSession {
         let tmp: Tmp = r.json().await.unwrap();
         Ok(tmp.objectId)
     }
-    pub async fn get_object_id_from_cx_pan(
-        &self,
-        p: impl Fn(&str) -> bool,
-    ) -> Result<Option<String>, reqwest::Error> {
-        let r = utils::api::pan_chaoxing(self).await?;
-        let data = r.text().await.unwrap();
-        let start_of_enc = data.find("enc =\"").unwrap() + 6;
-        let end_of_enc = data[start_of_enc..data.len()].find("\"").unwrap() + start_of_enc;
-        let enc = &data[start_of_enc..end_of_enc];
-        let start_of_root_dir = data.find("_rootdir = \"").unwrap() + 12;
-        let end_of_root_dir =
-            data[start_of_root_dir..data.len()].find("\"").unwrap() + start_of_root_dir;
-        let parent_id = &data[start_of_root_dir..end_of_root_dir];
-        let r = utils::api::pan_list(self, parent_id, enc).await?;
-        #[derive(Deserialize)]
-        #[allow(non_snake_case)]
-        struct CloudFile {
-            name: String,
-            objectId: Option<String>,
-        }
-        #[derive(Deserialize)]
-        struct TmpR {
-            list: Vec<CloudFile>,
-        }
-        let r: TmpR = r.json().await?;
-        for item in r.list {
-            if p(&item.name) {
-                return Ok(item.objectId);
-            }
-        }
-        Ok(None)
-    }
 }
 
 impl SignSession {
-    async fn get_all_activities(&self, c: Course) -> Result<Vec<Activity>, reqwest::Error> {
-        let r = utils::api::active_list(self, c.clone()).await?;
-        let r: GetActivityR = r.json().await.unwrap();
-        let mut arr = Vec::new();
-        if let Some(data) = r.data {
-            for ar in data.activeList {
-                if let Some(other_id) = ar.otherId {
-                    let other_id_i64: i64 = other_id.parse().unwrap();
-                    if other_id_i64 >= 0 && other_id_i64 <= 5 {
-                        arr.push(Activity::Sign(SignActivity {
-                            id: ar.id.to_string(),
-                            name: ar.nameOne,
-                            course: c.clone(),
-                            other_id,
-                            status: ar.status,
-                            start_time_secs: (ar.startTime / 1000) as i64,
-                        }))
-                    } else {
-                        arr.push(Activity::Other(OtherActivity {
-                            id: ar.id.to_string(),
-                            name: ar.nameOne,
-                            course: c.clone(),
-                            status: ar.status,
-                            start_time_secs: (ar.startTime / 1000) as i64,
-                        }))
-                    }
-                } else {
-                    arr.push(Activity::Other(OtherActivity {
-                        id: ar.id.to_string(),
-                        name: ar.nameOne,
-                        course: c.clone(),
-                        status: ar.status,
-                        start_time_secs: (ar.startTime / 1000) as i64,
-                    }))
-                }
-            }
-        }
-        Ok(arr)
-    }
     pub async fn traverse_activities(
         &self,
     ) -> Result<(Vec<SignActivity>, Vec<SignActivity>, Vec<OtherActivity>), reqwest::Error> {
@@ -458,7 +251,7 @@ impl SignSession {
         let mut other_activities = Vec::new();
         let mut tasks = FuturesUnordered::new();
         for c in courses {
-            tasks.push(self.get_all_activities(c));
+            tasks.push(Activity::from_course(self, c));
         }
         while let Some(item) = tasks.next().await {
             for a in item? {

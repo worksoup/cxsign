@@ -1,7 +1,15 @@
-use std::path::PathBuf;
+pub mod address;
+pub mod api;
+pub mod photo;
+pub mod sql;
 
+use des::{
+    cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit},
+    Des,
+};
 use directories::ProjectDirs;
 use lazy_static::lazy_static;
+use std::path::PathBuf;
 lazy_static! {
     pub static ref CONFIG_DIR: PathBuf = {
         let binding = ProjectDirs::from("rt.lea", "worksoup", "cxsign").unwrap();
@@ -10,13 +18,6 @@ lazy_static! {
         dir
     };
 }
-pub mod api;
-pub mod sql;
-
-use des::cipher::generic_array::GenericArray;
-use des::cipher::BlockEncrypt;
-use des::cipher::KeyInit;
-use des::Des;
 pub fn pwd_des(pwd: &str) -> String {
     fn pkcs7(pwd: &str) -> Vec<[u8; 8]> {
         assert!(pwd.len() > 7);
@@ -25,7 +26,7 @@ pub fn pwd_des(pwd: &str) -> String {
         let pwd = pwd.as_bytes();
         let len = pwd.len();
         let batch = len / 8;
-        let mut m = len % 8;
+        let m = len % 8;
         for i in 0..batch {
             let mut a = [0u8; 8];
             a.copy_from_slice(&pwd[0 + i * 8..8 + i * 8]);
@@ -55,9 +56,10 @@ pub fn pwd_des(pwd: &str) -> String {
     }
     hex::encode(a)
 }
-mod test {
-    #[test]
-    fn test_des() {
-        println!("{}", crate::utils::pwd_des("0123456789."));
-    }
-}
+
+// mod test {
+//     #[test]
+//     fn test_des() {
+//         println!("{}", crate::utils::pwd_des("0123456789."));
+//     }
+// }

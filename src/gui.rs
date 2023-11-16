@@ -1,4 +1,4 @@
-use crate::sign_session::sign_session::SignSession;
+use crate::sign_session::session::SignSession;
 use futures::{channel::mpsc::UnboundedSender, StreamExt};
 use slint::{ModelRc, SharedString, VecModel, Weak};
 use std::{

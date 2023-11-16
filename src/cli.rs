@@ -1,3 +1,7 @@
+use crate::{
+    sign_session::{session::SignSession, activity::sign::{SignActivity, SignState, SignType}},
+    utils::{address::Address, photo::Photo, sql::DataBase},
+};
 use std::{
     collections::{hash_map::OccupiedError, HashMap},
     fs::DirEntry,
@@ -10,16 +14,6 @@ pub fn print_now() {
         .to_string();
     println!("{str}");
 }
-use crate::{
-    sign_session::{
-        activity::{
-            activity::{Address, SignActivity, SignState},
-            sign::{Photo, SignType},
-        },
-        sign_session::SignSession,
-    },
-    utils::sql::DataBase,
-};
 
 // 添加账号。
 pub async fn add_account(db: &DataBase, uname: String, pwd: Option<String>) {
@@ -307,15 +301,11 @@ pub async fn pre_sign_and_handle_sign_type_sign(
 ) -> Result<SignState, reqwest::Error> {
     s.pre_sign(session).await?;
     match sign_type {
-        crate::sign_session::activity::sign::SignType::Photo => photo_sign_(s, session, &pic).await,
-        crate::sign_session::activity::sign::SignType::Common => general_sign_(s, session).await,
-        crate::sign_session::activity::sign::SignType::QrCode => {
-            qrcode_sign_(s, session, &pic, db, enc, location, pos).await
-        }
-        crate::sign_session::activity::sign::SignType::Location => {
-            location_sign_(s, session, db, location, pos).await
-        }
-        crate::sign_session::activity::sign::SignType::Unknown => {
+        SignType::Photo => photo_sign_(s, session, &pic).await,
+        SignType::Common => general_sign_(s, session).await,
+        SignType::QrCode => qrcode_sign_(s, session, &pic, db, enc, location, pos).await,
+        SignType::Location => location_sign_(s, session, db, location, pos).await,
+        SignType::Unknown => {
             panic!("无效签到类型！");
         }
         signcode_sign_type => signcode_sign_(s, signcode_sign_type, session, signcode).await,
