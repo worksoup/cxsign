@@ -1,19 +1,14 @@
 use crate::{
-    sign_session::{session::SignSession, activity::sign::{SignActivity, SignState, SignType}},
+    sign_session::{
+        activity::sign::{SignActivity, SignState, SignType},
+        session::SignSession,
+    },
     utils::{address::Address, photo::Photo, sql::DataBase},
 };
 use std::{
     collections::{hash_map::OccupiedError, HashMap},
-    fs::DirEntry,
     path::PathBuf,
-    time::SystemTime,
 };
-pub fn print_now() {
-    let str = chrono::DateTime::<chrono::Local>::from(SystemTime::now())
-        .format("%+")
-        .to_string();
-    println!("{str}");
-}
 
 // 添加账号。
 pub async fn add_account(db: &DataBase, uname: String, pwd: Option<String>) {
@@ -218,77 +213,7 @@ async fn signcode_sign_(
         }
     }
 }
-pub(crate) fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
-    loop {
-        let ans = inquire::Confirm::new("二维码图片是否准备好了？").with_help_message("本程序会读取 `--picdir` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。").with_default_value_formatter(&|v|{
-            if v {"是[默认]"}else{"否[默认]"}.into()
-        }).with_formatter(&|v|{
-            if v {"是"}else{"否"}.into()
-        }).with_parser(&|s|{
-            match inquire::Confirm::DEFAULT_PARSER(s) {
-                r@Ok(_) => r,
-                Err(_) => {
-                    if s == "是"{
-                        Ok(true)
-                    }else if s =="否"  {
-                        Ok(false)
-                    }else {
-                        Err(())
-                    }
-                },
-            }
-        }).with_error_message("请以\"y\", \"yes\"等表示“是”，\"n\", \"no\"等表示“否”。")
-        .with_default(true)
-        .prompt()
-        .unwrap();
-        if ans {
-            break;
-        }
-    }
-    let pic = if let Ok(pic_dir) = std::fs::read_dir(picdir) {
-        let mut files: Vec<DirEntry> = pic_dir
-            .filter_map(|k| {
-                if let Ok(k) = k {
-                    if let Ok(t) = k.file_type() {
-                        if t.is_file() {
-                            let name = k.file_name();
-                            let ext = name.to_str().unwrap().split('.').last().unwrap();
-                            if ext == "png" || ext == "jpg" {
-                                Some(k)
-                            } else {
-                                None
-                            }
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .collect();
-        if files.is_empty() {
-            eprintln!("文件夹下没有图片！（只支持 `*.png` 文件或 `*.jpg` 文件。）");
-            None
-        } else {
-            files.sort_by(|a, b| {
-                b.metadata()
-                    .unwrap()
-                    .modified()
-                    .unwrap()
-                    .cmp(&a.metadata().unwrap().modified().unwrap())
-            });
-            Some(files[0].path())
-        }
-    } else {
-        eprintln!("遍历文件夹失败！");
-        None
-    };
-    pic
-}
-pub async fn pre_sign_and_handle_sign_type_sign(
+async fn pre_sign_and_handle_sign_type_sign(
     s: &SignActivity,
     sign_type: &SignType,
     session: &SignSession,

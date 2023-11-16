@@ -225,7 +225,7 @@ async fn main() {
             let pic = if let Some(pic) = pic {
                 let metadata = std::fs::metadata(&pic).unwrap();
                 if metadata.is_dir() {
-                    cli::picdir_to_pic(&pic)
+                    utils::picdir_to_pic(&pic)
                 } else {
                     Some(pic)
                 }
@@ -239,7 +239,7 @@ async fn main() {
             .await
             .unwrap();
         }
-        cli::print_now();
+        utils::print_now();
     }
 }
 
