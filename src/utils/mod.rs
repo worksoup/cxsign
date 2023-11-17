@@ -9,7 +9,8 @@ use des::{
 };
 use directories::ProjectDirs;
 use lazy_static::lazy_static;
-use std::{path::PathBuf, fs::DirEntry};
+use std::{fs::DirEntry, path::PathBuf};
+use unicode_width::UnicodeWidthStr;
 lazy_static! {
     pub static ref CONFIG_DIR: PathBuf = {
         let binding = ProjectDirs::from("rt.lea", "worksoup", "cxsign").unwrap();
@@ -133,6 +134,14 @@ pub fn pwd_des(pwd: &str) -> String {
         a.append(&mut b);
     }
     hex::encode(a)
+}
+
+pub fn get_unicode_correct_display_width(s: &str, perfer_width: usize) -> usize {
+    if UnicodeWidthStr::width(s) > perfer_width {
+        perfer_width
+    } else {
+        UnicodeWidthStr::width(s) + 12 - s.len()
+    }
 }
 
 // mod test {

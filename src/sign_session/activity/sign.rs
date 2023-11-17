@@ -1,8 +1,7 @@
 use crate::sign_session::{course::Course, session::SignSession};
-use crate::utils;
 use crate::utils::address::Address;
 use crate::utils::photo::Photo;
-use unicode_width::UnicodeWidthStr;
+use crate::utils::{self, get_unicode_correct_display_width};
 pub enum SignType {
     // 拍照签到
     Photo,
@@ -75,11 +74,7 @@ pub struct SignActivityRaw {
 
 impl SignActivity {
     pub fn display(&self, already_course: bool) {
-        let name_width = if UnicodeWidthStr::width(self.name.as_str()) > 12 {
-            12
-        } else {
-            UnicodeWidthStr::width(self.name.as_str()) + 12 - self.name.len()
-        };
+        let name_width = get_unicode_correct_display_width(self.name.as_str(), 12);
         if already_course {
             println!(
                 "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}",

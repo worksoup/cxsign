@@ -222,16 +222,6 @@ async fn main() {
         } else {
             let sessions = cli::get_sessions(&db).await;
             let (asigns, osigns) = cli::get_signs(&sessions).await;
-            let pic = if let Some(pic) = pic {
-                let metadata = std::fs::metadata(&pic).unwrap();
-                if metadata.is_dir() {
-                    utils::picdir_to_pic(&pic)
-                } else {
-                    Some(pic)
-                }
-            } else {
-                None
-            };
             cli::sign(
                 &db, &sessions, asigns, osigns, activity, account, location, pos, enc, pic,
                 signcode,

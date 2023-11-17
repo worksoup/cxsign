@@ -239,7 +239,7 @@ async fn pre_sign_and_handle_sign_type_sign(
 
 async fn handle_account_sign<'a>(
     s: &SignActivity,
-    pic: &Option<PathBuf>,
+    picdir: &Option<PathBuf>,
     location: Option<i64>,
     db: &DataBase,
     pos: &Option<String>,
@@ -248,13 +248,23 @@ async fn handle_account_sign<'a>(
     local_sessions: &'a Vec<&SignSession>,
 ) -> Result<(), reqwest::Error> {
     let sign_type = s.get_sign_type(local_sessions[0]).await?;
+    let pic = if let Some(pic) = picdir {
+        let metadata = std::fs::metadata(&pic).unwrap();
+        if metadata.is_dir() {
+            crate::utils::picdir_to_pic(&pic)
+        } else {
+            Some(pic.to_owned())
+        }
+    } else {
+        None
+    };
     for session in local_sessions {
         let state = pre_sign_and_handle_sign_type_sign(
             &s, &sign_type, session, &pic, location, db, &pos, &enc, &signcode,
         )
         .await?;
         match state {
-            SignState::Success => println!("签到成功！"),
+            SignState::Success => println!("用户[{}]签到成功！", session.get_stu_name()),
             SignState::Fail(msg) => eprintln!("{msg}"),
         }
     }
@@ -272,7 +282,7 @@ pub async fn sign(
     location: Option<i64>,
     pos: Option<String>,
     enc: Option<String>,
-    pic: Option<PathBuf>,
+    picdir: Option<PathBuf>,
     signcode: Option<String>,
 ) -> Result<(), reqwest::Error> {
     if let Some(active_id) = activity {
@@ -292,7 +302,17 @@ pub async fn sign(
             accounts.push(&sessions[account]);
             local_sessions = &accounts;
         }
-        handle_account_sign(s, &pic, location, db, &pos, &enc, &signcode, local_sessions).await?;
+        handle_account_sign(
+            s,
+            &picdir,
+            location,
+            db,
+            &pos,
+            &enc,
+            &signcode,
+            local_sessions,
+        )
+        .await?;
     } else {
         for (s, mut local_sessions) in &asigns {
             let mut accounts = Vec::new();
@@ -300,8 +320,17 @@ pub async fn sign(
                 accounts.push(&sessions[account]);
                 local_sessions = &accounts;
             }
-            handle_account_sign(s, &pic, location, db, &pos, &enc, &signcode, local_sessions)
-                .await?;
+            handle_account_sign(
+                s,
+                &picdir,
+                location,
+                db,
+                &pos,
+                &enc,
+                &signcode,
+                local_sessions,
+            )
+            .await?;
         }
     }
     Ok(())
