@@ -1,7 +1,7 @@
-use std::{collections::HashMap, fs::File, ops::Deref};
 use crate::sign_session::course::Course;
-use sqlite::Connection;
 use crate::utils::address::Address;
+use sqlite::Connection;
+use std::{collections::HashMap, fs::File, ops::Deref};
 
 pub struct DataBase {
     connection: Connection,
@@ -269,6 +269,24 @@ impl DataBase {
         }
         poss
     }
+    pub fn get_pos(&self, posid: i64) -> (i64, Address) {
+        let mut query = self
+            .connection
+            .prepare("SELECT * FROM pos WHERE posid=?;")
+            .unwrap();
+        query.bind((1, posid)).unwrap();
+        let c: Vec<sqlite::Row> = query
+            .iter()
+            .filter_map(|e| if let Ok(e) = e { Some(e) } else { None })
+            .collect();
+        let row = &c[0];
+        let addr = row.read("addr");
+        let lat = row.read("lat");
+        let lon = row.read("lon");
+        let alt = row.read("alt");
+        let courseid = row.read("courseid");
+        (courseid, Address::new(addr, lat, lon, alt))
+    }
     pub fn get_course_poss(&self, course_id: i64) -> HashMap<i64, Address> {
         let mut query = self
             .connection
@@ -284,6 +302,26 @@ impl DataBase {
                 let lon = row.read("lon");
                 let alt = row.read("alt");
                 poss.insert(posid, Address::new(addr, lat, lon, alt));
+            } else {
+                eprintln!("位置解析行出错：{c:?}.");
+            }
+        }
+        poss
+    }
+    pub fn get_course_poss_without_posid(&self, course_id: i64) -> Vec<Address> {
+        let mut query = self
+            .connection
+            .prepare("SELECT * FROM pos WHERE courseid=?;")
+            .unwrap();
+        query.bind((1, course_id)).unwrap();
+        let mut poss = Vec::new();
+        for c in query.iter() {
+            if let Ok(row) = c {
+                let addr = row.read("addr");
+                let lat = row.read("lat");
+                let lon = row.read("lon");
+                let alt = row.read("alt");
+                poss.push(Address::new(addr, lat, lon, alt));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }

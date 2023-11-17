@@ -40,7 +40,7 @@ async fn main() {
                         match acc_sub {
                             AccCmds::Add { uname } => {
                                 // 添加账号。
-                                cli::add_account(&db, uname, None).await;
+                                utils::add_account(&db, uname, None).await;
                             }
                             AccCmds::Remove { uname, yes } => {
                                 if !yes {
@@ -61,7 +61,7 @@ async fn main() {
                         if fresh {
                             for (uname, (pwd, _)) in accounts {
                                 db.delete_account(&uname);
-                                cli::add_account(&db, uname, Some(pwd)).await;
+                                utils::add_account(&db, uname, Some(pwd)).await;
                             }
                         } else {
                             // 列出所有账号。
@@ -74,7 +74,7 @@ async fn main() {
                 MainCmds::Course { fresh } => {
                     if fresh {
                         // 重新获取课程信息并缓存。
-                        let sessions = cli::get_sessions(&db).await;
+                        let sessions = utils::get_sessions(&db).await;
                         db.delete_all_course();
                         for (_, session) in sessions {
                             let courses = session.get_courses().await.unwrap();
@@ -184,9 +184,9 @@ async fn main() {
                     }
                 }
                 MainCmds::List { course, all } => {
-                    let sessions = cli::get_sessions(&db).await;
+                    let sessions = utils::get_sessions(&db).await;
                     let (available_sign_activities, other_sign_activities) =
-                        cli::get_signs(&sessions).await;
+                        utils::get_signs(&sessions).await;
                     if let Some(course) = course {
                         // 列出指定课程的有效签到。
                         for a in available_sign_activities {
@@ -220,8 +220,8 @@ async fn main() {
                 }
             }
         } else {
-            let sessions = cli::get_sessions(&db).await;
-            let (asigns, osigns) = cli::get_signs(&sessions).await;
+            let sessions = utils::get_sessions(&db).await;
+            let (asigns, osigns) = utils::get_signs(&sessions).await;
             cli::sign(
                 &db, &sessions, asigns, osigns, activity, account, location, pos, enc, pic,
                 signcode,

@@ -3,7 +3,7 @@ use serde_derive::Deserialize;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
-
+// TODO: 删除 unwrap
 pub struct Photo {
     object_id: String,
 }

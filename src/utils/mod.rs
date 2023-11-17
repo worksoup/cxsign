@@ -9,8 +9,16 @@ use des::{
 };
 use directories::ProjectDirs;
 use lazy_static::lazy_static;
-use std::{fs::DirEntry, path::PathBuf};
+use std::{
+    collections::{hash_map::OccupiedError, HashMap},
+    fs::DirEntry,
+    path::PathBuf,
+};
 use unicode_width::UnicodeWidthStr;
+
+use crate::sign_session::{activity::sign::SignActivity, session::SignSession};
+
+use self::sql::DataBase;
 lazy_static! {
     pub static ref CONFIG_DIR: PathBuf = {
         let binding = ProjectDirs::from("rt.lea", "worksoup", "cxsign").unwrap();
@@ -144,6 +152,72 @@ pub fn get_unicode_correct_display_width(s: &str, perfer_width: usize) -> usize 
     }
 }
 
+// 添加账号。
+pub async fn add_account(db: &DataBase, uname: String, pwd: Option<String>) {
+    let pwd = if let Some(pwd) = pwd {
+        pwd
+    } else {
+        inquire::Password::new("密码：")
+            .without_confirmation()
+            .prompt()
+            .unwrap()
+    };
+    let enc_pwd = crate::utils::pwd_des(&pwd);
+    let session = SignSession::login_enc(&uname, &enc_pwd).await.unwrap();
+    let name = session.get_stu_name();
+    db.add_account_or(&uname, &enc_pwd, name, DataBase::update_account);
+    let courses = session.get_courses().await.unwrap();
+    for c in courses {
+        db.add_course_or(&c, |_, _| {});
+    }
+}
+
+pub async fn get_sessions(db: &DataBase) -> HashMap<String, SignSession> {
+    let accounts = db.get_accounts();
+    let config_dir = crate::utils::CONFIG_DIR.clone();
+    let mut s = HashMap::new();
+    for a in accounts {
+        let cookies_dir = config_dir.join(a.0.to_string() + ".json");
+        let session = SignSession::load(cookies_dir).await.unwrap();
+        s.insert(a.0, session);
+    }
+    s
+}
+
+pub async fn get_signs<'a>(
+    sessions: &'a HashMap<String, SignSession>,
+) -> (
+    HashMap<SignActivity, Vec<&'a SignSession>>,
+    HashMap<SignActivity, Vec<&'a SignSession>>,
+) {
+    let mut asigns = HashMap::new();
+    let mut osigns = HashMap::new();
+    for (_, session) in sessions {
+        let (available_sign_activities, other_sign_activities, _) =
+            session.traverse_activities().await.unwrap();
+        for sa in available_sign_activities {
+            let vec = vec![session];
+            if let Err(OccupiedError {
+                mut entry,
+                value: _,
+            }) = asigns.try_insert(sa, vec)
+            {
+                entry.get_mut().push(session);
+            }
+        }
+        for sa in other_sign_activities {
+            let vec = vec![session];
+            if let Err(OccupiedError {
+                mut entry,
+                value: _,
+            }) = osigns.try_insert(sa, vec)
+            {
+                entry.get_mut().push(session);
+            }
+        }
+    }
+    (asigns, osigns)
+}
 // mod test {
 //     #[test]
 //     fn test_des() {
