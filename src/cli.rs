@@ -45,21 +45,36 @@ async fn qrcode_sign_<'a>(
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
+    let mut correct_pos: Option<&Address> = None;
     for session in sessions {
         sign.pre_sign(session).await?;
-        let mut state = SignState::Fail("所有位置均不可用".into());
-        for pos in poss {
-            match sign.qrcode_sign(enc, &pos, session).await? {
-                r @ SignState::Success => {
-                    state = r;
-                    break;
-                }
-                SignState::Fail(msg) => {
-                    eprintln!("{msg:?}");
-                }
-            };
+        if let Some(pos) = &correct_pos {
+            states.insert(
+                session.get_stu_name(),
+                sign.qrcode_sign(enc, &pos, session).await?,
+            );
+        } else {
+            let mut state = SignState::Fail("所有位置均不可用".into());
+            for pos in poss {
+                match sign.qrcode_sign(enc, &pos, session).await? {
+                    r @ SignState::Success => {
+                        state = r;
+                        correct_pos = Some(pos);
+                        break;
+                    }
+                    SignState::Fail(msg) => {
+                        eprintln!(
+                            "用户[{}]在二维码签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
+                            session.get_stu_name(),
+                            sign.name,
+                            pos,
+                            msg
+                        );
+                    }
+                };
+            }
+            states.insert(session.get_stu_name(), state);
         }
-        states.insert(session.get_stu_name(), state);
     }
     Ok(states)
 }
@@ -69,40 +84,51 @@ async fn location_sign_<'a>(
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
+    let mut correct_pos: Option<&Address> = None;
     for session in sessions {
         sign.pre_sign(session).await?;
-        let mut state = SignState::Fail("所有位置均不可用".into());
-        for ref pos in poss {
-            match sign.location_sign(&pos, session).await? {
-                r @ SignState::Success => {
-                    state = r;
-                    break;
-                }
-                SignState::Fail(msg) => {
-                    eprintln!("{msg:?}");
-                }
-            };
+        if let Some(pos) = &correct_pos {
+            states.insert(
+                session.get_stu_name(),
+                sign.location_sign(&pos, session).await?,
+            );
+        } else {
+            let mut state = SignState::Fail("所有位置均不可用".into());
+            for pos in poss {
+                match sign.location_sign(&pos, session).await? {
+                    r @ SignState::Success => {
+                        state = r;
+                        correct_pos = Some(pos);
+                        break;
+                    }
+                    SignState::Fail(msg) => {
+                        eprintln!(
+                            "用户[{}]在位置签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
+                            session.get_stu_name(),
+                            sign.name,
+                            pos,
+                            msg
+                        );
+                    }
+                };
+            }
+            states.insert(session.get_stu_name(), state);
         }
-        states.insert(session.get_stu_name(), state);
     }
     Ok(states)
 }
 async fn signcode_sign_<'a>(
     sign: &SignActivity,
-    signcode: &Option<String>,
+    signcode: &str,
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
-    if let Some(signcode) = signcode {
-        for session in sessions {
-            sign.pre_sign(session).await?;
-            states.insert(
-                session.get_stu_name(),
-                sign.signcode_sign(session, signcode).await?,
-            );
-        }
-    } else {
-        eprintln!("未提供手势，手势签到[{}]失败！", sign.name);
+    for session in sessions {
+        sign.pre_sign(session).await?;
+        states.insert(
+            session.get_stu_name(),
+            sign.signcode_sign(session, signcode).await?,
+        );
     }
     Ok(states)
 }
@@ -195,16 +221,30 @@ async fn handle_account_sign<'a>(
         SignType::Unknown => {
             eprintln!("签到活动[{}]为无效签到类型！", sign.name);
         }
-        _ => {
-            states = signcode_sign_(sign, signcode, sessions).await?;
+        signcode_sign_type => {
+            if let Some(signcode) = signcode {
+                states = signcode_sign_(sign, signcode, sessions).await?;
+            } else {
+                let sign_type_str = match signcode_sign_type {
+                    SignType::Gesture => "手势",
+                    SignType::SignCode => "签到码",
+                    _ => unreachable!(),
+                };
+                eprintln!(
+                    "所有用户在{sign_type_str}签到[{}]中签到失败！需要提供签到码！",
+                    sign.name
+                )
+            }
         }
     };
-    for (uname, state) in states {
-        if let SignState::Fail(msg) = state {
-            eprintln!(
-                "用户[{}]在签到活动[{}]中签到失败！失败信息：[{:?}]",
-                uname, sign.name, msg
-            );
+    if !states.is_empty() {
+        println!("签到活动[{}]签到结果：", sign.name);
+        for (uname, state) in states {
+            if let SignState::Fail(msg) = state {
+                eprintln!("\t用户[{}]签到失败！失败信息：[{:?}]", uname, msg);
+            } else {
+                println!("\t用户[{}]签到成功！", uname,);
+            }
         }
     }
     Ok(())
