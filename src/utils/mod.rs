@@ -152,7 +152,7 @@ pub fn get_unicode_correct_display_width(s: &str, perfer_width: usize) -> usize 
     }
 }
 
-// 添加账号。
+// 添加账号。TODO: 跳过输入密码阶段
 pub async fn add_account(db: &DataBase, uname: String, pwd: Option<String>) {
     let pwd = if let Some(pwd) = pwd {
         pwd
@@ -163,6 +163,16 @@ pub async fn add_account(db: &DataBase, uname: String, pwd: Option<String>) {
             .unwrap()
     };
     let enc_pwd = crate::utils::pwd_des(&pwd);
+    let session = SignSession::login_enc(&uname, &enc_pwd).await.unwrap();
+    let name = session.get_stu_name();
+    db.add_account_or(&uname, &enc_pwd, name, DataBase::update_account);
+    let courses = session.get_courses().await.unwrap();
+    for c in courses {
+        db.add_course_or(&c, |_, _| {});
+    }
+}
+// 添加账号（刷新时用，此时密码一定是存在的且为加密后的密码）。
+pub async fn add_account_enc(db: &DataBase, uname: String, enc_pwd: &str) {
     let session = SignSession::login_enc(&uname, &enc_pwd).await.unwrap();
     let name = session.get_stu_name();
     db.add_account_or(&uname, &enc_pwd, name, DataBase::update_account);

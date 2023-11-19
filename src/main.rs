@@ -59,9 +59,9 @@ async fn main() {
                     } else {
                         let accounts = db.get_accounts();
                         if fresh {
-                            for (uname, (pwd, _)) in accounts {
+                            for (uname, (ref enc_pwd, _)) in accounts {
                                 db.delete_account(&uname);
-                                utils::add_account(&db, uname, Some(pwd)).await;
+                                utils::add_account_enc(&db, uname, enc_pwd).await;
                             }
                         } else {
                             // 列出所有账号。
