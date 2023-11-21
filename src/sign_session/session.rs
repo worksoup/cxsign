@@ -1,5 +1,6 @@
 use crate::sign_session::activity::activity::{Activity, OtherActivity};
 use crate::sign_session::course::{Course, GetCoursesR};
+use crate::utils::api::UA;
 use crate::utils::{self, CONFIG_DIR};
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
@@ -55,6 +56,7 @@ impl SignSession {
         };
         let cookies = UserCookies::new(cookies);
         let client = Client::builder()
+            .user_agent(UA)
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()
             .unwrap();
@@ -81,6 +83,7 @@ impl SignSession {
         let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
         let cookie_store = std::sync::Arc::new(cookie_store);
         let client = ClientBuilder::new()
+            .user_agent(UA)
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()?;
         let response = utils::api::login(&client, uname, pwd).await?;
@@ -129,6 +132,7 @@ impl SignSession {
         let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
         let cookie_store = std::sync::Arc::new(cookie_store);
         let client = ClientBuilder::new()
+            .user_agent(UA)
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()?;
         let response = utils::api::login_enc(&client, uname, enc_pwd).await?;
@@ -217,9 +221,14 @@ impl SignSession {
     async fn get_stu_name_(client: &Client) -> Result<String, reqwest::Error> {
         let r = utils::api::account_manage(client).await?;
         let html_content = r.text().await?;
-        let e = html_content.find("messageName").unwrap() + 20;
+        // println!("{html_content}");
+        let e = html_content.find("colorBlue").unwrap();
         let html_content = html_content.index(e..html_content.len()).to_owned();
-        let name = html_content.index(0..html_content.find('"').unwrap());
+        let e = html_content.find(">").unwrap() + 1;
+        let html_content = html_content.index(e..html_content.len()).to_owned();
+        let name = html_content
+            .index(0..html_content.find('<').unwrap())
+            .trim();
         Ok(name.to_owned())
     }
     pub async fn get_pan_token(&self) -> Result<String, reqwest::Error> {

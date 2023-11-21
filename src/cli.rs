@@ -3,7 +3,7 @@ use crate::{
         activity::sign::{SignActivity, SignState, SignType},
         session::SignSession,
     },
-    utils::{address::Address, photo::Photo, sql::DataBase, picdir_to_pic},
+    utils::{address::Address, photo::Photo, picdir_to_pic, sql::DataBase},
 };
 use std::{collections::HashMap, path::PathBuf};
 
@@ -191,11 +191,12 @@ async fn handle_account_sign<'a>(
         }
         SignType::QrCode => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            {
-                if let Some(enc) = enc {
-                    states = qrcode_sign_(sign, &enc, &poss, sessions).await?;
-                } else {
-                    if let Some(pic) = pic {
+            if let Some(enc) = enc {
+                states = qrcode_sign_(sign, &enc, &poss, sessions).await?;
+            } else if let Some(pic) = pic {
+                let metadata = std::fs::metadata(&pic).unwrap();
+                if metadata.is_dir() {
+                    if let Some(pic) = picdir_to_pic(&pic) {
                         let results =
                             rxing::helpers::detect_multiple_in_file(pic.to_str().unwrap())
                                 .expect("decodes");
@@ -203,15 +204,27 @@ async fn handle_account_sign<'a>(
                         let r = r.getText();
                         let beg = r.find("&enc=").unwrap();
                         let enc = &r[beg + 5..beg + 37];
-                        // println!("enc: {s}");
                         states = qrcode_sign_(sign, &enc, &poss, sessions).await?;
                     } else {
                         eprintln!(
+                                        "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供 `enc` 参数或签到二维码！",
+                                        sign.name
+                                    );
+                    }
+                } else {
+                    let results = rxing::helpers::detect_multiple_in_file(pic.to_str().unwrap())
+                        .expect("decodes");
+                    let r = &results[0];
+                    let r = r.getText();
+                    let beg = r.find("&enc=").unwrap();
+                    let enc = &r[beg + 5..beg + 37];
+                    states = qrcode_sign_(sign, &enc, &poss, sessions).await?;
+                }
+            } else {
+                eprintln!(
                             "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供 `enc` 参数或签到二维码！",
                             sign.name
-                        )
-                    }
-                }
+                        );
             };
         }
         SignType::Location => {
