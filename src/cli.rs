@@ -3,7 +3,7 @@ use crate::{
         activity::sign::{SignActivity, SignState, SignType},
         session::SignSession,
     },
-    utils::{address::Address, photo::Photo, sql::DataBase},
+    utils::{address::Address, photo::Photo, sql::DataBase, picdir_to_pic},
 };
 use std::{collections::HashMap, path::PathBuf};
 
