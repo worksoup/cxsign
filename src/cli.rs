@@ -19,25 +19,33 @@ async fn photo_sign_<'a>(
         Photo::default(sessions[0]).await
     };
     for session in sessions {
-        sign.pre_sign(session).await?;
-        states.insert(
-            session.get_stu_name(),
-            sign.photo_sign(&photo, session).await?,
-        );
+        match sign.pre_sign(session).await? {
+            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
+            SignState::Fail(_) => states.insert(
+                session.get_stu_name(),
+                sign.photo_sign(&photo, session).await?,
+            ),
+        };
     }
     Ok(states)
 }
+
 async fn general_sign_<'a>(
     sign: &SignActivity,
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     for session in sessions {
-        sign.pre_sign(session).await?;
-        states.insert(session.get_stu_name(), sign.general_sign(session).await?);
+        match sign.pre_sign(session).await? {
+            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
+            SignState::Fail(_) => {
+                states.insert(session.get_stu_name(), sign.general_sign(session).await?)
+            }
+        };
     }
     Ok(states)
 }
+
 async fn qrcode_sign_<'a>(
     sign: &SignActivity,
     enc: &str,
@@ -47,37 +55,42 @@ async fn qrcode_sign_<'a>(
     let mut states = HashMap::new();
     let mut correct_pos: Option<&Address> = None;
     for session in sessions {
-        sign.pre_sign(session).await?;
-        if let Some(pos) = &correct_pos {
-            states.insert(
-                session.get_stu_name(),
-                sign.qrcode_sign(enc, &pos, session).await?,
-            );
-        } else {
-            let mut state = SignState::Fail("所有位置均不可用".into());
-            for pos in poss {
-                match sign.qrcode_sign(enc, &pos, session).await? {
-                    r @ SignState::Success => {
-                        state = r;
-                        correct_pos = Some(pos);
-                        break;
+        match sign.pre_sign(session).await? {
+            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
+            SignState::Fail(_) => {
+                if let Some(pos) = &correct_pos {
+                    states.insert(
+                        session.get_stu_name(),
+                        sign.qrcode_sign(enc, &pos, session).await?,
+                    )
+                } else {
+                    let mut state = SignState::Fail("所有位置均不可用".into());
+                    for pos in poss {
+                        match sign.qrcode_sign(enc, &pos, session).await? {
+                            r @ SignState::Success => {
+                                state = r;
+                                correct_pos = Some(pos);
+                                break;
+                            }
+                            SignState::Fail(msg) => {
+                                eprintln!(
+                                    "用户[{}]在二维码签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
+                                    session.get_stu_name(),
+                                    sign.name,
+                                    pos,
+                                    msg
+                                );
+                            }
+                        };
                     }
-                    SignState::Fail(msg) => {
-                        eprintln!(
-                            "用户[{}]在二维码签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
-                            session.get_stu_name(),
-                            sign.name,
-                            pos,
-                            msg
-                        );
-                    }
-                };
+                    states.insert(session.get_stu_name(), state)
+                }
             }
-            states.insert(session.get_stu_name(), state);
-        }
+        };
     }
     Ok(states)
 }
+
 async fn location_sign_<'a>(
     sign: &SignActivity,
     poss: &Vec<Address>,
@@ -86,37 +99,42 @@ async fn location_sign_<'a>(
     let mut states = HashMap::new();
     let mut correct_pos: Option<&Address> = None;
     for session in sessions {
-        sign.pre_sign(session).await?;
-        if let Some(pos) = &correct_pos {
-            states.insert(
-                session.get_stu_name(),
-                sign.location_sign(&pos, session).await?,
-            );
-        } else {
-            let mut state = SignState::Fail("所有位置均不可用".into());
-            for pos in poss {
-                match sign.location_sign(&pos, session).await? {
-                    r @ SignState::Success => {
-                        state = r;
-                        correct_pos = Some(pos);
-                        break;
+        match sign.pre_sign(session).await? {
+            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
+            SignState::Fail(_) => {
+                if let Some(pos) = &correct_pos {
+                    states.insert(
+                        session.get_stu_name(),
+                        sign.location_sign(&pos, session).await?,
+                    )
+                } else {
+                    let mut state = SignState::Fail("所有位置均不可用".into());
+                    for pos in poss {
+                        match sign.location_sign(&pos, session).await? {
+                            r @ SignState::Success => {
+                                state = r;
+                                correct_pos = Some(pos);
+                                break;
+                            }
+                            SignState::Fail(msg) => {
+                                eprintln!(
+                                    "用户[{}]在位置签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
+                                    session.get_stu_name(),
+                                    sign.name,
+                                    pos,
+                                    msg
+                                );
+                            }
+                        };
                     }
-                    SignState::Fail(msg) => {
-                        eprintln!(
-                            "用户[{}]在位置签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
-                            session.get_stu_name(),
-                            sign.name,
-                            pos,
-                            msg
-                        );
-                    }
-                };
+                    states.insert(session.get_stu_name(), state)
+                }
             }
-            states.insert(session.get_stu_name(), state);
-        }
+        };
     }
     Ok(states)
 }
+
 async fn signcode_sign_<'a>(
     sign: &SignActivity,
     signcode: &str,
@@ -124,11 +142,13 @@ async fn signcode_sign_<'a>(
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     for session in sessions {
-        sign.pre_sign(session).await?;
-        states.insert(
-            session.get_stu_name(),
-            sign.signcode_sign(session, signcode).await?,
-        );
+        match sign.pre_sign(session).await? {
+            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
+            SignState::Fail(_) => states.insert(
+                session.get_stu_name(),
+                sign.signcode_sign(session, signcode).await?,
+            ),
+        };
     }
     Ok(states)
 }

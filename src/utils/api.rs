@@ -62,6 +62,20 @@ pub async fn pre_sign(
     let url = format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s");
     Ok(client.get(url).send().await?)
 }
+// 预签到 2
+static ANALYSIS: &'static str = "https://mobilelearn.chaoxing.com/pptSign/analysis";
+pub async fn analysis(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
+    let url = ANALYSIS;
+    let url = format!("{url}?vs=1&DB_STRATEGY=RANDOM&aid={active_id}");
+    Ok(client.get(url).send().await?)
+}
+// 预签到 2
+static ANALYSIS2: &'static str = "https://mobilelearn.chaoxing.com/pptSign/analysis2";
+pub async fn analysis2(client: &Client, code: &str) -> Result<Response, reqwest::Error> {
+    let url = ANALYSIS2;
+    let url = format!("{url}?DB_STRATEGY=RANDOM&code={code}");
+    Ok(client.get(url).send().await?)
+}
 // 签到
 static PPT_SIGN: &'static str = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax";
 pub async fn general_sign(

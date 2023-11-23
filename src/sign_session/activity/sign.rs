@@ -111,12 +111,42 @@ impl SignActivity {
         let r = r.text().await?;
         Ok(r.find(r#""ifphoto":0"#).is_none())
     }
-    pub async fn pre_sign(&self, session: &SignSession) -> Result<(), reqwest::Error> {
+    pub async fn pre_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
         let active_id = self.id.as_str();
         let uid = session.get_uid();
-        let _r = utils::api::pre_sign(session, self.course.clone(), active_id, uid).await?;
+        let response_of_presign =
+            utils::api::pre_sign(session, self.course.clone(), active_id, uid).await?;
         println!("预签到已请求。");
-        Ok(())
+        let response_of_analysis = utils::api::analysis(session, active_id).await?;
+        let data = response_of_analysis.text().await.unwrap();
+        let code = {
+            let start_of_code = data.find("code='+'").unwrap() + 8;
+            let data = &data[start_of_code..data.len()];
+            let end_of_code = data.find('\'').unwrap();
+            &data[0..end_of_code]
+        };
+        println!("code: {code:?}");
+        let response_of_analysis2 = utils::api::analysis2(session, code).await?;
+        println!(
+            "analysis 结果：{}",
+            response_of_analysis2.text().await.unwrap()
+        );
+        let presign_status = {
+            let html = response_of_presign.text().await.unwrap();
+            if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
+                let html = &html[start_of_statuscontent_h1 + 19..html.len()];
+                let end_of_statuscontent_h1 = html.find('>').unwrap();
+                let statuscontent_h1_content = html[0..end_of_statuscontent_h1].trim();
+                if statuscontent_h1_content == "签到成功" {
+                    SignState::Success
+                } else {
+                    SignState::Fail(statuscontent_h1_content.into())
+                }
+            } else {
+                SignState::Fail("还未签到".into())
+            }
+        };
+        Ok(presign_status)
     }
     pub async fn general_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
         let r = utils::api::general_sign(
