@@ -228,15 +228,18 @@ pub async fn get_signs<'a>(
     }
     (asigns, osigns)
 }
-pub fn handle_qrcode_pic_path(pic_path: &str) -> (String, String) {
+pub fn handle_qrcode_pic_path(pic_path: &str) -> String {
     let results = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
     let r = &results[0];
     let r = r.getText();
     let beg = r.find("&enc=").unwrap();
     let enc = &r[beg + 5..beg + 37];
-    let beg = r.find("&c=").unwrap();
-    let c = &r[beg + 3..beg + 9];
-    (c.to_owned(), enc.to_owned())
+    // 在二维码图片中会有一个参数 `c`, 二维码预签到时需要。
+    // 但是该参数似乎暂时可以从 `signDetail` 接口获取到。所以此处先注释掉。
+    // let beg = r.find("&c=").unwrap();
+    // let c = &r[beg + 3..beg + 9];
+    // (c.to_owned(), enc.to_owned())
+    enc.to_owned()
 }
 // mod test {
 //     #[test]

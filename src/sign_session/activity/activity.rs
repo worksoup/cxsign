@@ -21,13 +21,18 @@ impl Activity {
                 if let Some(other_id) = ar.otherId {
                     let other_id_i64: i64 = other_id.parse().unwrap();
                     if other_id_i64 >= 0 && other_id_i64 <= 5 {
+                        let active_id = ar.id.to_string();
+                        let detail =
+                            SignActivity::get_sign_detial_by_active_id(active_id.as_str(), session)
+                                .await?;
                         arr.push(Activity::Sign(SignActivity {
-                            id: ar.id.to_string(),
+                            id: active_id,
                             name: ar.nameOne,
                             course: c.clone(),
                             other_id,
                             status: ar.status,
                             start_time_secs: (ar.startTime / 1000) as i64,
+                            detail,
                         }))
                     } else {
                         arr.push(Activity::Other(OtherActivity {

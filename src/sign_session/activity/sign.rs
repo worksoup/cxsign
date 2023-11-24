@@ -28,6 +28,7 @@ pub struct SignActivity {
     pub other_id: String,
     pub status: i32,
     pub start_time_secs: i64,
+    pub detail: SignDetail,
 }
 #[derive(Debug)]
 pub enum SignState {
@@ -90,6 +91,12 @@ pub struct SignActivityRaw {
     pub status: i32,
     pub start_time_secs: i64,
 }
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct SignDetail {
+    is_photo: bool,
+    is_refresh_qrcode: bool,
+    c: String,
+}
 impl SignActivity {
     pub fn display(&self, already_course: bool) {
         let name_width = get_unicode_correct_display_width(self.name.as_str(), 12);
@@ -124,16 +131,41 @@ impl SignActivity {
         let one_hour = std::time::Duration::from_secs(7200);
         self.status == 1 && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
     }
-    async fn is_photo(&self, session: &SignSession) -> Result<bool, reqwest::Error> {
-        let r = utils::api::sign_detail(session, self.id.as_str()).await?;
-        let r = r.text().await?;
-        Ok(r.find(r#""ifphoto":0"#).is_none())
+
+    fn is_photo(&self) -> bool {
+        self.detail.is_photo
     }
-    // async fn get_sign_detial(&self, session: &SignSession) -> Result<bool, reqwest::Error> {
-    //     let r = utils::api::sign_detail(session, self.id.as_str()).await?;
-    //     let r = r.text().await?;
-    //     Ok(r.find(r#""ifphoto":0"#).is_none())
-    // }
+
+    pub fn is_refresh_qrcode(&self) -> bool {
+        self.detail.is_refresh_qrcode
+    }
+
+    pub fn get_c_of_qrcode_sign(&self) -> &str {
+        &self.detail.c
+    }
+
+    pub async fn get_sign_detial_by_active_id(
+        active_id: &str,
+        session: &SignSession,
+    ) -> Result<SignDetail, reqwest::Error> {
+        #[derive(Deserialize)]
+        struct SignDetailRaw {
+            ifPhoto: i64,
+            ifRefreshEwm: i64,
+            signCode: Option<String>,
+        }
+        let r = utils::api::sign_detail(session, active_id).await?;
+        let SignDetailRaw {
+            ifPhoto,
+            ifRefreshEwm,
+            signCode,
+        } = r.json().await?;
+        Ok(SignDetail {
+            is_photo: ifPhoto > 0,
+            is_refresh_qrcode: ifRefreshEwm > 0,
+            c: if let Some(c) = signCode { c } else { "".into() },
+        })
+    }
     async fn pre_sign_internal(
         &self,
         active_id: &str,
@@ -180,7 +212,7 @@ impl SignActivity {
         self.pre_sign_internal(active_id, session, response_of_presign)
             .await
     }
-    pub async fn pre_sign_for_qrcode_sign(
+    pub async fn pre_sign_for_refresh_qrcode_sign(
         &self,
         c: &str,
         enc: &str,
@@ -295,7 +327,7 @@ impl SignActivity {
                 panic!("{e}")
             }) {
                 0 => {
-                    if self.is_photo(session).await? {
+                    if self.is_photo() {
                         SignType::Photo
                     } else {
                         SignType::Common
