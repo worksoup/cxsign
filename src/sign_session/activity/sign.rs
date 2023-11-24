@@ -194,7 +194,6 @@ impl SignActivity {
                 let end_of_statuscontent_h1 = html.find('<').unwrap();
                 let statuscontent_h1_content = html[0..end_of_statuscontent_h1].trim();
                 if statuscontent_h1_content == "签到成功" {
-                    println!("预签到状态：{statuscontent_h1_content}.");
                     SignState::Success
                 } else {
                     SignState::Fail(statuscontent_h1_content.into())
