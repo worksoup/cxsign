@@ -3,7 +3,7 @@ use crate::{
         activity::sign::{SignActivity, SignState, SignType},
         session::SignSession,
     },
-    utils::{address::Address, photo::Photo, picdir_to_pic, sql::DataBase},
+    utils::{address::Address, handle_qrcode_pic_path, photo::Photo, picdir_to_pic, sql::DataBase},
 };
 use std::{collections::HashMap, path::PathBuf};
 
@@ -48,6 +48,7 @@ async fn general_sign_<'a>(
 
 async fn qrcode_sign_<'a>(
     sign: &SignActivity,
+    c: &str,
     enc: &str,
     poss: &Vec<Address>,
     sessions: &'a Vec<&SignSession>,
@@ -55,18 +56,18 @@ async fn qrcode_sign_<'a>(
     let mut states = HashMap::new();
     let mut correct_pos: Option<&Address> = None;
     for session in sessions {
-        match sign.pre_sign(session).await? {
+        match sign.pre_sign_for_qrcode_sign(c, enc, session).await? {
             SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
             SignState::Fail(_) => {
                 if let Some(pos) = &correct_pos {
                     states.insert(
                         session.get_stu_name(),
-                        sign.qrcode_sign(enc, &pos, session).await?,
+                        sign.sign_by_qrcode(enc, &pos, session).await?,
                     )
                 } else {
                     let mut state = SignState::Fail("所有位置均不可用".into());
                     for pos in poss {
-                        match sign.qrcode_sign(enc, &pos, session).await? {
+                        match sign.sign_by_qrcode(enc, &pos, session).await? {
                             r @ SignState::Success => {
                                 state = r;
                                 correct_pos = Some(pos);
@@ -176,7 +177,6 @@ async fn handle_account_sign<'a>(
     location: Option<i64>,
     db: &DataBase,
     pos: &Option<String>,
-    enc: &Option<String>,
     signcode: &Option<String>,
     sessions: &'a Vec<&SignSession>,
 ) -> Result<(), reqwest::Error> {
@@ -211,40 +211,21 @@ async fn handle_account_sign<'a>(
         }
         SignType::QrCode => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            if let Some(enc) = enc {
-                states = qrcode_sign_(sign, &enc, &poss, sessions).await?;
-            } else if let Some(pic) = pic {
+            if let Some(pic) = pic {
                 let metadata = std::fs::metadata(&pic).unwrap();
                 if metadata.is_dir() {
                     if let Some(pic) = picdir_to_pic(&pic) {
-                        let results =
-                            rxing::helpers::detect_multiple_in_file(pic.to_str().unwrap())
-                                .expect("decodes");
-                        let r = &results[0];
-                        let r = r.getText();
-                        let beg = r.find("&enc=").unwrap();
-                        let enc = &r[beg + 5..beg + 37];
-                        states = qrcode_sign_(sign, &enc, &poss, sessions).await?;
+                        let (c, enc) = handle_qrcode_pic_path(pic.to_str().unwrap());
+                        states = qrcode_sign_(sign, &c, &enc, &poss, sessions).await?;
                     } else {
-                        eprintln!(
-                                        "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供 `enc` 参数或签到二维码！",
-                                        sign.name
-                                    );
+                        eprintln!("所有用户在二维码签到[{}]中签到失败！二维码签到需要提供 `enc` 参数或签到二维码！", sign.name);
                     }
                 } else {
-                    let results = rxing::helpers::detect_multiple_in_file(pic.to_str().unwrap())
-                        .expect("decodes");
-                    let r = &results[0];
-                    let r = r.getText();
-                    let beg = r.find("&enc=").unwrap();
-                    let enc = &r[beg + 5..beg + 37];
-                    states = qrcode_sign_(sign, &enc, &poss, sessions).await?;
+                    let (c, enc) = handle_qrcode_pic_path(pic.to_str().unwrap());
+                    states = qrcode_sign_(sign, &c, &enc, &poss, sessions).await?;
                 }
             } else {
-                eprintln!(
-                            "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供 `enc` 参数或签到二维码！",
-                            sign.name
-                        );
+                eprintln!("所有用户在二维码签到[{}]中签到失败！二维码签到需要提供 `enc` 参数或签到二维码！", sign.name);
             };
         }
         SignType::Location => {
@@ -292,7 +273,6 @@ pub async fn sign(
     account: Option<String>,
     location: Option<i64>,
     pos: Option<String>,
-    enc: Option<String>,
     pic: Option<PathBuf>,
     signcode: Option<String>,
 ) -> Result<(), reqwest::Error> {
@@ -313,17 +293,7 @@ pub async fn sign(
             accounts.push(&sessions[account]);
             full_sessions = &accounts;
         }
-        handle_account_sign(
-            sign,
-            &pic,
-            location,
-            db,
-            &pos,
-            &enc,
-            &signcode,
-            full_sessions,
-        )
-        .await?;
+        handle_account_sign(sign, &pic, location, db, &pos, &signcode, full_sessions).await?;
     } else {
         for (sign, mut full_sessions) in &asigns {
             let mut accounts = Vec::new();
@@ -331,17 +301,7 @@ pub async fn sign(
                 accounts.push(&sessions[account]);
                 full_sessions = &accounts;
             }
-            handle_account_sign(
-                sign,
-                &pic,
-                location,
-                db,
-                &pos,
-                &enc,
-                &signcode,
-                full_sessions,
-            )
-            .await?;
+            handle_account_sign(sign, &pic, location, db, &pos, &signcode, full_sessions).await?;
         }
     }
     Ok(())

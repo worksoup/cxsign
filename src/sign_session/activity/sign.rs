@@ -1,3 +1,5 @@
+use serde_derive::Deserialize;
+
 use crate::sign_session::{course::Course, session::SignSession};
 use crate::utils::address::Address;
 use crate::utils::photo::Photo;
@@ -61,6 +63,23 @@ impl SignActivity {
         }
         .into()
     }
+    async fn check_signcode(
+        session: &SignSession,
+        active_id: &str,
+        signcode: &str,
+    ) -> Result<bool, reqwest::Error> {
+        #[derive(Deserialize)]
+        struct CheckR {
+            #[allow(unused)]
+            result: i64,
+        }
+        let CheckR { result } = utils::api::check_signcode(&session, active_id, signcode)
+            .await?
+            .json()
+            .await
+            .unwrap();
+        Ok(result == 1)
+    }
 }
 #[derive(Debug)]
 pub struct SignActivityRaw {
@@ -71,7 +90,6 @@ pub struct SignActivityRaw {
     pub status: i32,
     pub start_time_secs: i64,
 }
-
 impl SignActivity {
     pub fn display(&self, already_course: bool) {
         let name_width = get_unicode_correct_display_width(self.name.as_str(), 12);
@@ -107,16 +125,21 @@ impl SignActivity {
         self.status == 1 && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
     }
     async fn is_photo(&self, session: &SignSession) -> Result<bool, reqwest::Error> {
-        let r = utils::api::ppt_active_info(session, self.id.as_str()).await?;
+        let r = utils::api::sign_detail(session, self.id.as_str()).await?;
         let r = r.text().await?;
         Ok(r.find(r#""ifphoto":0"#).is_none())
     }
-    pub async fn pre_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
-        let active_id = self.id.as_str();
-        let uid = session.get_uid();
-        let response_of_presign =
-            utils::api::pre_sign(session, self.course.clone(), active_id, uid).await?;
-        println!("预签到已请求。");
+    // async fn get_sign_detial(&self, session: &SignSession) -> Result<bool, reqwest::Error> {
+    //     let r = utils::api::sign_detail(session, self.id.as_str()).await?;
+    //     let r = r.text().await?;
+    //     Ok(r.find(r#""ifphoto":0"#).is_none())
+    // }
+    async fn pre_sign_internal(
+        &self,
+        active_id: &str,
+        session: &SignSession,
+        response_of_presign: reqwest::Response,
+    ) -> Result<SignState, reqwest::Error> {
         let response_of_analysis = utils::api::analysis(session, active_id).await?;
         let data = response_of_analysis.text().await.unwrap();
         let code = {
@@ -148,6 +171,36 @@ impl SignActivity {
         };
         Ok(presign_status)
     }
+    pub async fn pre_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
+        let active_id = self.id.as_str();
+        let uid = session.get_uid();
+        let response_of_presign =
+            utils::api::pre_sign(session, self.course.clone(), active_id, uid).await?;
+        println!("预签到已请求。");
+        self.pre_sign_internal(active_id, session, response_of_presign)
+            .await
+    }
+    pub async fn pre_sign_for_qrcode_sign(
+        &self,
+        c: &str,
+        enc: &str,
+        session: &SignSession,
+    ) -> Result<SignState, reqwest::Error> {
+        let active_id = self.id.as_str();
+        let uid = session.get_uid();
+        let response_of_presign = utils::api::pre_sign_for_qrcode_sign(
+            session,
+            self.course.clone(),
+            active_id,
+            uid,
+            c,
+            enc,
+        )
+        .await?;
+        println!("预签到已请求。");
+        self.pre_sign_internal(active_id, session, response_of_presign)
+            .await
+    }
     pub async fn general_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
         let r = utils::api::general_sign(
             session,
@@ -164,16 +217,20 @@ impl SignActivity {
         session: &SignSession,
         signcode: &str,
     ) -> Result<SignState, reqwest::Error> {
-        let r = utils::api::signcode_sign(
-            session,
-            self.id.as_str(),
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
-            signcode,
-        )
-        .await?;
-        Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
+        if Self::check_signcode(session, &self.id, signcode).await? {
+            let r = utils::api::signcode_sign(
+                session,
+                self.id.as_str(),
+                session.get_uid(),
+                session.get_fid(),
+                session.get_stu_name(),
+                signcode,
+            )
+            .await?;
+            Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
+        } else {
+            Ok(SignState::Fail("签到码或手势不正确".into()))
+        }
     }
     pub async fn location_sign(
         &self,
@@ -209,7 +266,7 @@ impl SignActivity {
         .await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
-    pub async fn qrcode_sign(
+    pub async fn sign_by_qrcode(
         &self,
         enc: &str,
         address: &Address,

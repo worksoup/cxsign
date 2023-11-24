@@ -105,7 +105,7 @@ pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
     };
     pic
 }
-pub fn pwd_des(pwd: &str) -> String {
+pub fn encrypto_pwd(pwd: &str) -> String {
     fn pkcs7(pwd: &str) -> Vec<[u8; 8]> {
         assert!(pwd.len() > 7);
         assert!(pwd.len() < 17);
@@ -162,7 +162,7 @@ pub async fn add_account(db: &DataBase, uname: String, pwd: Option<String>) {
             .prompt()
             .unwrap()
     };
-    let enc_pwd = crate::utils::pwd_des(&pwd);
+    let enc_pwd = crate::utils::encrypto_pwd(&pwd);
     let session = SignSession::login_enc(&uname, &enc_pwd).await.unwrap();
     let name = session.get_stu_name();
     db.add_account_or(&uname, &enc_pwd, name, DataBase::update_account);
@@ -227,6 +227,16 @@ pub async fn get_signs<'a>(
         }
     }
     (asigns, osigns)
+}
+pub fn handle_qrcode_pic_path(pic_path: &str) -> (String, String) {
+    let results = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
+    let r = &results[0];
+    let r = r.getText();
+    let beg = r.find("&enc=").unwrap();
+    let enc = &r[beg + 5..beg + 37];
+    let beg = r.find("&c=").unwrap();
+    let c = &r[beg + 3..beg + 9];
+    (c.to_owned(), enc.to_owned())
 }
 // mod test {
 //     #[test]

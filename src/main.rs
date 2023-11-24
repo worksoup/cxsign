@@ -23,7 +23,6 @@ async fn main() {
         account,
         location,
         pos,
-        enc,
         pic,
         signcode,
         gui,
@@ -223,8 +222,7 @@ async fn main() {
             let sessions = utils::get_sessions(&db).await;
             let (asigns, osigns) = utils::get_signs(&sessions).await;
             cli::sign(
-                &db, &sessions, asigns, osigns, activity, account, location, pos, enc, pic,
-                signcode,
+                &db, &sessions, asigns, osigns, activity, account, location, pos, pic, signcode,
             )
             .await
             .unwrap();
@@ -256,10 +254,6 @@ struct Args {
     /// 格式为：`addr/lat/lon/alt`.
     #[arg(long)]
     pos: Option<String>,
-    /// `enc` 参数。
-    /// 二维码签到时需要提供该参数。
-    #[arg(short, long)]
-    enc: Option<String>,
     /// 本地图片路径。
     /// 拍照签到或二维码时需要提供，
     /// 如果是文件，则直接使用该文件作为拍照签到图片或二维码图片文件。

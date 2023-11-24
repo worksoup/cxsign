@@ -59,17 +59,39 @@ pub async fn pre_sign(
     let course_id = course.get_id();
     let class_id = course.get_class_id();
     let url = PRE_SIGN;
-    let url = format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s");
+    let url = format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0");
     Ok(client.get(url).send().await?)
 }
-// 预签到 2
+pub async fn pre_sign_for_qrcode_sign(
+    client: &Client,
+    course: Course,
+    active_id: &str,
+    uid: &str,
+    c: &str,
+    enc: &str,
+) -> Result<Response, reqwest::Error> {
+    let course_id = course.get_id();
+    let class_id = course.get_class_id();
+    let url = PRE_SIGN;
+    let ex_args = format!("SIGNIN:aid={active_id}&source=15&Code={c}&enc={enc}");
+    let ex_args = "&rcode=".to_owned()
+        + percent_encoding::utf8_percent_encode(
+            ex_args.as_str(),
+            percent_encoding::NON_ALPHANUMERIC,
+        )
+        .to_string()
+        .as_str();
+    let url = format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0&rcode={ex_args}");
+    Ok(client.get(url).send().await?)
+}
+// analysis
 static ANALYSIS: &'static str = "https://mobilelearn.chaoxing.com/pptSign/analysis";
 pub async fn analysis(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     let url = ANALYSIS;
     let url = format!("{url}?vs=1&DB_STRATEGY=RANDOM&aid={active_id}");
     Ok(client.get(url).send().await?)
 }
-// 预签到 2
+// analysis 2
 static ANALYSIS2: &'static str = "https://mobilelearn.chaoxing.com/pptSign/analysis2";
 pub async fn analysis2(client: &Client, code: &str) -> Result<Response, reqwest::Error> {
     let url = ANALYSIS2;
@@ -154,12 +176,37 @@ pub async fn signcode_sign(
     let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&latitude=-1&longitude=-1&appType=15&fid={fid}&name={stu_name}&signCode={signcode}");
     Ok(client.get(url).send().await?)
 }
+
+// 签到码检查
+static CHECK_SINGCODE: &'static str =
+    "https://mobilelearn.chaoxing.com/widget/sign/pcStuSignController/checkSignCode";
+pub async fn check_signcode(
+    client: &Client,
+    active_id: &str,
+    signcode: &str,
+) -> Result<Response, reqwest::Error> {
+    let r = client
+        .get(String::from(CHECK_SINGCODE) + "?activeId=" + active_id + "&signCode=" + signcode)
+        .send()
+        .await?;
+    Ok(r)
+}
+// ppt_active_info
 // 签到信息获取
 static PPT_ACTIVE_INFO: &'static str =
     "https://mobilelearn.chaoxing.com/v2/apis/active/getPPTActiveInfo";
 pub async fn ppt_active_info(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     let r = client
         .get(String::from(PPT_ACTIVE_INFO) + "?activeId=" + active_id)
+        .send()
+        .await?;
+    Ok(r)
+}
+// 签到信息获取 2
+static SIGN_DETAIL: &'static str = "https://mobilelearn.chaoxing.com/newsign/signDetail";
+pub async fn sign_detail(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
+    let r = client
+        .get(String::from(SIGN_DETAIL) + "?activePrimaryId=" + active_id + "&type=1")
         .send()
         .await?;
     Ok(r)
