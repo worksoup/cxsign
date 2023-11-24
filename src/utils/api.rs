@@ -161,7 +161,7 @@ pub async fn location_sign(
     fid: &str,
 ) -> Result<Response, reqwest::Error> {
     let url = PPT_SIGN;
-    let url = format!("{url}?name={stu_name}&address={address}&activeId={active_id}&uid={uid}&clientip=&latitude={lat}&longitude={lon}&fid={fid}&appType=15&ifTiJiao=1");
+    let url = format!("{url}?name={stu_name}&address={address}&activeId={active_id}&uid={uid}&clientip=&latitude={lat}&longitude={lon}&fid={fid}&appType=15&ifTiJiao=1&validate=");
     Ok(client.get(url).send().await?)
 }
 pub async fn signcode_sign(
@@ -236,6 +236,7 @@ pub async fn active_list(client: &Client, course: Course) -> Result<Response, re
         url.push_str(time.as_str());
         url
     };
+    // println!("{url}");
     Ok(client.get(url).send().await?)
 }
 // 查询活动 2

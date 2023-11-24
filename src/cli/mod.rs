@@ -1,3 +1,8 @@
+mod single_sign;
+
+use futures::{stream::FuturesUnordered, StreamExt};
+use tokio::sync::{Mutex, RwLock};
+
 use crate::{
     sign_session::{
         activity::sign::{SignActivity, SignState, SignType},
@@ -5,7 +10,23 @@ use crate::{
     },
     utils::{address::Address, handle_qrcode_pic_path, photo::Photo, picdir_to_pic, sql::DataBase},
 };
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
+async fn general_sign_<'a>(
+    sign: &SignActivity,
+    sessions: &'a Vec<&SignSession>,
+) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
+    let mut states = HashMap::new();
+    let mut tasks = FuturesUnordered::new();
+    for session in sessions {
+        tasks.push(single_sign::general_sign_single(sign, session));
+    }
+    while let Some(tmp) = tasks.next().await {
+        let (name, state) = tmp?;
+        states.insert(name, state);
+    }
+    Ok(states)
+}
 
 async fn photo_sign_<'a>(
     sign: &SignActivity,
@@ -18,34 +39,16 @@ async fn photo_sign_<'a>(
     } else {
         Photo::default(sessions[0]).await
     };
+    let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        match sign.pre_sign(session).await? {
-            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
-            SignState::Fail(_) => states.insert(
-                session.get_stu_name(),
-                sign.photo_sign(&photo, session).await?,
-            ),
-        };
+        tasks.push(single_sign::photo_sign_single(sign, &photo, session));
+    }
+    while let Some(tmp) = tasks.next().await {
+        let (name, state) = tmp?;
+        states.insert(name, state);
     }
     Ok(states)
 }
-
-async fn general_sign_<'a>(
-    sign: &SignActivity,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
-    for session in sessions {
-        match sign.pre_sign(session).await? {
-            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
-            SignState::Fail(_) => {
-                states.insert(session.get_stu_name(), sign.general_sign(session).await?)
-            }
-        };
-    }
-    Ok(states)
-}
-
 async fn qrcode_sign_<'a>(
     sign: &SignActivity,
     c: &str,
@@ -54,45 +57,13 @@ async fn qrcode_sign_<'a>(
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
-    let mut correct_pos: Option<&Address> = None;
+    let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        match if sign.is_refresh_qrcode() {
-            sign.pre_sign(session).await?
-        } else {
-            sign.pre_sign_for_refresh_qrcode_sign(c, enc, session)
-                .await?
-        } {
-            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
-            SignState::Fail(_) => {
-                if let Some(pos) = &correct_pos {
-                    states.insert(
-                        session.get_stu_name(),
-                        sign.sign_by_qrcode(enc, &pos, session).await?,
-                    )
-                } else {
-                    let mut state = SignState::Fail("所有位置均不可用".into());
-                    for pos in poss {
-                        match sign.sign_by_qrcode(enc, &pos, session).await? {
-                            r @ SignState::Success => {
-                                state = r;
-                                correct_pos = Some(pos);
-                                break;
-                            }
-                            SignState::Fail(msg) => {
-                                eprintln!(
-                                    "用户[{}]在二维码签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
-                                    session.get_stu_name(),
-                                    sign.name,
-                                    pos,
-                                    msg
-                                );
-                            }
-                        };
-                    }
-                    states.insert(session.get_stu_name(), state)
-                }
-            }
-        };
+        tasks.push(single_sign::qrcode_sign_single(sign, c, enc, poss, session));
+    }
+    while let Some(tmp) = tasks.next().await {
+        let (name, state) = tmp?;
+        states.insert(name, state);
     }
     Ok(states)
 }
@@ -103,40 +74,13 @@ async fn location_sign_<'a>(
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
-    let mut correct_pos: Option<&Address> = None;
+    let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        match sign.pre_sign(session).await? {
-            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
-            SignState::Fail(_) => {
-                if let Some(pos) = &correct_pos {
-                    states.insert(
-                        session.get_stu_name(),
-                        sign.location_sign(&pos, session).await?,
-                    )
-                } else {
-                    let mut state = SignState::Fail("所有位置均不可用".into());
-                    for pos in poss {
-                        match sign.location_sign(&pos, session).await? {
-                            r @ SignState::Success => {
-                                state = r;
-                                correct_pos = Some(pos);
-                                break;
-                            }
-                            SignState::Fail(msg) => {
-                                eprintln!(
-                                    "用户[{}]在位置签到[{}]中尝试位置[{:?}]签到失败！失败信息：[{:?}]",
-                                    session.get_stu_name(),
-                                    sign.name,
-                                    pos,
-                                    msg
-                                );
-                            }
-                        };
-                    }
-                    states.insert(session.get_stu_name(), state)
-                }
-            }
-        };
+        tasks.push(single_sign::location_sign_single(sign, poss, session));
+    }
+    while let Some(tmp) = tasks.next().await {
+        let (name, state) = tmp?;
+        states.insert(name, state);
     }
     Ok(states)
 }
@@ -147,14 +91,13 @@ async fn signcode_sign_<'a>(
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
+    let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        match sign.pre_sign(session).await? {
-            SignState::Success => states.insert(session.get_stu_name(), SignState::Success),
-            SignState::Fail(_) => states.insert(
-                session.get_stu_name(),
-                sign.signcode_sign(session, signcode).await?,
-            ),
-        };
+        tasks.push(single_sign::signcode_sign_single(sign, signcode, session));
+    }
+    while let Some(tmp) = tasks.next().await {
+        let (name, state) = tmp?;
+        states.insert(name, state);
     }
     Ok(states)
 }
@@ -185,7 +128,7 @@ async fn handle_account_sign<'a>(
     signcode: &Option<String>,
     sessions: &'a Vec<&SignSession>,
 ) -> Result<(), reqwest::Error> {
-    let sign_type = sign.get_sign_type(sessions[0]).await?;
+    let sign_type = sign.get_sign_type();
     let mut states = HashMap::new();
 
     match sign_type {

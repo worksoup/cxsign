@@ -149,6 +149,7 @@ impl SignActivity {
         session: &SignSession,
     ) -> Result<SignDetail, reqwest::Error> {
         #[derive(Deserialize)]
+        #[allow(non_snake_case)]
         struct SignDetailRaw {
             ifPhoto: i64,
             ifRefreshEwm: i64,
@@ -190,9 +191,10 @@ impl SignActivity {
             let html = response_of_presign.text().await.unwrap();
             if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
                 let html = &html[start_of_statuscontent_h1 + 19..html.len()];
-                let end_of_statuscontent_h1 = html.find('>').unwrap();
+                let end_of_statuscontent_h1 = html.find('<').unwrap();
                 let statuscontent_h1_content = html[0..end_of_statuscontent_h1].trim();
                 if statuscontent_h1_content == "签到成功" {
+                    println!("预签到状态：{statuscontent_h1_content}.");
                     SignState::Success
                 } else {
                     SignState::Fail(statuscontent_h1_content.into())
@@ -201,6 +203,7 @@ impl SignActivity {
                 SignState::Fail("还未签到".into())
             }
         };
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         Ok(presign_status)
     }
     pub async fn pre_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
@@ -233,7 +236,30 @@ impl SignActivity {
         self.pre_sign_internal(active_id, session, response_of_presign)
             .await
     }
-    pub async fn general_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
+    pub fn get_sign_type(&self) -> SignType {
+        match self.other_id.parse::<u8>().unwrap_or_else(|e| {
+            println!("{}", self.other_id);
+            println!("{}", self.course.get_name());
+            panic!("{e}")
+        }) {
+            0 => {
+                if self.is_photo() {
+                    SignType::Photo
+                } else {
+                    SignType::Common
+                }
+            }
+            1 => SignType::Unknown,
+            2 => SignType::QrCode,
+            3 => SignType::Gesture,
+            4 => SignType::Location,
+            5 => SignType::SignCode,
+            _ => SignType::Unknown,
+        }
+    }
+}
+impl SignActivity {
+    pub async fn sign_common(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
         let r = utils::api::general_sign(
             session,
             self.id.as_str(),
@@ -244,7 +270,7 @@ impl SignActivity {
         .await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
-    pub async fn signcode_sign(
+    pub async fn sign_by_signcode(
         &self,
         session: &SignSession,
         signcode: &str,
@@ -264,7 +290,7 @@ impl SignActivity {
             Ok(SignState::Fail("签到码或手势不正确".into()))
         }
     }
-    pub async fn location_sign(
+    pub async fn sign_by_location(
         &self,
         address: &Address,
         session: &SignSession,
@@ -282,7 +308,7 @@ impl SignActivity {
         .await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
-    pub async fn photo_sign(
+    pub async fn sign_by_photo(
         &self,
         photo: &Photo,
         session: &SignSession,
@@ -318,29 +344,6 @@ impl SignActivity {
         )
         .await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
-    }
-    pub async fn get_sign_type(&self, session: &SignSession) -> Result<SignType, reqwest::Error> {
-        Ok(
-            match self.other_id.parse::<u8>().unwrap_or_else(|e| {
-                println!("{}", self.other_id);
-                println!("{}", self.course.get_name());
-                panic!("{e}")
-            }) {
-                0 => {
-                    if self.is_photo() {
-                        SignType::Photo
-                    } else {
-                        SignType::Common
-                    }
-                }
-                1 => SignType::Unknown,
-                2 => SignType::QrCode,
-                3 => SignType::Gesture,
-                4 => SignType::Location,
-                5 => SignType::SignCode,
-                _ => SignType::Unknown,
-            },
-        )
     }
 }
 impl SignActivity {
