@@ -24,6 +24,7 @@ async fn main() {
         pos,
         pic,
         signcode,
+        capture,
     } = args;
     let db = DataBase::new();
     if let Some(sub) = command {
@@ -217,6 +218,7 @@ async fn main() {
         let (asigns, osigns) = utils::get_signs(&sessions).await;
         cli::sign(
             &db, &sessions, asigns, osigns, activity, account, location, pos, pic, signcode,
+            capture,
         )
         .await
         .unwrap();
@@ -248,11 +250,15 @@ struct Args {
     #[arg(long)]
     pos: Option<String>,
     /// 本地图片路径。
-    /// 拍照签到或二维码时需要提供，
+    /// 拍照或二维码签到时需要提供。
     /// 如果是文件，则直接使用该文件作为拍照签到图片或二维码图片文件。
     /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
     #[arg(short, long)]
     pic: Option<PathBuf>,
+    /// 从屏幕上获取二维码。
+    /// 二维码签到时需要提供。
+    #[arg(short, long)]
+    capture: bool,
     /// 签到码。
     /// 签到码签到时需要提供。
     #[arg(short, long)]

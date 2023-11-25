@@ -7,7 +7,10 @@ use crate::{
         activity::sign::{SignActivity, SignState, SignType},
         session::SignSession,
     },
-    utils::{address::Address, handle_qrcode_pic_path, photo::Photo, picdir_to_pic, sql::DataBase},
+    utils::{
+        address::Address, get_refresh_qrcode_sign_params_on_screen, handle_qrcode_pic_path,
+        photo::Photo, picdir_to_pic, sql::DataBase,
+    },
 };
 use std::{collections::HashMap, path::PathBuf};
 
@@ -126,6 +129,7 @@ async fn handle_account_sign<'a>(
     pos: &Option<String>,
     signcode: &Option<String>,
     sessions: &'a Vec<&SignSession>,
+    capture: bool,
 ) -> Result<(), reqwest::Error> {
     let sign_type = sign.get_sign_type();
     let mut states = HashMap::new();
@@ -158,31 +162,45 @@ async fn handle_account_sign<'a>(
         }
         SignType::QrCode => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            if let Some(pic) = pic {
-                let metadata = std::fs::metadata(&pic).unwrap();
-                if metadata.is_dir() {
-                    if let Some(pic) = picdir_to_pic(&pic) {
-                        let enc = handle_qrcode_pic_path(pic.to_str().unwrap());
-                        states =
-                            qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
-                                .await?;
-                    } else {
-                        eprintln!(
-                            "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供或签到二维码！",
-                            sign.name
-                        );
-                    }
-                } else {
-                    let enc = handle_qrcode_pic_path(pic.to_str().unwrap());
+            if capture {
+                if let Some(enc) =
+                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode())
+                {
                     states = qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
                         .await?;
                 }
             } else {
-                eprintln!(
-                    "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
-                    sign.name
-                );
-            };
+                if let Some(pic) = pic {
+                    if std::fs::metadata(&pic).unwrap().is_dir() {
+                        if let Some(pic) = picdir_to_pic(&pic) {
+                            let enc = handle_qrcode_pic_path(pic.to_str().unwrap());
+                            states = qrcode_sign_(
+                                sign,
+                                sign.get_c_of_qrcode_sign(),
+                                &enc,
+                                &poss,
+                                sessions,
+                            )
+                            .await?;
+                        } else {
+                            eprintln!(
+                                "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供或签到二维码！",
+                                sign.name
+                            );
+                        }
+                    } else {
+                        let enc = handle_qrcode_pic_path(pic.to_str().unwrap());
+                        states =
+                            qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
+                                .await?;
+                    }
+                } else {
+                    eprintln!(
+                        "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
+                        sign.name
+                    );
+                };
+            }
         }
         SignType::Location => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
@@ -231,6 +249,7 @@ pub async fn sign(
     pos: Option<String>,
     pic: Option<PathBuf>,
     signcode: Option<String>,
+    capture: bool,
 ) -> Result<(), reqwest::Error> {
     if let Some(active_id) = activity {
         let s1 = asigns.iter().find(|kv| kv.0.id == active_id.to_string());
@@ -249,7 +268,17 @@ pub async fn sign(
             accounts.push(&sessions[account]);
             full_sessions = &accounts;
         }
-        handle_account_sign(sign, &pic, location, db, &pos, &signcode, full_sessions).await?;
+        handle_account_sign(
+            sign,
+            &pic,
+            location,
+            db,
+            &pos,
+            &signcode,
+            full_sessions,
+            capture,
+        )
+        .await?;
     } else {
         for (sign, mut full_sessions) in &asigns {
             let mut accounts = Vec::new();
@@ -257,7 +286,17 @@ pub async fn sign(
                 accounts.push(&sessions[account]);
                 full_sessions = &accounts;
             }
-            handle_account_sign(sign, &pic, location, db, &pos, &signcode, full_sessions).await?;
+            handle_account_sign(
+                sign,
+                &pic,
+                location,
+                db,
+                &pos,
+                &signcode,
+                full_sessions,
+                capture,
+            )
+            .await?;
         }
     }
     Ok(())

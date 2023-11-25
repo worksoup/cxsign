@@ -5,6 +5,9 @@ use reqwest::{Client, Response};
 pub static UA: &'static str = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 (schild:eaf4fb193ec970c0a9775e2a27b0232b) (device:iPhone11,2) Language/zh-Hans com.ssreader.ChaoXingStudy/ChaoXingStudy_3_6.0.2_ios_phone_202209281930_99 (@Kalimdor)_1665876591620212942";
 
 // 登陆页
+pub static QRCODE_PAT: &'static str = "https://mobilelearn.chaoxing.com/widget/sign/e";
+
+// 登陆页
 static LOGIN_PAGE: &'static str =
     "http://passport2.chaoxing.com/mlogin?fid=&newversion=true&refer=http%3A%2F%2Fi.chaoxing.com";
 #[allow(unused)]

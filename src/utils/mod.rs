@@ -8,7 +8,10 @@ use des::{
     Des,
 };
 use directories::ProjectDirs;
+use image::RgbaImage;
 use lazy_static::lazy_static;
+use rxing::{DecodingHintDictionary, Point, PointU};
+use screenshots::Screen;
 use std::{
     collections::{hash_map::OccupiedError, HashMap},
     fs::DirEntry,
@@ -35,29 +38,32 @@ pub fn print_now() {
     println!("{str}");
 }
 
-pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
-    loop {
-        let ans = inquire::Confirm::new("二维码图片是否准备好了？").with_help_message("本程序会读取 `--picdir` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。").with_default_value_formatter(&|v|{
-            if v {"是[默认]"}else{"否[默认]"}.into()
-        }).with_formatter(&|v|{
-            if v {"是"}else{"否"}.into()
-        }).with_parser(&|s|{
-            match inquire::Confirm::DEFAULT_PARSER(s) {
-                r@Ok(_) => r,
-                Err(_) => {
-                    if s == "是"{
-                        Ok(true)
-                    }else if s =="否"  {
-                        Ok(false)
-                    }else {
-                        Err(())
-                    }
-                },
+pub fn inquire_confirm(message: &str, help_message: &str) -> bool {
+    inquire::Confirm::new(message)
+        .with_help_message(help_message)
+        .with_default_value_formatter(&|v| if v { "是[默认]" } else { "否[默认]" }.into())
+        .with_formatter(&|v| if v { "是" } else { "否" }.into())
+        .with_parser(&|s| match inquire::Confirm::DEFAULT_PARSER(s) {
+            r @ Ok(_) => r,
+            Err(_) => {
+                if s == "是" {
+                    Ok(true)
+                } else if s == "否" {
+                    Ok(false)
+                } else {
+                    Err(())
+                }
             }
-        }).with_error_message("请以\"y\", \"yes\"等表示“是”，\"n\", \"no\"等表示“否”。")
+        })
+        .with_error_message("请以\"y\", \"yes\"等表示“是”，\"n\", \"no\"等表示“否”。")
         .with_default(true)
         .prompt()
-        .unwrap();
+        .unwrap()
+}
+
+pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
+    loop {
+        let ans = inquire_confirm("二维码图片是否准备好了？","本程序会读取 `--picdir` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。",);
         if ans {
             break;
         }
@@ -228,18 +234,100 @@ pub async fn get_signs<'a>(
     }
     (asigns, osigns)
 }
-pub fn handle_qrcode_pic_path(pic_path: &str) -> String {
-    let results = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
-    let r = &results[0];
-    let r = r.getText();
-    let beg = r.find("&enc=").unwrap();
-    let enc = &r[beg + 5..beg + 37];
+fn handle_qrcode_url(url: &str) -> String {
+    let beg = url.find("&enc=").unwrap();
+    let enc = &url[beg + 5..beg + 37];
     // 在二维码图片中会有一个参数 `c`, 二维码预签到时需要。
     // 但是该参数似乎暂时可以从 `signDetail` 接口获取到。所以此处先注释掉。
     // let beg = r.find("&c=").unwrap();
     // let c = &r[beg + 3..beg + 9];
     // (c.to_owned(), enc.to_owned())
     enc.to_owned()
+}
+pub fn handle_qrcode_pic_path(pic_path: &str) -> String {
+    let results = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
+    handle_qrcode_url(&results[0].getText())
+}
+pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<String> {
+    fn find_max_rect(vertex: &Vec<Point>) -> (PointU, PointU) {
+        let mut x_max = vertex[0].x;
+        let mut x_min = x_max;
+        let mut y_max = vertex[0].y;
+        let mut y_min = y_max;
+        for p in vertex {
+            if p.x > x_max {
+                x_max = p.x
+            }
+            if p.y > y_max {
+                y_max = p.y
+            }
+            if p.x < x_min {
+                x_min = p.x
+            }
+            if p.y < y_min {
+                y_min = p.y
+            }
+        }
+        let lt = Point { x: x_min, y: y_min };
+        let rb = Point {
+            x: x_max + 1.0,
+            y: y_max + 1.0,
+        };
+        (PointU::from(lt), PointU::from(rb))
+    }
+    fn detect_multiple_in_image(
+        image: RgbaImage,
+        hints: &mut DecodingHintDictionary,
+    ) -> rxing::common::Result<Vec<rxing::RXingResult>> {
+        hints
+            .entry(rxing::DecodeHintType::TRY_HARDER)
+            .or_insert(rxing::DecodeHintValue::TryHarder(true));
+        let reader = rxing::MultiFormatReader::default();
+        let mut scanner = rxing::multi::GenericMultipleBarcodeReader::new(reader);
+        rxing::multi::MultipleBarcodeReader::decode_multiple_with_hints(
+            &mut scanner,
+            &mut rxing::BinaryBitmap::new(rxing::common::HybridBinarizer::new(
+                rxing::BufferedImageLuminanceSource::new(image::DynamicImage::ImageRgba8(image)),
+            )),
+            &hints,
+        )
+    }
+    let screens = Screen::all().unwrap();
+    // 在所有屏幕中寻找。
+    for screen in screens {
+        // 先截取整个屏幕。
+        let image = screen.capture().unwrap();
+        // 如果成功识别到二维码。
+        if let Ok(results) = detect_multiple_in_image(image, &mut HashMap::new()) {
+            // 在结果中寻找。
+            for r in &results {
+                let url = r.getText();
+                // 如果符合要求的二维码。
+                if url.contains(api::QRCODE_PAT) && url.contains("&enc=") {
+                    // 如果是定时刷新的二维码。
+                    if is_refresh {
+                        // 获取二维码在屏幕上的位置。
+                        let pos = r.getPoints();
+                        let pos = find_max_rect(pos);
+                        // 等待二维码刷新。
+                        if inquire_confirm("二维码图片是否就绪？","本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
+                            let wh = pos.1 - pos.0;
+                            let image = screen
+                                .capture_area(pos.0.x as i32, pos.0.y as i32, wh.x, wh.y)
+                                .unwrap();
+                            image.save("/home/leart/Pictures/123.png").unwrap();
+                            let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
+                            return Some(handle_qrcode_url(&results[0].getText()));
+                        }
+                    } else {
+                        // 如果不是定时刷新的二维码，则不需要提示。
+                        return Some(handle_qrcode_url(url));
+                    }
+                }
+            }
+        }
+    }
+    None
 }
 // mod test {
 //     #[test]
