@@ -6,8 +6,9 @@
 #![feature(map_try_insert)]
 
 mod cli;
-mod sign_session;
+mod session;
 mod utils;
+mod activity;
 
 use clap::{Parser, Subcommand};
 use std::{ops::Deref, path::PathBuf};

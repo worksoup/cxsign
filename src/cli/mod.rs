@@ -1,17 +1,14 @@
 mod single_sign;
 
-use futures::{stream::FuturesUnordered, StreamExt};
-
+use crate::activity::sign::{SignActivity, SignState, SignType};
 use crate::{
-    sign_session::{
-        activity::sign::{SignActivity, SignState, SignType},
-        session::SignSession,
-    },
+    session::SignSession,
     utils::{
         address::Address, get_refresh_qrcode_sign_params_on_screen, handle_qrcode_pic_path,
         photo::Photo, picdir_to_pic, sql::DataBase,
     },
 };
+use futures::{stream::FuturesUnordered, StreamExt};
 use std::{collections::HashMap, path::PathBuf};
 
 async fn general_sign_<'a>(

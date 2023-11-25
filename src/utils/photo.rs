@@ -1,4 +1,4 @@
-use crate::{sign_session::session::SignSession, utils};
+use crate::{session::SignSession, utils};
 use serde_derive::Deserialize;
 use std::fs::File;
 use std::io::Read;
@@ -13,7 +13,7 @@ impl Photo {
         session: &SignSession,
         p: impl Fn(&str) -> bool,
     ) -> Result<Option<String>, reqwest::Error> {
-        let r = utils::api::pan_chaoxing(session).await?;
+        let r = utils::query::pan_chaoxing(session).await?;
         let data = r.text().await.unwrap();
         let start_of_enc = data.find("enc =\"").unwrap() + 6;
         let end_of_enc = data[start_of_enc..data.len()].find("\"").unwrap() + start_of_enc;
@@ -22,7 +22,7 @@ impl Photo {
         let end_of_root_dir =
             data[start_of_root_dir..data.len()].find("\"").unwrap() + start_of_root_dir;
         let parent_id = &data[start_of_root_dir..end_of_root_dir];
-        let r = utils::api::pan_list(session, parent_id, enc).await?;
+        let r = utils::query::pan_list(session, parent_id, enc).await?;
         #[derive(Deserialize)]
         #[allow(non_snake_case)]
         struct CloudFile {

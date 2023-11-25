@@ -1,4 +1,4 @@
-use crate::sign_session::course::Course;
+use crate::session::course::Course;
 use crate::utils::address::Address;
 use sqlite::Connection;
 use std::{collections::HashMap, fs::File, ops::Deref};

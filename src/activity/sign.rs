@@ -1,6 +1,6 @@
 use serde_derive::Deserialize;
 
-use crate::sign_session::{course::Course, session::SignSession};
+use crate::session::{course::Course, SignSession};
 use crate::utils::address::Address;
 use crate::utils::photo::Photo;
 use crate::utils::{self, get_unicode_correct_display_width};
@@ -74,7 +74,7 @@ impl SignActivity {
             #[allow(unused)]
             result: i64,
         }
-        let CheckR { result } = utils::api::check_signcode(&session, active_id, signcode)
+        let CheckR { result } = utils::query::check_signcode(&session, active_id, signcode)
             .await?
             .json()
             .await
@@ -155,7 +155,7 @@ impl SignActivity {
             ifRefreshEwm: i64,
             signCode: Option<String>,
         }
-        let r = utils::api::sign_detail(session, active_id).await?;
+        let r = utils::query::sign_detail(session, active_id).await?;
         let SignDetailRaw {
             ifPhoto,
             ifRefreshEwm,
@@ -173,7 +173,7 @@ impl SignActivity {
         session: &SignSession,
         response_of_presign: reqwest::Response,
     ) -> Result<SignState, reqwest::Error> {
-        let response_of_analysis = utils::api::analysis(session, active_id).await?;
+        let response_of_analysis = utils::query::analysis(session, active_id).await?;
         let data = response_of_analysis.text().await.unwrap();
         let code = {
             let start_of_code = data.find("code='+'").unwrap() + 8;
@@ -182,7 +182,7 @@ impl SignActivity {
             &data[0..end_of_code]
         };
         println!("code: {code:?}");
-        let response_of_analysis2 = utils::api::analysis2(session, code).await?;
+        let response_of_analysis2 = utils::query::analysis2(session, code).await?;
         println!(
             "analysis 结果：{}",
             response_of_analysis2.text().await.unwrap()
@@ -209,7 +209,7 @@ impl SignActivity {
         let active_id = self.id.as_str();
         let uid = session.get_uid();
         let response_of_presign =
-            utils::api::pre_sign(session, self.course.clone(), active_id, uid).await?;
+            utils::query::pre_sign(session, self.course.clone(), active_id, uid).await?;
         println!("预签到已请求。");
         self.pre_sign_internal(active_id, session, response_of_presign)
             .await
@@ -222,7 +222,7 @@ impl SignActivity {
     ) -> Result<SignState, reqwest::Error> {
         let active_id = self.id.as_str();
         let uid = session.get_uid();
-        let response_of_presign = utils::api::pre_sign_for_qrcode_sign(
+        let response_of_presign = utils::query::pre_sign_for_qrcode_sign(
             session,
             self.course.clone(),
             active_id,
@@ -259,7 +259,7 @@ impl SignActivity {
 }
 impl SignActivity {
     pub async fn sign_common(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
-        let r = utils::api::general_sign(
+        let r = utils::query::general_sign(
             session,
             self.id.as_str(),
             session.get_uid(),
@@ -275,7 +275,7 @@ impl SignActivity {
         signcode: &str,
     ) -> Result<SignState, reqwest::Error> {
         if Self::check_signcode(session, &self.id, signcode).await? {
-            let r = utils::api::signcode_sign(
+            let r = utils::query::signcode_sign(
                 session,
                 self.id.as_str(),
                 session.get_uid(),
@@ -294,7 +294,7 @@ impl SignActivity {
         address: &Address,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
-        let r = utils::api::location_sign(
+        let r = utils::query::location_sign(
             session,
             session.get_stu_name(),
             address.get_addr(),
@@ -312,7 +312,7 @@ impl SignActivity {
         photo: &Photo,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
-        let r = utils::api::photo_sign(
+        let r = utils::query::photo_sign(
             session,
             self.id.as_str(),
             session.get_uid(),
@@ -329,7 +329,7 @@ impl SignActivity {
         address: &Address,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
-        let r = utils::api::qrcode_sign(
+        let r = utils::query::qrcode_sign(
             session,
             enc,
             session.get_stu_name(),
@@ -354,7 +354,7 @@ impl SignActivity {
     ) -> Result<(), reqwest::Error> {
         let id = self.id.as_str();
         let uid = session.get_uid();
-        let _r = utils::api::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
+        let _r = utils::query::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
 
         Ok(())
     }
@@ -362,7 +362,7 @@ impl SignActivity {
         &self,
         session: &SignSession,
     ) -> Result<(), reqwest::Error> {
-        let r = utils::api::chat_group_general_sign(session, self.id.as_str(), session.get_uid())
+        let r = utils::query::chat_group_general_sign(session, self.id.as_str(), session.get_uid())
             .await?;
         println!("{:?}", r.text().await.unwrap());
         Ok(())
@@ -372,7 +372,7 @@ impl SignActivity {
         session: &SignSession,
         signcode: &str,
     ) -> Result<(), reqwest::Error> {
-        let r = utils::api::chat_group_signcode_sign(
+        let r = utils::query::chat_group_signcode_sign(
             session,
             self.id.as_str(),
             session.get_uid(),
@@ -387,7 +387,7 @@ impl SignActivity {
         address: &Address,
         session: &SignSession,
     ) -> Result<(), reqwest::Error> {
-        let r = utils::api::chat_group_location_sign(
+        let r = utils::query::chat_group_location_sign(
             session,
             address.get_addr(),
             self.id.as_str(),
@@ -404,7 +404,7 @@ impl SignActivity {
         photo: &Photo,
         session: &SignSession,
     ) -> Result<(), reqwest::Error> {
-        let r = utils::api::chat_group_photo_sign(
+        let r = utils::query::chat_group_photo_sign(
             session,
             self.id.as_str(),
             session.get_uid(),

@@ -1,4 +1,4 @@
-use crate::sign_session::course::Course;
+use crate::session::course::Course;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Response};
 

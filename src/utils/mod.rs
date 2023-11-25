@@ -1,5 +1,5 @@
 pub mod address;
-pub mod api;
+pub mod query;
 pub mod photo;
 pub mod sql;
 
@@ -19,7 +19,8 @@ use std::{
 };
 use unicode_width::UnicodeWidthStr;
 
-use crate::sign_session::{activity::sign::SignActivity, session::SignSession};
+use crate::activity::sign::SignActivity;
+use crate::session::SignSession;
 
 use self::sql::DataBase;
 lazy_static! {
@@ -303,7 +304,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
             for r in &results {
                 let url = r.getText();
                 // 如果符合要求的二维码。
-                if url.contains(api::QRCODE_PAT) && url.contains("&enc=") {
+                if url.contains(query::QRCODE_PAT) && url.contains("&enc=") {
                     // 如果是定时刷新的二维码。
                     if is_refresh {
                         // 获取二维码在屏幕上的位置。

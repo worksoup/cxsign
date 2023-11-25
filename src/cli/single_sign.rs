@@ -1,8 +1,6 @@
+use crate::activity::sign::{SignActivity, SignState};
 use crate::{
-    sign_session::{
-        activity::sign::{SignActivity, SignState},
-        session::SignSession,
-    },
+    session::SignSession,
     utils::{address::Address, photo::Photo},
 };
 

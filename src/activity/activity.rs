@@ -1,5 +1,5 @@
 use super::sign::SignActivity;
-use crate::sign_session::{course::Course, session::SignSession};
+use crate::session::{course::Course, SignSession};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ impl Activity {
         session: &SignSession,
         c: Course,
     ) -> Result<Vec<Activity>, reqwest::Error> {
-        let r = crate::utils::api::active_list(session, c.clone()).await?;
+        let r = crate::utils::query::active_list(session, c.clone()).await?;
         let r: GetActivityR = r.json().await.unwrap();
         let mut arr = Vec::new();
         if let Some(data) = r.data {

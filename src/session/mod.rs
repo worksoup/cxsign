@@ -1,17 +1,21 @@
-use crate::sign_session::activity::activity::{Activity, OtherActivity};
-use crate::sign_session::course::{Course, GetCoursesR};
-use crate::utils::api::UA;
-use crate::utils::{self, CONFIG_DIR};
-use futures::stream::FuturesUnordered;
-use futures::StreamExt;
+pub mod course;
+pub mod cookies;
+
+use cookies::UserCookies;
+use crate::activity::{
+    activity::{Activity, OtherActivity},
+    sign::SignActivity,
+};
+use crate::session::course::{Course, GetCoursesR};
+use crate::utils::{self, query::UA, CONFIG_DIR};
+use futures::{stream::FuturesUnordered, StreamExt};
 use reqwest::{Client, ClientBuilder};
 use serde_derive::Deserialize;
-use std::cmp::Ordering;
-use std::hash::Hash;
-use std::ops::{Deref, Index};
-
-use super::activity::sign::SignActivity;
-use super::cookies::UserCookies;
+use std::{
+    cmp::Ordering,
+    hash::Hash,
+    ops::{Deref, Index},
+};
 
 #[derive(Debug)]
 pub struct SignSession {
@@ -86,7 +90,7 @@ impl SignSession {
             .user_agent(UA)
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()?;
-        let response = utils::api::login_enc(&client, uname, enc_pwd).await?;
+        let response = utils::query::login_enc(&client, uname, enc_pwd).await?;
         /// TODO: 存疑
         #[derive(Deserialize)]
         struct LoginR {
@@ -149,7 +153,7 @@ impl SignSession {
     }
 
     pub async fn get_courses(&self) -> Result<Vec<Course>, reqwest::Error> {
-        let r = utils::api::back_clazz_data(self.deref()).await?;
+        let r = utils::query::back_clazz_data(self.deref()).await?;
         let r: GetCoursesR = r.json().await.unwrap();
         let mut arr = Vec::new();
         for c in r.channelList {
@@ -170,7 +174,7 @@ impl SignSession {
         Ok(arr)
     }
     async fn get_stu_name_(client: &Client) -> Result<String, reqwest::Error> {
-        let r = utils::api::account_manage(client).await?;
+        let r = utils::query::account_manage(client).await?;
         let html_content = r.text().await?;
         // println!("{html_content}");
         let e = html_content.find("colorBlue").unwrap();
@@ -183,7 +187,7 @@ impl SignSession {
         Ok(name.to_owned())
     }
     pub async fn get_pan_token(&self) -> Result<String, reqwest::Error> {
-        let r = utils::api::pan_token(self).await?;
+        let r = utils::query::pan_token(self).await?;
         #[derive(Deserialize)]
         struct Tmp {
             _token: String,
@@ -198,7 +202,7 @@ impl SignSession {
         file_name: &str,
     ) -> Result<String, reqwest::Error> {
         let token = self.get_pan_token().await?;
-        let r = utils::api::pan_upload(self, buffer, self.get_uid(), &token, file_name).await?;
+        let r = utils::query::pan_upload(self, buffer, self.get_uid(), &token, file_name).await?;
         #[derive(Deserialize)]
         #[allow(non_snake_case)]
         struct Tmp {
