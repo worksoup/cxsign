@@ -120,7 +120,6 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
                             let image = screen
                                 .capture_area(pos.0.x as i32, pos.0.y as i32, wh.x, wh.y)
                                 .unwrap();
-                            image.save("/home/leart/Pictures/123.png").unwrap();
                             let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
                             return Some(handle_qrcode_url(&results[0].getText()));
                         }

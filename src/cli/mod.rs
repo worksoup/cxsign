@@ -12,7 +12,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
     loop {
-        let ans = crate::utils::inquire_confirm("二维码图片是否准备好了？","本程序会读取 `--picdir` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。",);
+        let ans = crate::utils::inquire_confirm("二维码图片是否就绪？","本程序会读取 `--picdir` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。",);
         if ans {
             break;
         }
