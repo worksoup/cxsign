@@ -8,6 +8,18 @@ auther = "worksoup"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4"
+clap = { version = "4.4", features = ["derive"] }
+cookie_store = "0.20"
+des = "0.8.1"
+directories = "5.0"
+futures = "0.3"
+hex-literal = "0.4.1"
+hex = "0.4.3"
+image = "0.24"
+inquire = "0.6"
+lazy_static = "1.4"
+percent-encoding = "2.3"
 reqwest = { version = "0.11", features = [
     "json",
     "cookies",
@@ -15,29 +27,17 @@ reqwest = { version = "0.11", features = [
     "deflate",
     "multipart",
 ] }
-tokio = { version = "1.33", features = ["full"] }
+reqwest_cookie_store = "0.6"
+rxing = "0.4"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
-tokio-stream = "0.1"
-futures = "0.3"
-url = "2.4"
-percent-encoding = "2.3"
-cookie_store = "0.20"
-chrono = "0.4"
 slint = "1.2"
-image = "0.24"
-clap = { version = "4.4", features = ["derive"] }
 sqlite = "0.32"
-inquire = "0.6"
-directories = "5.0"
-reqwest_cookie_store = "0.6"
-lazy_static = "1.4"
+tokio = { version = "1.33", features = ["full"] }
+tokio-stream = "0.1"
 unicode-width = "0.1"
-rxing = "0.4"
-des = "0.8.1"
-hex-literal = "0.4.1"
-hex = "0.4.3"
+# url = "2.4"
 # strfmt = "*"
 # cipher = { version = "0.4", features = ["block-padding"] }
 # des = "0.8"
