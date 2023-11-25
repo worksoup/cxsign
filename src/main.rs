@@ -6,7 +6,6 @@
 #![feature(map_try_insert)]
 
 mod cli;
-mod gui;
 mod sign_session;
 mod utils;
 
@@ -25,210 +24,204 @@ async fn main() {
         pos,
         pic,
         signcode,
-        gui,
     } = args;
-
-    if gui {
-        gui::gui().await;
-    } else {
-        let db = DataBase::new();
-        if let Some(sub) = command {
-            match sub {
-                MainCmds::Account { command, fresh } => {
-                    if let Some(acc_sub) = command {
-                        match acc_sub {
-                            AccCmds::Add { uname } => {
-                                // 添加账号。
-                                utils::add_account(&db, uname, None).await;
-                            }
-                            AccCmds::Remove { uname, yes } => {
-                                if !yes {
-                                    let ans = inquire::Confirm::new("是否删除？")
-                                        .with_default(false)
-                                        .prompt()
-                                        .unwrap();
-                                    if !ans {
-                                        return;
-                                    }
-                                }
-                                // 删除指定账号。
-                                db.delete_account(&uname);
-                            }
+    let db = DataBase::new();
+    if let Some(sub) = command {
+        match sub {
+            MainCmds::Account { command, fresh } => {
+                if let Some(acc_sub) = command {
+                    match acc_sub {
+                        AccCmds::Add { uname } => {
+                            // 添加账号。
+                            utils::add_account(&db, uname, None).await;
                         }
-                    } else {
-                        let accounts = db.get_accounts();
-                        if fresh {
-                            for (uname, (ref enc_pwd, _)) in accounts {
-                                db.delete_account(&uname);
-                                utils::add_account_enc(&db, uname, enc_pwd).await;
+                        AccCmds::Remove { uname, yes } => {
+                            if !yes {
+                                let ans = inquire::Confirm::new("是否删除？")
+                                    .with_default(false)
+                                    .prompt()
+                                    .unwrap();
+                                if !ans {
+                                    return;
+                                }
                             }
-                        } else {
-                            // 列出所有账号。
-                            for a in accounts {
-                                println!("{}, {}", a.0, a.1 .1);
-                            }
+                            // 删除指定账号。
+                            db.delete_account(&uname);
                         }
                     }
-                }
-                MainCmds::Course { fresh } => {
+                } else {
+                    let accounts = db.get_accounts();
                     if fresh {
-                        // 重新获取课程信息并缓存。
-                        let sessions = utils::get_sessions(&db).await;
-                        db.delete_all_course();
-                        for (_, session) in sessions {
-                            let courses = session.get_courses().await.unwrap();
-                            for c in courses {
-                                db.add_course_or(&c, |_, _| {});
-                            }
-                        }
-                    }
-                    // 列出所有课程。
-                    let courses = db.get_courses();
-                    for c in courses {
-                        c.1.display();
-                    }
-                }
-                MainCmds::Pos {
-                    command,
-                    course,
-                    global,
-                } => {
-                    if let Some(pos_sub) = command {
-                        match pos_sub {
-                            PosCmds::Add { course, pos } => {
-                                if let Some(course_id) = course {
-                                    if course_id < 0 {
-                                        eprintln!("警告：课程号小于 0! 请检查是否正确！");
-                                        if course_id == -1 {
-                                            eprintln!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
-                                        }
-                                    }
-                                    // 为指定课程添加位置。
-                                    let mut posid = 0_i64;
-                                    loop {
-                                        if db.has_pos(posid) {
-                                            posid = posid + 1;
-                                            continue;
-                                        }
-                                        db.add_pos_or(
-                                            posid,
-                                            course_id,
-                                            &Address::parse_str(&pos),
-                                            |_, _, _, _| {},
-                                        );
-                                        break;
-                                    }
-                                } else {
-                                    // 添加全局位置。
-                                    let mut posid = 0_i64;
-                                    loop {
-                                        if db.has_pos(posid) {
-                                            posid = posid + 1;
-                                            continue;
-                                        }
-                                        db.add_pos_or(
-                                            posid,
-                                            -1,
-                                            &Address::parse_str(&pos),
-                                            |_, _, _, _| {},
-                                        );
-                                        break;
-                                    }
-                                }
-                            }
-                            PosCmds::Remove { posid, yes } => {
-                                if !yes {
-                                    let ans = inquire::Confirm::new("是否删除？")
-                                        .with_default(false)
-                                        .prompt()
-                                        .unwrap();
-                                    if !ans {
-                                        return;
-                                    }
-                                }
-                                // 删除指定位置。
-                                db.delete_pos(posid);
-                            }
+                        for (uname, (ref enc_pwd, _)) in accounts {
+                            db.delete_account(&uname);
+                            utils::add_account_enc(&db, uname, enc_pwd).await;
                         }
                     } else {
-                        if global {
-                            // 列出所有全局位置。
-                            let poss = db.get_poss();
-                            for pos in poss {
-                                if pos.1 .0 == -1 {
-                                    println!(
-                                        "posid: {}, course_id: {}, addr: {:?}",
-                                        pos.0, pos.1 .0, pos.1 .1
-                                    )
-                                }
-                            }
-                        } else {
+                        // 列出所有账号。
+                        for a in accounts {
+                            println!("{}, {}", a.0, a.1 .1);
+                        }
+                    }
+                }
+            }
+            MainCmds::Course { fresh } => {
+                if fresh {
+                    // 重新获取课程信息并缓存。
+                    let sessions = utils::get_sessions(&db).await;
+                    db.delete_all_course();
+                    for (_, session) in sessions {
+                        let courses = session.get_courses().await.unwrap();
+                        for c in courses {
+                            db.add_course_or(&c, |_, _| {});
+                        }
+                    }
+                }
+                // 列出所有课程。
+                let courses = db.get_courses();
+                for c in courses {
+                    c.1.display();
+                }
+            }
+            MainCmds::Pos {
+                command,
+                course,
+                global,
+            } => {
+                if let Some(pos_sub) = command {
+                    match pos_sub {
+                        PosCmds::Add { course, pos } => {
                             if let Some(course_id) = course {
-                                // 列出指定课程的位置。
-                                let poss = db.get_course_poss(course_id);
-                                for pos in poss {
-                                    println!("posid: {}, addr: {:?}", pos.0, pos.1)
+                                if course_id < 0 {
+                                    eprintln!("警告：课程号小于 0! 请检查是否正确！");
+                                    if course_id == -1 {
+                                        eprintln!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
+                                    }
+                                }
+                                // 为指定课程添加位置。
+                                let mut posid = 0_i64;
+                                loop {
+                                    if db.has_pos(posid) {
+                                        posid = posid + 1;
+                                        continue;
+                                    }
+                                    db.add_pos_or(
+                                        posid,
+                                        course_id,
+                                        &Address::parse_str(&pos),
+                                        |_, _, _, _| {},
+                                    );
+                                    break;
                                 }
                             } else {
-                                // 列出所有位置。
-                                let poss = db.get_poss();
-                                for pos in poss {
-                                    println!(
-                                        "posid: {}, course_id: {}, addr: {:?}",
-                                        pos.0, pos.1 .0, pos.1 .1
-                                    )
+                                // 添加全局位置。
+                                let mut posid = 0_i64;
+                                loop {
+                                    if db.has_pos(posid) {
+                                        posid = posid + 1;
+                                        continue;
+                                    }
+                                    db.add_pos_or(
+                                        posid,
+                                        -1,
+                                        &Address::parse_str(&pos),
+                                        |_, _, _, _| {},
+                                    );
+                                    break;
                                 }
+                            }
+                        }
+                        PosCmds::Remove { posid, yes } => {
+                            if !yes {
+                                let ans = inquire::Confirm::new("是否删除？")
+                                    .with_default(false)
+                                    .prompt()
+                                    .unwrap();
+                                if !ans {
+                                    return;
+                                }
+                            }
+                            // 删除指定位置。
+                            db.delete_pos(posid);
+                        }
+                    }
+                } else {
+                    if global {
+                        // 列出所有全局位置。
+                        let poss = db.get_poss();
+                        for pos in poss {
+                            if pos.1 .0 == -1 {
+                                println!(
+                                    "posid: {}, course_id: {}, addr: {:?}",
+                                    pos.0, pos.1 .0, pos.1 .1
+                                )
+                            }
+                        }
+                    } else {
+                        if let Some(course_id) = course {
+                            // 列出指定课程的位置。
+                            let poss = db.get_course_poss(course_id);
+                            for pos in poss {
+                                println!("posid: {}, addr: {:?}", pos.0, pos.1)
+                            }
+                        } else {
+                            // 列出所有位置。
+                            let poss = db.get_poss();
+                            for pos in poss {
+                                println!(
+                                    "posid: {}, course_id: {}, addr: {:?}",
+                                    pos.0, pos.1 .0, pos.1 .1
+                                )
                             }
                         }
                     }
                 }
-                MainCmds::List { course, all } => {
-                    let sessions = utils::get_sessions(&db).await;
-                    let (available_sign_activities, other_sign_activities) =
-                        utils::get_signs(&sessions).await;
-                    if let Some(course) = course {
-                        // 列出指定课程的有效签到。
-                        for a in available_sign_activities {
+            }
+            MainCmds::List { course, all } => {
+                let sessions = utils::get_sessions(&db).await;
+                let (available_sign_activities, other_sign_activities) =
+                    utils::get_signs(&sessions).await;
+                if let Some(course) = course {
+                    // 列出指定课程的有效签到。
+                    for a in available_sign_activities {
+                        if a.0.course.get_id() == course {
+                            a.0.display(true);
+                        }
+                    }
+                    if all {
+                        // 列出指定课程的所有签到。
+                        for a in other_sign_activities {
                             if a.0.course.get_id() == course {
                                 a.0.display(true);
                             }
                         }
-                        if all {
-                            // 列出指定课程的所有签到。
-                            for a in other_sign_activities {
-                                if a.0.course.get_id() == course {
-                                    a.0.display(true);
-                                }
-                            }
-                        }
-                    } else {
-                        // 列出所有有效签到。
-                        for a in available_sign_activities {
+                    }
+                } else {
+                    // 列出所有有效签到。
+                    for a in available_sign_activities {
+                        a.0.display(false);
+                    }
+                    if all {
+                        // 列出所有签到。
+                        for a in other_sign_activities {
                             a.0.display(false);
-                        }
-                        if all {
-                            // 列出所有签到。
-                            for a in other_sign_activities {
-                                a.0.display(false);
-                            }
                         }
                     }
                 }
-                MainCmds::WhereIsConfig => {
-                    println!("{:?}", CONFIG_DIR.deref());
-                }
             }
-        } else {
-            let sessions = utils::get_sessions(&db).await;
-            let (asigns, osigns) = utils::get_signs(&sessions).await;
-            cli::sign(
-                &db, &sessions, asigns, osigns, activity, account, location, pos, pic, signcode,
-            )
-            .await
-            .unwrap();
+            MainCmds::WhereIsConfig => {
+                println!("{:?}", CONFIG_DIR.deref());
+            }
         }
-        utils::print_now();
+    } else {
+        let sessions = utils::get_sessions(&db).await;
+        let (asigns, osigns) = utils::get_signs(&sessions).await;
+        cli::sign(
+            &db, &sessions, asigns, osigns, activity, account, location, pos, pic, signcode,
+        )
+        .await
+        .unwrap();
     }
+    utils::print_now();
 }
 
 #[derive(Parser, Debug)]
@@ -264,9 +257,6 @@ struct Args {
     /// 签到码签到时需要提供。
     #[arg(short, long)]
     signcode: Option<String>,
-    /// 以图形界面模式启动。
-    #[arg(short, long)]
-    gui: bool,
 }
 
 #[derive(Subcommand, Debug)]
