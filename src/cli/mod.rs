@@ -119,20 +119,22 @@ async fn handle_account_sign<'a>(
         }
         SignType::QrCode => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            if capture {
-                if let Some(enc) =
-                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode())
-                {
-                    states = sign::qrcode_sign_(
-                        sign,
-                        sign.get_c_of_qrcode_sign(),
-                        &enc,
-                        &poss,
-                        sessions,
-                    )
-                    .await?;
-                }
-            } else {
+            fn print_err_msg(sign: &SignActivity) {
+                eprintln!(
+                    "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
+                    sign.name
+                );
+            }
+            async fn try_by_pic_arg<'a>(
+                sign: &SignActivity,
+                pic: &Option<PathBuf>,
+                location: Option<i64>,
+                db: &DataBase,
+                pos: &Option<String>,
+                sessions: &'a Vec<&SignSession>,
+            ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
+                let poss = location_and_pos_to_poss(sign, db, location, pos).await;
+                let mut states = HashMap::new();
                 if let Some(pic) = pic {
                     if std::fs::metadata(&pic).unwrap().is_dir() {
                         if let Some(pic) = picdir_to_pic(&pic) {
@@ -147,10 +149,7 @@ async fn handle_account_sign<'a>(
                             )
                             .await?;
                         } else {
-                            eprintln!(
-                                "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供或签到二维码！",
-                                sign.name
-                            );
+                            print_err_msg(sign);
                         }
                     } else {
                         let enc = crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
@@ -164,11 +163,28 @@ async fn handle_account_sign<'a>(
                         .await?;
                     }
                 } else {
-                    eprintln!(
-                        "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
-                        sign.name
-                    );
+                    print_err_msg(sign);
                 };
+                Ok(states)
+            }
+            
+            if capture {
+                if let Some(enc) =
+                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode())
+                {
+                    states = sign::qrcode_sign_(
+                        sign,
+                        sign.get_c_of_qrcode_sign(),
+                        &enc,
+                        &poss,
+                        sessions,
+                    )
+                    .await?;
+                } else {
+                    states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
+                }
+            } else {
+                states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
             }
         }
         SignType::Location => {
