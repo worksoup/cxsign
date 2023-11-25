@@ -1,104 +1,64 @@
+mod sign;
 mod single_sign;
 
 use crate::activity::sign::{SignActivity, SignState, SignType};
+use crate::utils::sign::get_refresh_qrcode_sign_params_on_screen;
 use crate::{
     session::SignSession,
-    utils::{
-        address::Address, get_refresh_qrcode_sign_params_on_screen, handle_qrcode_pic_path,
-        photo::Photo, picdir_to_pic, sql::DataBase,
-    },
+    utils::{address::Address, sql::DataBase},
 };
-use futures::{stream::FuturesUnordered, StreamExt};
+use std::fs::DirEntry;
 use std::{collections::HashMap, path::PathBuf};
 
-async fn general_sign_<'a>(
-    sign: &SignActivity,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
-    let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::general_sign_single(sign, session));
+pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
+    loop {
+        let ans = crate::utils::inquire_confirm("二维码图片是否准备好了？","本程序会读取 `--picdir` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。",);
+        if ans {
+            break;
+        }
     }
-    while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
-    }
-    Ok(states)
-}
-
-async fn photo_sign_<'a>(
-    sign: &SignActivity,
-    pic: &Option<PathBuf>,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
-    let photo = if let Some(pic) = &pic {
-        Photo::from_file(sessions[0], &pic).await
+    let pic = if let Ok(pic_dir) = std::fs::read_dir(picdir) {
+        let mut files: Vec<DirEntry> = pic_dir
+            .filter_map(|k| {
+                if let Ok(k) = k {
+                    if let Ok(t) = k.file_type() {
+                        if t.is_file() {
+                            let name = k.file_name();
+                            let ext = name.to_str().unwrap().split('.').last().unwrap();
+                            if ext == "png" || ext == "jpg" {
+                                Some(k)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
+        if files.is_empty() {
+            eprintln!("文件夹下没有图片！（只支持 `*.png` 文件或 `*.jpg` 文件。）");
+            None
+        } else {
+            files.sort_by(|a, b| {
+                b.metadata()
+                    .unwrap()
+                    .modified()
+                    .unwrap()
+                    .cmp(&a.metadata().unwrap().modified().unwrap())
+            });
+            Some(files[0].path())
+        }
     } else {
-        Photo::default(sessions[0]).await
+        eprintln!("遍历文件夹失败！");
+        None
     };
-    let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::photo_sign_single(sign, &photo, session));
-    }
-    while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
-    }
-    Ok(states)
-}
-async fn qrcode_sign_<'a>(
-    sign: &SignActivity,
-    c: &str,
-    enc: &str,
-    poss: &Vec<Address>,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
-    let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::qrcode_sign_single(sign, c, enc, poss, session));
-    }
-    while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
-    }
-    Ok(states)
-}
-
-async fn location_sign_<'a>(
-    sign: &SignActivity,
-    poss: &Vec<Address>,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
-    let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::location_sign_single(sign, poss, session));
-    }
-    while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
-    }
-    Ok(states)
-}
-
-async fn signcode_sign_<'a>(
-    sign: &SignActivity,
-    signcode: &str,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
-    let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::signcode_sign_single(sign, signcode, session));
-    }
-    while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
-    }
-    Ok(states)
+    pic
 }
 async fn location_and_pos_to_poss(
     sign: &SignActivity,
@@ -136,11 +96,11 @@ async fn handle_account_sign<'a>(
             if let Some(pic) = pic {
                 if let Ok(metadata) = std::fs::metadata(&pic) {
                     let pic = if metadata.is_dir() {
-                        crate::utils::picdir_to_pic(&pic)
+                        picdir_to_pic(&pic)
                     } else {
                         Some(pic.to_owned())
                     };
-                    states = photo_sign_(sign, &pic, sessions).await?;
+                    states = sign::photo_sign_(sign, &pic, sessions).await?;
                 } else {
                     eprintln!(
                         "所有用户在拍照签到[{}]中签到失败！未能获取{:?}的元信息！",
@@ -155,7 +115,7 @@ async fn handle_account_sign<'a>(
             };
         }
         SignType::Common => {
-            states = general_sign_(sign, sessions).await?;
+            states = sign::general_sign_(sign, sessions).await?;
         }
         SignType::QrCode => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
@@ -163,15 +123,22 @@ async fn handle_account_sign<'a>(
                 if let Some(enc) =
                     get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode())
                 {
-                    states = qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
-                        .await?;
+                    states = sign::qrcode_sign_(
+                        sign,
+                        sign.get_c_of_qrcode_sign(),
+                        &enc,
+                        &poss,
+                        sessions,
+                    )
+                    .await?;
                 }
             } else {
                 if let Some(pic) = pic {
                     if std::fs::metadata(&pic).unwrap().is_dir() {
                         if let Some(pic) = picdir_to_pic(&pic) {
-                            let enc = handle_qrcode_pic_path(pic.to_str().unwrap());
-                            states = qrcode_sign_(
+                            let enc =
+                                crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
+                            states = sign::qrcode_sign_(
                                 sign,
                                 sign.get_c_of_qrcode_sign(),
                                 &enc,
@@ -186,10 +153,15 @@ async fn handle_account_sign<'a>(
                             );
                         }
                     } else {
-                        let enc = handle_qrcode_pic_path(pic.to_str().unwrap());
-                        states =
-                            qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
-                                .await?;
+                        let enc = crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
+                        states = sign::qrcode_sign_(
+                            sign,
+                            sign.get_c_of_qrcode_sign(),
+                            &enc,
+                            &poss,
+                            sessions,
+                        )
+                        .await?;
                     }
                 } else {
                     eprintln!(
@@ -201,14 +173,14 @@ async fn handle_account_sign<'a>(
         }
         SignType::Location => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            states = location_sign_(sign, &poss, sessions).await?;
+            states = sign::location_sign_(sign, &poss, sessions).await?;
         }
         SignType::Unknown => {
             eprintln!("签到活动[{}]为无效签到类型！", sign.name);
         }
         signcode_sign_type => {
             if let Some(signcode) = signcode {
-                states = signcode_sign_(sign, signcode, sessions).await?;
+                states = sign::signcode_sign_(sign, signcode, sessions).await?;
             } else {
                 let sign_type_str = match signcode_sign_type {
                     SignType::Gesture => "手势",

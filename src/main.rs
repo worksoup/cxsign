@@ -5,10 +5,10 @@
 #![feature(hash_set_entry)]
 #![feature(map_try_insert)]
 
+mod activity;
 mod cli;
 mod session;
 mod utils;
-mod activity;
 
 use clap::{Parser, Subcommand};
 use std::{ops::Deref, path::PathBuf};
@@ -35,7 +35,7 @@ async fn main() {
                     match acc_sub {
                         AccCmds::Add { uname } => {
                             // 添加账号。
-                            utils::add_account(&db, uname, None).await;
+                            utils::account::add_account(&db, uname, None).await;
                         }
                         AccCmds::Remove { uname, yes } => {
                             if !yes {
@@ -56,7 +56,7 @@ async fn main() {
                     if fresh {
                         for (uname, (ref enc_pwd, _)) in accounts {
                             db.delete_account(&uname);
-                            utils::add_account_enc(&db, uname, enc_pwd).await;
+                            utils::account::add_account_enc(&db, uname, enc_pwd).await;
                         }
                     } else {
                         // 列出所有账号。
@@ -69,7 +69,7 @@ async fn main() {
             MainCmds::Course { fresh } => {
                 if fresh {
                     // 重新获取课程信息并缓存。
-                    let sessions = utils::get_sessions(&db).await;
+                    let sessions = utils::account::get_sessions(&db).await;
                     db.delete_all_course();
                     for (_, session) in sessions {
                         let courses = session.get_courses().await.unwrap();
@@ -179,9 +179,9 @@ async fn main() {
                 }
             }
             MainCmds::List { course, all } => {
-                let sessions = utils::get_sessions(&db).await;
+                let sessions = utils::account::get_sessions(&db).await;
                 let (available_sign_activities, other_sign_activities) =
-                    utils::get_signs(&sessions).await;
+                    utils::sign::get_signs(&sessions).await;
                 if let Some(course) = course {
                     // 列出指定课程的有效签到。
                     for a in available_sign_activities {
@@ -215,8 +215,8 @@ async fn main() {
             }
         }
     } else {
-        let sessions = utils::get_sessions(&db).await;
-        let (asigns, osigns) = utils::get_signs(&sessions).await;
+        let sessions = utils::account::get_sessions(&db).await;
+        let (asigns, osigns) = utils::sign::get_signs(&sessions).await;
         cli::sign(
             &db, &sessions, asigns, osigns, activity, account, location, pos, pic, signcode,
             capture,
