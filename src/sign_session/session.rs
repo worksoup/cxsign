@@ -78,56 +78,7 @@ impl SignSession {
         &self.stu_name
     }
 
-    pub async fn login(uname: &str, pwd: &str) -> Result<SignSession, reqwest::Error> {
-        let cookie_store = reqwest_cookie_store::CookieStore::new(None);
-        let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
-        let cookie_store = std::sync::Arc::new(cookie_store);
-        let client = ClientBuilder::new()
-            .user_agent(UA)
-            .cookie_provider(std::sync::Arc::clone(&cookie_store))
-            .build()?;
-        let response = utils::api::login(&client, uname, pwd).await?;
-        #[derive(Deserialize)]
-        struct LoginR {
-            mes: String,
-            status: bool,
-        }
-        let LoginR { mes, status } = response.json().await.unwrap();
-        if status {
-            println!("{mes:?}");
-            println!("登录成功！");
-        } else {
-            eprintln!("{mes:?}");
-            panic!("登录失败！");
-        }
-        {
-            // Write store back to disk
-            let mut writer = std::fs::File::create(CONFIG_DIR.join(uname.to_string() + ".json"))
-                .map(std::io::BufWriter::new)
-                .unwrap();
-            let store = cookie_store.lock().unwrap();
-            store.save_json(&mut writer).unwrap();
-        }
-        let store = {
-            let s = cookie_store.clone();
-            let s = s.lock().unwrap();
-            let mut r = Vec::new();
-            for s in s.iter_any() {
-                r.push(s.to_owned());
-            }
-            r
-        };
-        let cookies = UserCookies::new(store);
-        // println!("{:?}", response.text().await.unwrap());
-        let stu_name = Self::get_stu_name_(&client).await?;
-        Ok(SignSession {
-            client,
-            stu_name,
-            cookies,
-        })
-    }
-
-    pub async fn login_enc(uname: &str, enc_pwd: &str) -> Result<SignSession, reqwest::Error> {
+    pub async fn login(uname: &str, enc_pwd: &str) -> Result<SignSession, reqwest::Error> {
         let cookie_store = reqwest_cookie_store::CookieStore::new(None);
         let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
         let cookie_store = std::sync::Arc::new(cookie_store);

@@ -191,7 +191,6 @@ pub async fn check_signcode(
         .await?;
     Ok(r)
 }
-// ppt_active_info
 // 签到信息获取
 static PPT_ACTIVE_INFO: &'static str =
     "https://mobilelearn.chaoxing.com/v2/apis/active/getPPTActiveInfo";

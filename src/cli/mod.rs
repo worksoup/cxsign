@@ -1,7 +1,6 @@
 mod single_sign;
 
 use futures::{stream::FuturesUnordered, StreamExt};
-use tokio::sync::{Mutex, RwLock};
 
 use crate::{
     sign_session::{
@@ -10,7 +9,7 @@ use crate::{
     },
     utils::{address::Address, handle_qrcode_pic_path, photo::Photo, picdir_to_pic, sql::DataBase},
 };
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf};
 
 async fn general_sign_<'a>(
     sign: &SignActivity,
