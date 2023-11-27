@@ -63,15 +63,15 @@ pub fn encrypto_pwd(pwd: &str) -> String {
         let m = len % 8;
         for i in 0..batch {
             let mut a = [0u8; 8];
-            a.copy_from_slice(&pwd[0 + i * 8..8 + i * 8]);
+            a.copy_from_slice(&pwd[i * 8..8 + i * 8]);
             r.push(a);
         }
         let mut b = [0u8; 8];
         for i in 0..m {
-            b[i] = pwd[8 * batch as usize + i];
+            b[i] = pwd[8 * batch + i];
         }
-        for i in m..8 {
-            b[i] = (8 - m) as u8;
+        for item in b.iter_mut().skip(m) {
+            *item = (8 - m) as u8;
         }
         r.push(b);
         println!("{r:?}");

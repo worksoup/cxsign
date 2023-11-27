@@ -16,11 +16,11 @@ impl Photo {
         let r = utils::query::pan_chaoxing(session).await?;
         let data = r.text().await.unwrap();
         let start_of_enc = data.find("enc =\"").unwrap() + 6;
-        let end_of_enc = data[start_of_enc..data.len()].find("\"").unwrap() + start_of_enc;
+        let end_of_enc = data[start_of_enc..data.len()].find('"').unwrap() + start_of_enc;
         let enc = &data[start_of_enc..end_of_enc];
         let start_of_root_dir = data.find("_rootdir = \"").unwrap() + 12;
         let end_of_root_dir =
-            data[start_of_root_dir..data.len()].find("\"").unwrap() + start_of_root_dir;
+            data[start_of_root_dir..data.len()].find('"').unwrap() + start_of_root_dir;
         let parent_id = &data[start_of_root_dir..end_of_root_dir];
         let r = utils::query::pan_list(session, parent_id, enc).await?;
         #[derive(Deserialize)]

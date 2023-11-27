@@ -4,15 +4,15 @@ use rxing::{Point, PointI, PointU};
 
 use crate::{activity::sign::SignActivity, session::SignSession, utils::inquire_confirm};
 
-pub async fn get_signs<'a>(
-    sessions: &'a HashMap<String, SignSession>,
+pub async fn get_signs(
+    sessions: &HashMap<String, SignSession>,
 ) -> (
-    HashMap<SignActivity, Vec<&'a SignSession>>,
-    HashMap<SignActivity, Vec<&'a SignSession>>,
+    HashMap<SignActivity, Vec<&SignSession>>,
+    HashMap<SignActivity, Vec<&SignSession>>,
 ) {
     let mut asigns = HashMap::new();
     let mut osigns = HashMap::new();
-    for (_, session) in sessions {
+    for session in sessions.values() {
         let (available_sign_activities, other_sign_activities, _) =
             session.traverse_activities().await.unwrap();
         for sa in available_sign_activities {
@@ -50,7 +50,7 @@ fn handle_qrcode_url(url: &str) -> String {
 }
 pub fn handle_qrcode_pic_path(pic_path: &str) -> String {
     let results = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
-    handle_qrcode_url(&results[0].getText())
+    handle_qrcode_url(results[0].getText())
 }
 
 pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<String> {
@@ -95,7 +95,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
             &mut rxing::BinaryBitmap::new(rxing::common::HybridBinarizer::new(
                 rxing::BufferedImageLuminanceSource::new(image::DynamicImage::ImageRgba8(image)),
             )),
-            &hints,
+            hints,
         )
     }
     let screens = screenshots::Screen::all().unwrap();
@@ -123,7 +123,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
                                 .capture_area(pos.0.x , pos.0.y  , pos.1.x, pos.1.y)
                                 .unwrap();
                             let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
-                            return Some(handle_qrcode_url(&results[0].getText()));
+                            return Some(handle_qrcode_url(results[0].getText()));
                         }
                     } else {
                         // 如果不是定时刷新的二维码，则不需要提示。

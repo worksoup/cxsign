@@ -33,7 +33,7 @@ pub async fn photo_sign_<'a>(
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     let photo = if let Some(pic) = &pic {
-        Photo::from_file(sessions[0], &pic).await
+        Photo::from_file(sessions[0], pic).await
     } else {
         Photo::default(sessions[0]).await
     };

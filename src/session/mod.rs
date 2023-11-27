@@ -1,13 +1,13 @@
-pub mod course;
 pub mod cookies;
+pub mod course;
 
-use cookies::UserCookies;
 use crate::activity::{
-    activity::{Activity, OtherActivity},
     sign::SignActivity,
+    {Activity, OtherActivity},
 };
 use crate::session::course::{Course, GetCoursesR};
 use crate::utils::{self, query::UA, CONFIG_DIR};
+use cookies::UserCookies;
 use futures::{stream::FuturesUnordered, StreamExt};
 use reqwest::{Client, ClientBuilder};
 use serde_derive::Deserialize;
@@ -72,10 +72,10 @@ impl SignSession {
         })
     }
     pub fn get_uid(&self) -> &str {
-        &self.cookies.get_uid()
+        self.cookies.get_uid()
     }
     pub fn get_fid(&self) -> &str {
-        &self.cookies.get_fid()
+        self.cookies.get_fid()
     }
 
     pub fn get_stu_name(&self) -> &str {
@@ -179,7 +179,7 @@ impl SignSession {
         // println!("{html_content}");
         let e = html_content.find("colorBlue").unwrap();
         let html_content = html_content.index(e..html_content.len()).to_owned();
-        let e = html_content.find(">").unwrap() + 1;
+        let e = html_content.find('>').unwrap() + 1;
         let html_content = html_content.index(e..html_content.len()).to_owned();
         let name = html_content
             .index(0..html_content.find('<').unwrap())

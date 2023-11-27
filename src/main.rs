@@ -103,7 +103,7 @@ async fn main() {
                                 let mut posid = 0_i64;
                                 loop {
                                     if db.has_pos(posid) {
-                                        posid = posid + 1;
+                                        posid += 1;
                                         continue;
                                     }
                                     db.add_pos_or(
@@ -119,7 +119,7 @@ async fn main() {
                                 let mut posid = 0_i64;
                                 loop {
                                     if db.has_pos(posid) {
-                                        posid = posid + 1;
+                                        posid += 1;
                                         continue;
                                     }
                                     db.add_pos_or(
@@ -146,35 +146,31 @@ async fn main() {
                             db.delete_pos(posid);
                         }
                     }
+                } else if global {
+                    // 列出所有全局位置。
+                    let poss = db.get_poss();
+                    for pos in poss {
+                        if pos.1 .0 == -1 {
+                            println!(
+                                "posid: {}, course_id: {}, addr: {:?}",
+                                pos.0, pos.1 .0, pos.1 .1
+                            )
+                        }
+                    }
+                } else if let Some(course_id) = course {
+                    // 列出指定课程的位置。
+                    let poss = db.get_course_poss(course_id);
+                    for pos in poss {
+                        println!("posid: {}, addr: {:?}", pos.0, pos.1)
+                    }
                 } else {
-                    if global {
-                        // 列出所有全局位置。
-                        let poss = db.get_poss();
-                        for pos in poss {
-                            if pos.1 .0 == -1 {
-                                println!(
-                                    "posid: {}, course_id: {}, addr: {:?}",
-                                    pos.0, pos.1 .0, pos.1 .1
-                                )
-                            }
-                        }
-                    } else {
-                        if let Some(course_id) = course {
-                            // 列出指定课程的位置。
-                            let poss = db.get_course_poss(course_id);
-                            for pos in poss {
-                                println!("posid: {}, addr: {:?}", pos.0, pos.1)
-                            }
-                        } else {
-                            // 列出所有位置。
-                            let poss = db.get_poss();
-                            for pos in poss {
-                                println!(
-                                    "posid: {}, course_id: {}, addr: {:?}",
-                                    pos.0, pos.1 .0, pos.1 .1
-                                )
-                            }
-                        }
+                    // 列出所有位置。
+                    let poss = db.get_poss();
+                    for pos in poss {
+                        println!(
+                            "posid: {}, course_id: {}, addr: {:?}",
+                            pos.0, pos.1 .0, pos.1 .1
+                        )
                     }
                 }
             }

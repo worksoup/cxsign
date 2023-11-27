@@ -56,13 +56,15 @@ impl SignActivity {
     pub fn get_sign_result_by_text(text: &str) -> SignState {
         match text {
             "success" => SignState::Success,
-            msg => SignState::Fail(if msg.is_empty() {
-                "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。".into()
-            } else {
-                msg.into()
-            }),
+            msg => SignState::Fail(
+                if msg.is_empty() {
+                    "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。"
+                } else {
+                    msg
+                }
+                .into(),
+            ),
         }
-        .into()
     }
     async fn check_signcode(
         session: &SignSession,
@@ -74,7 +76,7 @@ impl SignActivity {
             #[allow(unused)]
             result: i64,
         }
-        let CheckR { result } = utils::query::check_signcode(&session, active_id, signcode)
+        let CheckR { result } = utils::query::check_signcode(session, active_id, signcode)
             .await?
             .json()
             .await
@@ -259,14 +261,7 @@ impl SignActivity {
 }
 impl SignActivity {
     pub async fn sign_common(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::general_sign(
-            session,
-            self.id.as_str(),
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
-        )
-        .await?;
+        let r = utils::query::general_sign(session, self.id.as_str()).await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
     pub async fn sign_by_signcode(
@@ -275,15 +270,7 @@ impl SignActivity {
         signcode: &str,
     ) -> Result<SignState, reqwest::Error> {
         if Self::check_signcode(session, &self.id, signcode).await? {
-            let r = utils::query::signcode_sign(
-                session,
-                self.id.as_str(),
-                session.get_uid(),
-                session.get_fid(),
-                session.get_stu_name(),
-                signcode,
-            )
-            .await?;
+            let r = utils::query::signcode_sign(session, self.id.as_str(), signcode).await?;
             Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
         } else {
             Ok(SignState::Fail("签到码或手势不正确".into()))
@@ -294,17 +281,7 @@ impl SignActivity {
         address: &Address,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::location_sign(
-            session,
-            session.get_stu_name(),
-            address.get_addr(),
-            self.id.as_str(),
-            session.get_uid(),
-            address.get_lat(),
-            address.get_lon(),
-            session.get_fid(),
-        )
-        .await?;
+        let r = utils::query::location_sign(session, address, self.id.as_str()).await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
     pub async fn sign_by_photo(
@@ -312,15 +289,7 @@ impl SignActivity {
         photo: &Photo,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::photo_sign(
-            session,
-            self.id.as_str(),
-            session.get_uid(),
-            session.get_fid(),
-            photo.get_object_id(),
-            session.get_stu_name(),
-        )
-        .await?;
+        let r = utils::query::photo_sign(session, self.id.as_str(), photo.get_object_id()).await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
     pub async fn sign_by_qrcode(
@@ -329,19 +298,7 @@ impl SignActivity {
         address: &Address,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::qrcode_sign(
-            session,
-            enc,
-            session.get_stu_name(),
-            address.get_addr(),
-            self.id.as_str(),
-            session.get_uid(),
-            address.get_lat(),
-            address.get_lon(),
-            address.get_alt(),
-            session.get_fid(),
-        )
-        .await?;
+        let r = utils::query::qrcode_sign(session, enc, self.id.as_str(), address).await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
 }

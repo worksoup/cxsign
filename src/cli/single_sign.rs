@@ -13,7 +13,7 @@ pub async fn photo_sign_single<'a>(
         session.get_stu_name(),
         match sign.pre_sign(session).await? {
             SignState::Success => SignState::Success,
-            SignState::Fail(_) => sign.sign_by_photo(&photo, session).await?,
+            SignState::Fail(_) => sign.sign_by_photo(photo, session).await?,
         },
     ))
 }
@@ -50,7 +50,7 @@ pub async fn qrcode_sign_single<'a>(
             SignState::Fail(_) => {
                 let mut state = SignState::Fail("所有位置均不可用".into());
                 for pos in poss {
-                    match sign.sign_by_qrcode(enc, &pos, session).await? {
+                    match sign.sign_by_qrcode(enc, pos, session).await? {
                         r @ SignState::Success => {
                             state = r;
                             break;
@@ -84,7 +84,7 @@ pub async fn location_sign_single<'a>(
             SignState::Fail(_) => {
                 let mut state = SignState::Fail("所有位置均不可用".into());
                 for pos in poss {
-                    match sign.sign_by_location(&pos, session).await? {
+                    match sign.sign_by_location(pos, session).await? {
                         r @ SignState::Success => {
                             state = r;
                             break;

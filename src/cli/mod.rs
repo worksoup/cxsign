@@ -94,9 +94,9 @@ async fn handle_account_sign<'a>(
     match sign_type {
         SignType::Photo => {
             if let Some(pic) = pic {
-                if let Ok(metadata) = std::fs::metadata(&pic) {
+                if let Ok(metadata) = std::fs::metadata(pic) {
                     let pic = if metadata.is_dir() {
-                        picdir_to_pic(&pic)
+                        picdir_to_pic(pic)
                     } else {
                         Some(pic.to_owned())
                     };
@@ -136,8 +136,8 @@ async fn handle_account_sign<'a>(
                 let poss = location_and_pos_to_poss(sign, db, location, pos).await;
                 let mut states = HashMap::new();
                 if let Some(pic) = pic {
-                    if std::fs::metadata(&pic).unwrap().is_dir() {
-                        if let Some(pic) = picdir_to_pic(&pic) {
+                    if std::fs::metadata(pic).unwrap().is_dir() {
+                        if let Some(pic) = picdir_to_pic(pic) {
                             let enc =
                                 crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
                             states = sign::qrcode_sign_(
@@ -167,7 +167,7 @@ async fn handle_account_sign<'a>(
                 };
                 Ok(states)
             }
-            
+
             if capture {
                 if let Some(enc) =
                     get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode())
