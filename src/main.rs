@@ -243,7 +243,7 @@ struct Args {
     location: Option<i64>,
     /// 通过地址名称、经纬度与海拔直接指定位置。
     /// 位置签到或二维码位置签到时需要提供。
-    /// 格式为：`addr/lat/lon/alt`.
+    /// 格式为：`addr,lon,lat,alt`.
     #[arg(long)]
     pos: Option<String>,
     /// 本地图片路径。
@@ -329,7 +329,7 @@ enum PosCmds {
         #[arg(short, long)]
         course: Option<i64>,
         /// 地址名称、经纬度与海拔。
-        /// 格式为：`addr/lat/lon/alt`.
+        /// 格式为：`addr,lon,lat,alt`.
         pos: String,
     },
     /// 删除位置。

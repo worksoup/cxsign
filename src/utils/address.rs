@@ -8,11 +8,11 @@ pub struct Address {
 
 impl Address {
     pub fn parse_str(pos: &str) -> Self {
-        let pos: Vec<&str> = pos.split('/').collect();
+        let pos: Vec<&str> = pos.split(',').map(|item| item.trim()).collect();
         assert_eq!(
             pos.len(),
             4,
-            "位置信息格式错误！格式为：`addr/lat/lon/alt`."
+            "位置信息格式错误！格式为：`addr,lon,lat,alt`."
         );
         Self::new(pos[0], pos[1], pos[2], pos[3])
     }
