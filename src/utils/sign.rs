@@ -1,6 +1,6 @@
 use std::collections::{hash_map::OccupiedError, HashMap};
 
-use rxing::{Point, PointU};
+use rxing::{Point, PointI, PointU};
 
 use crate::{activity::sign::SignActivity, session::SignSession, utils::inquire_confirm};
 
@@ -54,7 +54,7 @@ pub fn handle_qrcode_pic_path(pic_path: &str) -> String {
 }
 
 pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<String> {
-    fn find_max_rect(vertex: &Vec<Point>) -> (PointU, PointU) {
+    fn find_max_rect(vertex: &Vec<Point>, scale: f32) -> (PointI, PointU) {
         let mut x_max = vertex[0].x;
         let mut x_min = x_max;
         let mut y_max = vertex[0].y;
@@ -73,12 +73,13 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
                 y_min = p.y
             }
         }
-        let lt = Point { x: x_min, y: y_min };
+        let lt = Point { x: x_min, y: y_min } / scale;
         let rb = Point {
             x: x_max + 1.0,
             y: y_max + 1.0,
-        };
-        (PointU::from(lt), PointU::from(rb))
+        } / scale;
+        let wh = rb - lt;
+        (PointI::from(lt), PointU::from(wh))
     }
     fn detect_multiple_in_image(
         image: image::RgbaImage,
@@ -114,13 +115,12 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
                     if is_refresh {
                         // 获取二维码在屏幕上的位置。
                         let pos = r.getPoints();
-                        let pos = find_max_rect(pos);
+                        let pos = find_max_rect(pos, scale_factor);
                         // 等待二维码刷新。
                         if inquire_confirm("二维码图片是否就绪？","本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
-                            let wh = pos.1 - pos.0;
                             println!("二维码位置：{pos:?}");
                             let image = screen
-                                .capture_area((pos.0.x as f32/scale_factor) as i32, (pos.0.y as f32/scale_factor) as i32, wh.x, wh.y)
+                                .capture_area(pos.0.x , pos.0.y  , pos.1.x, pos.1.y)
                                 .unwrap();
                             let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
                             return Some(handle_qrcode_url(&results[0].getText()));
