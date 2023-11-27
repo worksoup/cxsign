@@ -100,6 +100,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
     let screens = screenshots::Screen::all().unwrap();
     // 在所有屏幕中寻找。
     for screen in screens {
+        let scale_factor = screen.display_info.scale_factor;
         // 先截取整个屏幕。
         let image = screen.capture().unwrap();
         // 如果成功识别到二维码。
@@ -117,8 +118,9 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
                         // 等待二维码刷新。
                         if inquire_confirm("二维码图片是否就绪？","本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
                             let wh = pos.1 - pos.0;
+                            println!("二维码位置：{pos:?}");
                             let image = screen
-                                .capture_area(pos.0.x as i32, pos.0.y as i32, wh.x, wh.y)
+                                .capture_area((pos.0.x as f32/scale_factor) as i32, (pos.0.y as f32/scale_factor) as i32, wh.x, wh.y)
                                 .unwrap();
                             let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
                             return Some(handle_qrcode_url(&results[0].getText()));
