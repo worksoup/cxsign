@@ -5,7 +5,7 @@ use reqwest::{Client, Response};
 pub static UA: &'static str = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 (schild:eaf4fb193ec970c0a9775e2a27b0232b) (device:iPhone11,2) Language/zh-Hans com.ssreader.ChaoXingStudy/ChaoXingStudy_3_6.0.2_ios_phone_202209281930_99 (@Kalimdor)_1665876591620212942";
 
 // 登陆页
-pub static QRCODE_PAT: &'static str = "http://mobilelearn.chaoxing.com/widget/sign/e";
+pub static QRCODE_PAT: &'static str = "https://mobilelearn.chaoxing.com/widget/sign/e";
 
 // 登陆页
 static LOGIN_PAGE: &'static str =
@@ -15,7 +15,7 @@ pub async fn login_page(client: &Client) -> Result<Response, reqwest::Error> {
     Ok(client.get(LOGIN_PAGE).send().await?)
 }
 // 明文密码登陆
-static LOGIN: &'static str = "http://passport2-api.chaoxing.com/v11/loginregister";
+static LOGIN: &'static str = "https://passport2-api.chaoxing.com/v11/loginregister";
 pub async fn login(client: &Client, uname: &str, pwd: &str) -> Result<Response, reqwest::Error> {
     let body = format!("code={pwd}&cx_xxt_passport=json&uname={uname}&loginType=1&roleSelect=true");
     let url = {
@@ -52,7 +52,7 @@ pub async fn login_enc(
     Ok(response)
 }
 // 预签到
-static PRE_SIGN: &'static str = "http://mobilelearn.chaoxing.com/newsign/preSign";
+static PRE_SIGN: &'static str = "https://mobilelearn.chaoxing.com/newsign/preSign";
 pub async fn pre_sign(
     client: &Client,
     course: Course,
@@ -88,21 +88,21 @@ pub async fn pre_sign_for_qrcode_sign(
     Ok(client.get(url).send().await?)
 }
 // analysis
-static ANALYSIS: &'static str = "http://mobilelearn.chaoxing.com/pptSign/analysis";
+static ANALYSIS: &'static str = "https://mobilelearn.chaoxing.com/pptSign/analysis";
 pub async fn analysis(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     let url = ANALYSIS;
     let url = format!("{url}?vs=1&DB_STRATEGY=RANDOM&aid={active_id}");
     Ok(client.get(url).send().await?)
 }
 // analysis 2
-static ANALYSIS2: &'static str = "http://mobilelearn.chaoxing.com/pptSign/analysis2";
+static ANALYSIS2: &'static str = "https://mobilelearn.chaoxing.com/pptSign/analysis2";
 pub async fn analysis2(client: &Client, code: &str) -> Result<Response, reqwest::Error> {
     let url = ANALYSIS2;
     let url = format!("{url}?DB_STRATEGY=RANDOM&code={code}");
     Ok(client.get(url).send().await?)
 }
 // 签到
-static PPT_SIGN: &'static str = "http://mobilelearn.chaoxing.com/pptSign/stuSignajax";
+static PPT_SIGN: &'static str = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax";
 pub async fn general_sign(
     client: &Client,
     active_id: &str,
@@ -182,7 +182,7 @@ pub async fn signcode_sign(
 
 // 签到码检查
 static CHECK_SINGCODE: &'static str =
-    "http://mobilelearn.chaoxing.com/widget/sign/pcStuSignController/checkSignCode";
+    "https://mobilelearn.chaoxing.com/widget/sign/pcStuSignController/checkSignCode";
 pub async fn check_signcode(
     client: &Client,
     active_id: &str,
@@ -196,7 +196,7 @@ pub async fn check_signcode(
 }
 // 签到信息获取
 static PPT_ACTIVE_INFO: &'static str =
-    "http://mobilelearn.chaoxing.com/v2/apis/active/getPPTActiveInfo";
+    "https://mobilelearn.chaoxing.com/v2/apis/active/getPPTActiveInfo";
 pub async fn ppt_active_info(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     let r = client
         .get(String::from(PPT_ACTIVE_INFO) + "?activeId=" + active_id)
@@ -205,7 +205,7 @@ pub async fn ppt_active_info(client: &Client, active_id: &str) -> Result<Respons
     Ok(r)
 }
 // 签到信息获取 2
-static SIGN_DETAIL: &'static str = "http://mobilelearn.chaoxing.com/newsign/signDetail";
+static SIGN_DETAIL: &'static str = "https://mobilelearn.chaoxing.com/newsign/signDetail";
 pub async fn sign_detail(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     let r = client
         .get(String::from(SIGN_DETAIL) + "?activePrimaryId=" + active_id + "&type=1")
@@ -221,7 +221,7 @@ pub async fn back_clazz_data(client: &Client) -> Result<Response, reqwest::Error
 }
 // 查询活动 1
 static ACTIVE_LIST: &'static str =
-    "http://mobilelearn.chaoxing.com/v2/apis/active/student/activelist";
+    "https://mobilelearn.chaoxing.com/v2/apis/active/student/activelist";
 pub async fn active_list(client: &Client, course: Course) -> Result<Response, reqwest::Error> {
     let url = {
         let mut url = String::from(ACTIVE_LIST);
@@ -243,20 +243,20 @@ pub async fn active_list(client: &Client, course: Course) -> Result<Response, re
 }
 // 查询活动 2
 static TASK_ACTIVE_LIST: &'static str =
-    "http://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist";
+    "https://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist";
 // 账号设置页
 static ACCOUNT_MANAGE: &'static str = "http://passport2.chaoxing.com/mooc/accountManage";
 pub async fn account_manage(client: &Client) -> Result<Response, reqwest::Error> {
     Ok(client.get(ACCOUNT_MANAGE).send().await?)
 }
 // 超星网盘页
-static PAN_CHAOXING: &'static str = "http://pan-yz.chaoxing.com";
+static PAN_CHAOXING: &'static str = "https://pan-yz.chaoxing.com";
 pub async fn pan_chaoxing(client: &Client) -> Result<Response, reqwest::Error> {
     let url = PAN_CHAOXING;
     Ok(client.get(url).send().await?)
 }
 // 网盘列表
-static PAN_LIST: &'static str = "http://pan-yz.chaoxing.com/opt/listres";
+static PAN_LIST: &'static str = "https://pan-yz.chaoxing.com/opt/listres";
 pub async fn pan_list(
     client: &Client,
     parent_id: &str,
@@ -267,12 +267,12 @@ pub async fn pan_list(
     Ok(client.post(url).send().await?)
 }
 // 获取超星云盘的 token
-static PAN_TOKEN: &'static str = "http://pan-yz.chaoxing.com/api/token/uservalid";
+static PAN_TOKEN: &'static str = "https://pan-yz.chaoxing.com/api/token/uservalid";
 pub async fn pan_token(client: &Client) -> Result<Response, reqwest::Error> {
     Ok(client.get(PAN_TOKEN).send().await?)
 }
 // 网盘上传接口
-static PAN_UPLOAD: &'static str = "http://pan-yz.chaoxing.com/upload";
+static PAN_UPLOAD: &'static str = "https://pan-yz.chaoxing.com/upload";
 pub async fn pan_upload(
     client: &Client,
     buffer: Vec<u8>,
@@ -289,9 +289,9 @@ pub async fn pan_upload(
     Ok(client.post(url).multipart(form_data).send().await?)
 }
 // web 聊天页
-static WEB_IM: &'static str = "http://im.chaoxing.com/webim/me";
+static WEB_IM: &'static str = "https://im.chaoxing.com/webim/me";
 // 无课程群聊的预签到
-static CHAT_GROUP_PRE_SIGN: &'static str = "http://mobilelearn.chaoxing.com/sign/preStuSign";
+static CHAT_GROUP_PRE_SIGN: &'static str = "https://mobilelearn.chaoxing.com/sign/preStuSign";
 pub async fn chat_group_pre_sign(
     client: &Client,
     active_id: &str,
@@ -305,7 +305,7 @@ pub async fn chat_group_pre_sign(
     Ok(r)
 }
 // 无课程群聊的签到
-static CHAT_GROUP_SIGN: &'static str = "http://mobilelearn.chaoxing.com/sign/stuSignajax";
+static CHAT_GROUP_SIGN: &'static str = "https://mobilelearn.chaoxing.com/sign/stuSignajax";
 pub async fn chat_group_general_sign(
     client: &Client,
     active_id: &str,
