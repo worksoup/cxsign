@@ -1,6 +1,7 @@
 use std::collections::{hash_map::OccupiedError, HashMap};
 
 use rxing::{Point, PointI, PointU};
+use screenshots::display_info::DisplayInfo;
 
 use crate::{activity::sign::SignActivity, session::SignSession, utils::inquire_confirm};
 
@@ -54,7 +55,7 @@ pub fn handle_qrcode_pic_path(pic_path: &str) -> String {
 }
 
 pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<String> {
-    fn find_max_rect(vertex: &Vec<Point>, scale: f32) -> (PointI, PointU) {
+    fn find_max_rect(vertex: &Vec<Point>, display_info: &DisplayInfo) -> (PointI, PointU) {
         let mut x_max = vertex[0].x;
         let mut x_min = x_max;
         let mut y_max = vertex[0].y;
@@ -73,11 +74,16 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
                 y_min = p.y
             }
         }
-        let lt = Point { x: x_min, y: y_min } / scale;
-        let rb = Point {
-            x: x_max + 1.0,
-            y: y_max + 1.0,
-        } / scale;
+        let lt = {
+            let x = x_min - 10.0;
+            let y = y_min - 10.0;
+            Point { x, y } / display_info.scale_factor
+        };
+        let rb = {
+            let x = x_max + 10.0;
+            let y = y_max + 10.0;
+            Point { x, y } / display_info.scale_factor
+        };
         let wh = rb - lt;
         (PointI::from(lt), PointU::from(wh))
     }
@@ -101,7 +107,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
     let screens = screenshots::Screen::all().unwrap();
     // 在所有屏幕中寻找。
     for screen in screens {
-        let scale_factor = screen.display_info.scale_factor;
+        let display_info = screen.display_info;
         // 先截取整个屏幕。
         let image = screen.capture().unwrap();
         // 如果成功识别到二维码。
@@ -115,7 +121,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<Stri
                     if is_refresh {
                         // 获取二维码在屏幕上的位置。
                         let pos = r.getPoints();
-                        let pos = find_max_rect(pos, scale_factor);
+                        let pos = find_max_rect(pos, &display_info);
                         // 等待二维码刷新。
                         if inquire_confirm("二维码图片是否就绪？","本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
                             println!("二维码位置：{pos:?}");
