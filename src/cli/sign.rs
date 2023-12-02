@@ -53,7 +53,6 @@ pub async fn qrcode_sign_<'a>(
     enc: &str,
     poss: &Vec<Address>,
     sessions: &'a Vec<&SignSession>,
-    no_random_shift: bool,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
@@ -64,7 +63,6 @@ pub async fn qrcode_sign_<'a>(
             enc,
             poss,
             session,
-            no_random_shift,
         ));
     }
     while let Some(tmp) = tasks.next().await {

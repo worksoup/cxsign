@@ -129,7 +129,6 @@ async fn handle_account_sign<'a>(
                 db: &DataBase,
                 pos: &Option<String>,
                 sessions: &'a Vec<&SignSession>,
-                no_random_shift: bool,
             ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
                 let poss = location_and_pos_to_poss(sign, db, location, pos).await;
                 let mut states = HashMap::new();
@@ -144,7 +143,6 @@ async fn handle_account_sign<'a>(
                                 &enc,
                                 &poss,
                                 sessions,
-                                no_random_shift,
                             )
                             .await?;
                         } else {
@@ -158,7 +156,6 @@ async fn handle_account_sign<'a>(
                             &enc,
                             &poss,
                             sessions,
-                            no_random_shift,
                         )
                         .await?;
                     }
@@ -178,17 +175,13 @@ async fn handle_account_sign<'a>(
                         &enc,
                         &poss,
                         sessions,
-                        no_random_shift,
                     )
                     .await?;
                 } else {
-                    states =
-                        try_by_pic_arg(sign, pic, location, db, pos, sessions, no_random_shift)
-                            .await?;
+                    states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
                 }
             } else {
-                states =
-                    try_by_pic_arg(sign, pic, location, db, pos, sessions, no_random_shift).await?;
+                states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
             }
         }
         SignType::Location => {

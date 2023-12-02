@@ -38,7 +38,6 @@ pub async fn qrcode_sign_single<'a>(
     enc: &str,
     poss: &Vec<Address>,
     session: &'a SignSession,
-    no_random_shift: bool,
 ) -> Result<(&'a str, SignState), reqwest::Error> {
     Ok((
         session.get_stu_name(),
