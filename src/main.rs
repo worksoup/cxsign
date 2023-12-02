@@ -58,11 +58,11 @@ async fn main() {
                             db.delete_account(&uname);
                             utils::account::add_account_enc(&db, uname, enc_pwd).await;
                         }
-                    } else {
-                        // 列出所有账号。
-                        for a in accounts {
-                            println!("{}, {}", a.0, a.1 .1);
-                        }
+                    }
+                    // 列出所有账号。
+                    let accounts = db.get_accounts();
+                    for a in accounts {
+                        println!("{}, {}", a.0, a.1 .1);
                     }
                 }
             }
