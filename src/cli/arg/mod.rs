@@ -112,10 +112,12 @@ pub enum PosCmds {
     /// 删除位置。
     Remove {
         /// 位置 ID.
-        posid: i64,
+        posid: Option<i64>,
         /// 无需确认直接删除。
         #[arg(short, long)]
         yes: bool,
+        #[arg(short, long)]
+        all: bool,
     },
     /// 导入位置。
     Import {

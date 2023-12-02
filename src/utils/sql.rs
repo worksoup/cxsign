@@ -246,6 +246,9 @@ impl DataBase {
             .execute("DELETE FROM pos WHERE posid=".to_string() + posid.to_string().as_str() + ";")
             .unwrap();
     }
+    pub fn delete_all_pos(&self) {
+        self.connection.execute("DELETE FROM pos;").unwrap();
+    }
     fn create_table_pos(&self) {
         if !self.has_table_pos() {
             self.connection.execute(Self::CREATE_POS_SQL).unwrap();

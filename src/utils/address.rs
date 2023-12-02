@@ -20,7 +20,7 @@ impl Address {
             Err("位置信息格式错误！格式为：`addr,lon,lat,alt`.")
         }
     }
-    pub fn new(address: &str, lat: &str, lon: &str, altitude: &str) -> Address {
+    pub fn new(address: &str, lon: &str, lat: &str, altitude: &str) -> Address {
         Address {
             address: address.into(),
             lat: lat.into(),

@@ -113,7 +113,7 @@ async fn main() {
                                 &Address::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e)),
                             )
                         }
-                        PosCmds::Remove { posid, yes } => {
+                        PosCmds::Remove { posid, yes, all } => {
                             if !yes {
                                 let ans = inquire::Confirm::new("是否删除？")
                                     .with_default(false)
@@ -123,8 +123,21 @@ async fn main() {
                                     return;
                                 }
                             }
-                            // 删除指定位置。
-                            db.delete_pos(posid);
+                            if all {
+                                if !yes {
+                                    let ans = inquire::Confirm::new("请再次确认，是否删除？")
+                                        .with_default(false)
+                                        .prompt()
+                                        .unwrap();
+                                    if !ans {
+                                        return;
+                                    }
+                                }
+                                db.delete_all_pos();
+                            } else {
+                                // 删除指定位置。
+                                db.delete_pos(posid.expect("请提供要删除位置的 posid!"));
+                            }
                         }
                         PosCmds::Export { output } => {
                             // 列出所有位置。
@@ -142,21 +155,23 @@ async fn main() {
                             let contents = contents.split('\n');
                             let mut line_count = 1_i64;
                             for line in contents {
-                                let data: Vec<&str> = line.split('$').collect();
-                                if data.len() > 1 {
-                                    let mut course_id = -1_i64;
-                                    if let Ok(id) = data[0].trim().parse::<i64>() {
-                                        course_id = id;
+                                if !line.is_empty() {
+                                    let data: Vec<&str> = line.split('$').collect();
+                                    if data.len() > 1 {
+                                        let mut course_id = -1_i64;
+                                        if let Ok(id) = data[0].trim().parse::<i64>() {
+                                            course_id = id;
+                                        } else {
+                                            eprintln!("警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！");
+                                        }
+                                        if let Ok(pos) = Address::parse_str(data[1]) {
+                                            add_pos(&db, course_id, &pos)
+                                        } else {
+                                            eprintln!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `addr,lon,lat,alt`");
+                                        }
                                     } else {
-                                        eprintln!("警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！");
+                                        eprintln!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
                                     }
-                                    if let Ok(pos) = Address::parse_str(data[1]) {
-                                        add_pos(&db, course_id, &pos)
-                                    } else {
-                                        eprintln!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `addr,lon,lat,alt`");
-                                    }
-                                } else {
-                                    eprintln!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
                                 }
                                 line_count += 1;
                             }
