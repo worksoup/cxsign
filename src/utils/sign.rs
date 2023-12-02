@@ -39,6 +39,7 @@ pub async fn get_signs(
     }
     (asigns, osigns)
 }
+
 fn handle_qrcode_url(url: &str) -> String {
     let beg = url.find("&enc=").unwrap();
     let enc = &url[beg + 5..beg + 37];
@@ -49,93 +50,104 @@ fn handle_qrcode_url(url: &str) -> String {
     // (c.to_owned(), enc.to_owned())
     enc.to_owned()
 }
+
 pub fn handle_qrcode_pic_path(pic_path: &str) -> String {
     let results = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
     handle_qrcode_url(results[0].getText())
 }
 
-pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool) -> Option<String> {
-    fn find_max_rect(vertex: &Vec<Point>, display_info: &DisplayInfo) -> (PointI, PointU) {
-        let mut x_max = vertex[0].x;
-        let mut x_min = x_max;
-        let mut y_max = vertex[0].y;
-        let mut y_min = y_max;
-        for p in vertex {
-            if p.x > x_max {
-                x_max = p.x
-            }
-            if p.y > y_max {
-                y_max = p.y
-            }
-            if p.x < x_min {
-                x_min = p.x
-            }
-            if p.y < y_min {
-                y_min = p.y
-            }
+fn find_max_rect(vertex: &Vec<Point>, display_info: &DisplayInfo) -> (PointI, PointU) {
+    let mut x_max = vertex[0].x;
+    let mut x_min = x_max;
+    let mut y_max = vertex[0].y;
+    let mut y_min = y_max;
+    for p in vertex {
+        if p.x > x_max {
+            x_max = p.x
         }
-        let lt = {
-            let x = x_min - 10.0;
-            let y = y_min - 10.0;
-            Point { x, y } / display_info.scale_factor
-        };
-        let rb = {
-            let x = x_max + 10.0;
-            let y = y_max + 10.0;
-            Point { x, y } / display_info.scale_factor
-        };
-        let wh = rb - lt;
-        (PointI::from(lt), PointU::from(wh))
+        if p.y > y_max {
+            y_max = p.y
+        }
+        if p.x < x_min {
+            x_min = p.x
+        }
+        if p.y < y_min {
+            y_min = p.y
+        }
     }
-    fn detect_multiple_in_image(
-        image: image::RgbaImage,
-        hints: &mut rxing::DecodingHintDictionary,
-    ) -> rxing::common::Result<Vec<rxing::RXingResult>> {
-        hints
-            .entry(rxing::DecodeHintType::TRY_HARDER)
-            .or_insert(rxing::DecodeHintValue::TryHarder(true));
-        let reader = rxing::MultiFormatReader::default();
-        let mut scanner = rxing::multi::GenericMultipleBarcodeReader::new(reader);
-        rxing::multi::MultipleBarcodeReader::decode_multiple_with_hints(
-            &mut scanner,
-            &mut rxing::BinaryBitmap::new(rxing::common::HybridBinarizer::new(
-                rxing::BufferedImageLuminanceSource::new(image::DynamicImage::ImageRgba8(image)),
-            )),
-            hints,
-        )
-    }
+    let lt = {
+        let x = x_min - 10.0;
+        let y = y_min - 10.0;
+        Point { x, y } / display_info.scale_factor
+    };
+    let rb = {
+        let x = x_max + 10.0;
+        let y = y_max + 10.0;
+        Point { x, y } / display_info.scale_factor
+    };
+    let wh = rb - lt;
+    (PointI::from(lt), PointU::from(wh))
+}
+
+fn detect_multiple_in_image(
+    image: image::RgbaImage,
+    hints: &mut rxing::DecodingHintDictionary,
+) -> rxing::common::Result<Vec<rxing::RXingResult>> {
+    hints
+        .entry(rxing::DecodeHintType::TRY_HARDER)
+        .or_insert(rxing::DecodeHintValue::TryHarder(true));
+    let reader = rxing::MultiFormatReader::default();
+    let mut scanner = rxing::multi::GenericMultipleBarcodeReader::new(reader);
+    rxing::multi::MultipleBarcodeReader::decode_multiple_with_hints(
+        &mut scanner,
+        &mut rxing::BinaryBitmap::new(rxing::common::HybridBinarizer::new(
+            rxing::BufferedImageLuminanceSource::new(image::DynamicImage::ImageRgba8(image)),
+        )),
+        hints,
+    )
+}
+
+pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool, precise: bool) -> Option<String> {
     let screens = screenshots::Screen::all().unwrap();
     // 在所有屏幕中寻找。
     for screen in screens {
+        if !precise && is_refresh {
+            if !inquire_confirm(
+                "二维码图片是否就绪？",
+                "本程序将在屏幕上寻找签到二维码，待二维码刷新后按下回车进行签到。",
+            ) {
+                return None;
+            }
+        }
         let display_info = screen.display_info;
         // 先截取整个屏幕。
         let image = screen.capture().unwrap();
         // 如果成功识别到二维码。
-        if let Ok(results) = detect_multiple_in_image(image, &mut HashMap::new()) {
-            // 在结果中寻找。
-            for r in &results {
-                let url = r.getText();
-                // 如果符合要求的二维码。
-                if url.contains(crate::utils::query::QRCODE_PAT) && url.contains("&enc=") {
-                    // 如果是定时刷新的二维码。
-                    if is_refresh {
-                        // 获取二维码在屏幕上的位置。
-                        let pos = r.getPoints();
-                        let pos = find_max_rect(pos, &display_info);
-                        // 等待二维码刷新。
-                        if inquire_confirm("二维码图片是否就绪？","本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
-                            println!("二维码位置：{pos:?}");
-                            let image = screen
-                                .capture_area(pos.0.x , pos.0.y  , pos.1.x, pos.1.y)
-                                .unwrap();
-                            let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
-                            return Some(handle_qrcode_url(results[0].getText()));
-                        }
-                    } else {
-                        // 如果不是定时刷新的二维码，则不需要提示。
-                        return Some(handle_qrcode_url(url));
-                    }
-                }
+        let results = detect_multiple_in_image(image, &mut HashMap::new());
+        if results.is_err() {
+            continue;
+        }
+        let results = unsafe { results.unwrap_unchecked() };
+        // 在结果中寻找。
+        for r in &results {
+            let url = r.getText();
+            // 如果符合要求的二维码。
+            if !url.contains(crate::utils::query::QRCODE_PAT) && url.contains("&enc=") {
+                continue;
+            }
+            if precise && is_refresh && inquire_confirm("二维码图片是否就绪？", "本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
+                // 如果是定时刷新的二维码，等待二维码刷新。
+                // 获取二维码在屏幕上的位置。
+                let pos = find_max_rect(r.getPoints(), &display_info);
+                println!("二维码位置：{pos:?}");
+                let image = screen
+                    .capture_area(pos.0.x, pos.0.y, pos.1.x, pos.1.y)
+                    .unwrap();
+                let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
+                return Some(handle_qrcode_url(results[0].getText()));
+            } else {
+                // 如果不是定时刷新的二维码，则不需要提示。
+                return Some(handle_qrcode_url(url));
             }
         }
     }

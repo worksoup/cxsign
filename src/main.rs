@@ -30,6 +30,7 @@ async fn main() {
         signcode,
         capture,
         no_random_shift,
+        precise,
     } = args;
     let db = DataBase::new();
     if let Some(sub) = command {
@@ -265,6 +266,7 @@ async fn main() {
             pic,
             signcode,
             capture,
+            precise,
             no_random_shift,
         )
         .await

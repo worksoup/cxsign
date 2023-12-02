@@ -57,13 +57,7 @@ pub async fn qrcode_sign_<'a>(
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::qrcode_sign_single(
-            sign,
-            c,
-            enc,
-            poss,
-            session,
-        ));
+        tasks.push(single_sign::qrcode_sign_single(sign, c, enc, poss, session));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;

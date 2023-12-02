@@ -83,6 +83,7 @@ async fn handle_account_sign<'a>(
     signcode: &Option<String>,
     sessions: &'a Vec<&SignSession>,
     capture: bool,
+    precise: bool,
     no_random_shift: bool,
 ) -> Result<(), reqwest::Error> {
     let sign_type = sign.get_sign_type();
@@ -167,7 +168,7 @@ async fn handle_account_sign<'a>(
 
             if capture {
                 if let Some(enc) =
-                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode())
+                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode(), precise)
                 {
                     states = sign::qrcode_sign_(
                         sign,
@@ -232,6 +233,7 @@ pub async fn sign(
     pic: Option<PathBuf>,
     signcode: Option<String>,
     capture: bool,
+    precise: bool,
     no_random_shift: bool,
 ) -> Result<(), reqwest::Error> {
     if let Some(active_id) = activity {
@@ -260,6 +262,7 @@ pub async fn sign(
             &signcode,
             full_sessions,
             capture,
+            precise,
             no_random_shift,
         )
         .await?;
@@ -279,6 +282,7 @@ pub async fn sign(
                 &signcode,
                 full_sessions,
                 capture,
+                precise,
                 no_random_shift,
             )
             .await?;

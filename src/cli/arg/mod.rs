@@ -33,6 +33,10 @@ pub struct Args {
     /// 二维码签到时需要提供。
     #[arg(short, long)]
     pub capture: bool,
+    /// 精确地截取二维码。
+    /// 如果二维码识别过慢可以尝试添加添加此选项。
+    #[arg(long)]
+    pub precise: bool,
     /// 签到码。
     /// 签到码签到时需要提供。
     #[arg(short, long)]
