@@ -167,6 +167,7 @@ impl DataBase {
     pub fn delete_all_course(&self) {
         let mut query = self.connection.prepare("DELETE FROM course;").unwrap();
         query.next().unwrap();
+        println!("已删除旧的课程信息。");
     }
     fn create_table_course(&self) {
         if !self.has_table_course() {
@@ -265,7 +266,7 @@ impl DataBase {
                 let lon = row.read("lon");
                 let alt = row.read("alt");
                 let courseid = row.read("courseid");
-                poss.insert(posid, (courseid, Address::new(addr, lat, lon, alt)));
+                poss.insert(posid, (courseid, Address::new(addr, lon, lat, alt)));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }
@@ -288,7 +289,7 @@ impl DataBase {
         let lon = row.read("lon");
         let alt = row.read("alt");
         let courseid = row.read("courseid");
-        (courseid, Address::new(addr, lat, lon, alt))
+        (courseid, Address::new(addr, lon, lat, alt))
     }
     pub fn get_course_poss(&self, course_id: i64) -> HashMap<i64, Address> {
         let mut query = self
@@ -304,7 +305,7 @@ impl DataBase {
                 let lat = row.read("lat");
                 let lon = row.read("lon");
                 let alt = row.read("alt");
-                poss.insert(posid, Address::new(addr, lat, lon, alt));
+                poss.insert(posid, Address::new(addr, lon, lat, alt));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }
@@ -324,7 +325,7 @@ impl DataBase {
                 let lat = row.read("lat");
                 let lon = row.read("lon");
                 let alt = row.read("alt");
-                poss.push(Address::new(addr, lat, lon, alt));
+                poss.push(Address::new(addr, lon, lat, alt));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }

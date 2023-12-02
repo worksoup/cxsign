@@ -183,14 +183,18 @@ impl SignActivity {
             let end_of_code = data.find('\'').unwrap();
             &data[0..end_of_code]
         };
+        #[cfg(debug_assertions)]
         println!("code: {code:?}");
         let response_of_analysis2 = utils::query::analysis2(session, code).await?;
+        #[cfg(debug_assertions)]
         println!(
             "analysis 结果：{}",
             response_of_analysis2.text().await.unwrap()
         );
         let presign_status = {
             let html = response_of_presign.text().await.unwrap();
+            #[cfg(debug_assertions)]
+            println!("预签到请求结果：{html}");
             if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
                 let html = &html[start_of_statuscontent_h1 + 19..html.len()];
                 let end_of_statuscontent_h1 = html.find('<').unwrap();
@@ -201,7 +205,7 @@ impl SignActivity {
                     SignState::Fail(statuscontent_h1_content.into())
                 }
             } else {
-                SignState::Fail("还未签到".into())
+                SignState::Fail(html.into())
             }
         };
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
@@ -212,7 +216,7 @@ impl SignActivity {
         let uid = session.get_uid();
         let response_of_presign =
             utils::query::pre_sign(session, self.course.clone(), active_id, uid).await?;
-        println!("预签到已请求。");
+        println!("用户[{}]预签到已请求。", session.get_stu_name());
         self.pre_sign_internal(active_id, session, response_of_presign)
             .await
     }
@@ -233,14 +237,14 @@ impl SignActivity {
             enc,
         )
         .await?;
-        println!("预签到已请求。");
+        println!("用户[{}]预签到已请求。", session.get_stu_name());
         self.pre_sign_internal(active_id, session, response_of_presign)
             .await
     }
     pub fn get_sign_type(&self) -> SignType {
         match self.other_id.parse::<u8>().unwrap_or_else(|e| {
-            println!("{}", self.other_id);
-            println!("{}", self.course.get_name());
+            eprintln!("{}", self.other_id);
+            eprintln!("{}", self.course.get_name());
             panic!("{e}")
         }) {
             0 => {

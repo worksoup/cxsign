@@ -47,26 +47,37 @@ pub async fn qrcode_sign_single<'a>(
                 .await?
         } {
             SignState::Success => SignState::Success,
-            SignState::Fail(_) => {
-                let mut state = SignState::Fail("所有位置均不可用".into());
-                for pos in poss {
-                    match sign.sign_by_qrcode(enc, pos, session).await? {
-                        r @ SignState::Success => {
-                            state = r;
-                            break;
-                        }
-                        SignState::Fail(msg) => {
-                            eprintln!(
-                                "用户[{}]在二维码签到[{}]中尝试位置[{:?}]时失败！失败信息：[{:?}]",
-                                session.get_stu_name(),
-                                sign.name,
-                                pos,
-                                msg
-                            );
-                        }
-                    };
+            SignState::Fail(msg) => {
+                let needed_pos = crate::utils::address::find_pos_needed_in_html(&msg);
+                if let Some(pos) = needed_pos {
+                    println!(
+                        "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用该位置签到。",
+                        session.get_stu_name(),
+                        pos.pos,
+                        pos.range
+                    );
+                    sign.sign_by_qrcode(enc, &pos.pos, session).await?
+                } else {
+                    let mut state = SignState::Fail("所有位置均不可用".into());
+                    for pos in poss {
+                        match sign.sign_by_qrcode(enc, pos, session).await? {
+                            r @ SignState::Success => {
+                                state = r;
+                                break;
+                            }
+                            SignState::Fail(msg) => {
+                                eprintln!(
+                                    "用户[{}]在二维码签到[{}]中尝试位置[{:?}]时失败！失败信息：[{:?}]",
+                                    session.get_stu_name(),
+                                    sign.name,
+                                    pos,
+                                    msg
+                                );
+                            }
+                        };
+                    }
+                    state
                 }
-                state
             }
         },
     ))
@@ -81,26 +92,37 @@ pub async fn location_sign_single<'a>(
         session.get_stu_name(),
         match sign.pre_sign(session).await? {
             SignState::Success => SignState::Success,
-            SignState::Fail(_) => {
-                let mut state = SignState::Fail("所有位置均不可用".into());
-                for pos in poss {
-                    match sign.sign_by_location(pos, session).await? {
-                        r @ SignState::Success => {
-                            state = r;
-                            break;
-                        }
-                        SignState::Fail(msg) => {
-                            eprintln!(
-                                "用户[{}]在位置签到[{}]中尝试位置[{:?}]时失败！失败信息：[{:?}]",
-                                session.get_stu_name(),
-                                sign.name,
-                                pos,
-                                msg
-                            );
-                        }
-                    };
+            SignState::Fail(msg) => {
+                let needed_pos = crate::utils::address::find_pos_needed_in_html(&msg);
+                if let Some(pos) = needed_pos {
+                    println!(
+                        "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用该位置签到。",
+                        session.get_stu_name(),
+                        pos.pos,
+                        pos.range
+                    );
+                    sign.sign_by_location(&pos.pos, session).await?
+                } else {
+                    let mut state = SignState::Fail("所有位置均不可用".into());
+                    for pos in poss {
+                        match sign.sign_by_location(pos, session).await? {
+                            r @ SignState::Success => {
+                                state = r;
+                                break;
+                            }
+                            SignState::Fail(msg) => {
+                                eprintln!(
+                                    "用户[{}]在位置签到[{}]中尝试位置[{:?}]时失败！失败信息：[{:?}]",
+                                    session.get_stu_name(),
+                                    sign.name,
+                                    pos,
+                                    msg
+                                );
+                            }
+                        };
+                    }
+                    state
                 }
-                state
             }
         },
     ))

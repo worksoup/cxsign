@@ -1,21 +1,20 @@
 #[derive(Debug)]
 pub struct Address {
     address: String,
-    lat: String,
     lon: String,
+    lat: String,
     altitude: String,
 }
-
+#[derive(Debug)]
+pub struct AddressRange {
+    pub pos: Address,
+    pub range: u32,
+}
 impl Address {
     pub fn parse_str(pos: &str) -> Result<Self, &str> {
         let pos: Vec<&str> = pos.split(',').map(|item| item.trim()).collect();
         if pos.len() == 4 {
-            Ok(Self::new(
-                pos[0].trim(),
-                pos[1].trim(),
-                pos[2].trim(),
-                pos[3].trim(),
-            ))
+            Ok(Self::new(pos[0], pos[1], pos[2], pos[3]))
         } else {
             Err("位置信息格式错误！格式为：`addr,lon,lat,alt`.")
         }
@@ -23,8 +22,8 @@ impl Address {
     pub fn new(address: &str, lon: &str, lat: &str, altitude: &str) -> Address {
         Address {
             address: address.into(),
-            lat: lat.into(),
             lon: lon.into(),
+            lat: lat.into(),
             altitude: altitude.into(),
         }
     }
@@ -67,4 +66,58 @@ pub fn add_pos(db: &super::sql::DataBase, course_id: i64, pos: &Address) {
         db.add_pos_or(posid, course_id, pos, |_, _, _, _| {});
         break;
     }
+}
+
+pub fn find_pos_needed_in_html(html: &str) -> Option<AddressRange> {
+    let p = vec![
+        "id=\"locationText\"",
+        "id=\"locationLongitude\"",
+        "id=\"locationLatitude\"",
+        "id=\"locationRange\"",
+    ];
+    let mut start = vec![None, None, None, None];
+    let mut results1 = Vec::new();
+    for i in 0..4 {
+        let s = html.find(p[i]);
+        start[i] = s;
+        if let Some(s) = s {
+            let r = &html[s + p[i].len()..html.len()];
+            results1.push(r);
+        } else {
+            return None;
+        }
+    }
+    let mut results2 = Vec::new();
+    for r in &results1 {
+        let s = r.find("value=\"");
+        if let Some(s) = s {
+            let r = &r[s + 7..r.len()];
+            results2.push(r);
+        } else {
+            return None;
+        }
+    }
+    let mut results3 = Vec::new();
+    for r in &results2 {
+        let e = r.find("\"");
+        if let Some(e) = e {
+            let r = &r[0..e];
+            results3.push(r);
+        } else {
+            return None;
+        }
+    }
+    Some(AddressRange {
+        pos: Address {
+            address: results3[0].to_owned(),
+            lon: results3[1].to_owned(),
+            lat: results3[2].to_owned(),
+            altitude: "1108".to_string(),
+        },
+        range: if let Ok(s) = results3[3].trim_end_matches('米').parse() {
+            s
+        } else {
+            return None;
+        },
+    })
 }

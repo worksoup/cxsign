@@ -114,29 +114,37 @@ async fn main() {
                             )
                         }
                         PosCmds::Remove { posid, yes, all } => {
-                            if !yes {
-                                let ans = inquire::Confirm::new("是否删除？")
+                            fn confirm(msg: &str) -> bool {
+                                inquire::Confirm::new(msg)
                                     .with_default(false)
                                     .prompt()
-                                    .unwrap();
-                                if !ans {
-                                    return;
-                                }
+                                    .unwrap()
                             }
-                            if all {
+                            if let Some(posid) = posid {
                                 if !yes {
-                                    let ans = inquire::Confirm::new("请再次确认，是否删除？")
-                                        .with_default(false)
-                                        .prompt()
-                                        .unwrap();
+                                    let ans = confirm("是否删除？");
+                                    if !ans {
+                                        return;
+                                    }
+                                }
+                                // 删除指定位置。
+                                db.delete_pos(posid);
+                            } else if all {
+                                if !yes {
+                                    let ans = confirm("是否删除？");
+                                    if !ans {
+                                        return;
+                                    }
+                                }
+                                if !yes {
+                                    let ans = confirm("请再次确认，是否删除？");
                                     if !ans {
                                         return;
                                     }
                                 }
                                 db.delete_all_pos();
                             } else {
-                                // 删除指定位置。
-                                db.delete_pos(posid.expect("请提供要删除位置的 posid!"));
+                                panic!("请提供要删除位置的 posid!")
                             }
                         }
                         PosCmds::Export { output } => {

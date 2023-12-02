@@ -74,7 +74,8 @@ pub fn encrypto_pwd(pwd: &str) -> String {
             *item = (8 - m) as u8;
         }
         r.push(b);
-        println!("{r:?}");
+        // #[cfg(debug_assertions)]
+        // println!("{r:?}");
         r
     }
     let key = b"u2oh6Vu^".to_owned();

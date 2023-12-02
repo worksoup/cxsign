@@ -21,22 +21,17 @@ pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
     let pic = if let Ok(pic_dir) = std::fs::read_dir(picdir) {
         let mut files: Vec<DirEntry> = pic_dir
             .filter_map(|k| {
-                if let Ok(k) = k {
-                    if let Ok(t) = k.file_type() {
-                        if t.is_file() {
-                            let name = k.file_name();
-                            let ext = name.to_str().unwrap().split('.').last().unwrap();
-                            if ext == "png" || ext == "jpg" {
-                                Some(k)
-                            } else {
-                                None
-                            }
-                        } else {
-                            None
+                let r = k.as_ref().is_ok_and(|k| {
+                    k.file_type().is_ok_and(|t| {
+                        t.is_file() && {
+                            let file_name = k.file_name();
+                            let ext = file_name.to_str().unwrap().split('.').last().unwrap();
+                            ext == "png" || ext == "jpg"
                         }
-                    } else {
-                        None
-                    }
+                    })
+                });
+                if r {
+                    Some(unsafe { k.unwrap_unchecked() })
                 } else {
                     None
                 }

@@ -65,6 +65,7 @@ impl SignSession {
             .build()
             .unwrap();
         let stu_name = Self::get_stu_name_(&client).await?;
+        println!("用户[{stu_name}]加载 Cookies 成功！");
         Ok(SignSession {
             client,
             stu_name,
@@ -115,12 +116,7 @@ impl SignSession {
         if let Some(msg2) = msg2 {
             mes.push(msg2);
         }
-        if status {
-            for mes in mes {
-                println!("{mes:?}");
-            }
-            println!("登录成功！");
-        } else {
+        if !status {
             for mes in mes {
                 eprintln!("{mes:?}");
             }
@@ -145,6 +141,7 @@ impl SignSession {
         };
         let cookies = UserCookies::new(store);
         let stu_name = Self::get_stu_name_(&client).await?;
+        println!("用户[{stu_name}]登录成功！");
         Ok(SignSession {
             client,
             stu_name,
@@ -171,12 +168,14 @@ impl SignSession {
                 }
             }
         }
+        println!("用户[{}]已获取课程列表。", self.stu_name);
         Ok(arr)
     }
     async fn get_stu_name_(client: &Client) -> Result<String, reqwest::Error> {
         let r = utils::query::account_manage(client).await?;
         let html_content = r.text().await?;
-        // println!("{html_content}");
+        #[cfg(debug_assertions)]
+        println!("{html_content}");
         let e = html_content.find("colorBlue").unwrap();
         let html_content = html_content.index(e..html_content.len()).to_owned();
         let e = html_content.find('>').unwrap() + 1;
@@ -217,11 +216,11 @@ impl SignSession {
     pub async fn traverse_activities(
         &self,
     ) -> Result<(Vec<SignActivity>, Vec<SignActivity>, Vec<OtherActivity>), reqwest::Error> {
-        let courses = self.get_courses().await?;
         let mut available_sign_activities = Vec::new();
         let mut other_sign_activities = Vec::new();
         let mut other_activities = Vec::new();
         let mut tasks = FuturesUnordered::new();
+        let courses = self.get_courses().await?;
         for c in courses {
             tasks.push(Activity::from_course(self, c));
         }
