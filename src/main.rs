@@ -29,6 +29,7 @@ async fn main() {
         pic,
         signcode,
         capture,
+        no_random_shift,
     } = args;
     let db = DataBase::new();
     if let Some(sub) = command {
@@ -253,8 +254,18 @@ async fn main() {
         let sessions = utils::account::get_sessions(&db).await;
         let (asigns, osigns) = utils::sign::get_signs(&sessions).await;
         cli::sign(
-            &db, &sessions, asigns, osigns, activity, account, location, pos, pic, signcode,
+            &db,
+            &sessions,
+            asigns,
+            osigns,
+            activity,
+            account,
+            location,
+            pos,
+            pic,
+            signcode,
             capture,
+            no_random_shift,
         )
         .await
         .unwrap();

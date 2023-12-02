@@ -83,6 +83,7 @@ async fn handle_account_sign<'a>(
     signcode: &Option<String>,
     sessions: &'a Vec<&SignSession>,
     capture: bool,
+    no_random_shift: bool,
 ) -> Result<(), reqwest::Error> {
     let sign_type = sign.get_sign_type();
     let mut states = HashMap::new();
@@ -128,6 +129,7 @@ async fn handle_account_sign<'a>(
                 db: &DataBase,
                 pos: &Option<String>,
                 sessions: &'a Vec<&SignSession>,
+                no_random_shift: bool,
             ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
                 let poss = location_and_pos_to_poss(sign, db, location, pos).await;
                 let mut states = HashMap::new();
@@ -142,6 +144,7 @@ async fn handle_account_sign<'a>(
                                 &enc,
                                 &poss,
                                 sessions,
+                                no_random_shift,
                             )
                             .await?;
                         } else {
@@ -155,6 +158,7 @@ async fn handle_account_sign<'a>(
                             &enc,
                             &poss,
                             sessions,
+                            no_random_shift,
                         )
                         .await?;
                     }
@@ -174,18 +178,22 @@ async fn handle_account_sign<'a>(
                         &enc,
                         &poss,
                         sessions,
+                        no_random_shift,
                     )
                     .await?;
                 } else {
-                    states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
+                    states =
+                        try_by_pic_arg(sign, pic, location, db, pos, sessions, no_random_shift)
+                            .await?;
                 }
             } else {
-                states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
+                states =
+                    try_by_pic_arg(sign, pic, location, db, pos, sessions, no_random_shift).await?;
             }
         }
         SignType::Location => {
             let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            states = sign::location_sign_(sign, &poss, sessions).await?;
+            states = sign::location_sign_(sign, &poss, sessions, no_random_shift).await?;
         }
         SignType::Unknown => {
             eprintln!("签到活动[{}]为无效签到类型！", sign.name);
@@ -231,6 +239,7 @@ pub async fn sign(
     pic: Option<PathBuf>,
     signcode: Option<String>,
     capture: bool,
+    no_random_shift: bool,
 ) -> Result<(), reqwest::Error> {
     if let Some(active_id) = activity {
         let s1 = asigns.iter().find(|kv| kv.0.id == active_id.to_string());
@@ -258,6 +267,7 @@ pub async fn sign(
             &signcode,
             full_sessions,
             capture,
+            no_random_shift,
         )
         .await?;
     } else {
@@ -276,6 +286,7 @@ pub async fn sign(
                 &signcode,
                 full_sessions,
                 capture,
+                no_random_shift,
             )
             .await?;
         }

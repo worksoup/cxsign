@@ -37,6 +37,9 @@ pub struct Args {
     /// 签到码签到时需要提供。
     #[arg(short, long)]
     pub signcode: Option<String>,
+    /// 禁用位置随机偏移。
+    #[arg(short, long)]
+    pub no_random_shift: bool,
 }
 
 #[derive(Subcommand, Debug)]

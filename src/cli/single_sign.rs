@@ -1,4 +1,5 @@
 use crate::activity::sign::{SignActivity, SignState};
+use crate::utils::address::pos_rand_shift;
 use crate::{
     session::SignSession,
     utils::{address::Address, photo::Photo},
@@ -37,6 +38,7 @@ pub async fn qrcode_sign_single<'a>(
     enc: &str,
     poss: &Vec<Address>,
     session: &'a SignSession,
+    no_random_shift: bool,
 ) -> Result<(&'a str, SignState), reqwest::Error> {
     Ok((
         session.get_stu_name(),
@@ -51,12 +53,18 @@ pub async fn qrcode_sign_single<'a>(
                 let needed_pos = crate::utils::address::find_pos_needed_in_html(&msg);
                 if let Some(pos) = needed_pos {
                     println!(
-                        "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用该位置签到。",
+                        "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用随机偏移后的位置签到。",
                         session.get_stu_name(),
                         pos.pos,
                         pos.range
                     );
-                    sign.sign_by_qrcode(enc, &pos.pos, session).await?
+                    let pos = if no_random_shift {
+                        pos.pos
+                    } else {
+                        pos_rand_shift(pos)
+                    };
+                    println!("用户[{}]签到使用位置：{}.", session.get_stu_name(), pos);
+                    sign.sign_by_qrcode(enc, &pos, session).await?
                 } else {
                     let mut state = SignState::Fail("所有位置均不可用".into());
                     for pos in poss {
@@ -87,6 +95,7 @@ pub async fn location_sign_single<'a>(
     sign: &SignActivity,
     poss: &Vec<Address>,
     session: &'a SignSession,
+    no_random_shift: bool,
 ) -> Result<(&'a str, SignState), reqwest::Error> {
     Ok((
         session.get_stu_name(),
@@ -96,12 +105,18 @@ pub async fn location_sign_single<'a>(
                 let needed_pos = crate::utils::address::find_pos_needed_in_html(&msg);
                 if let Some(pos) = needed_pos {
                     println!(
-                        "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用该位置签到。",
+                        "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用随机偏移后的位置签到。",
                         session.get_stu_name(),
                         pos.pos,
                         pos.range
                     );
-                    sign.sign_by_location(&pos.pos, session).await?
+                    let pos = if no_random_shift {
+                        pos.pos
+                    } else {
+                        pos_rand_shift(pos)
+                    };
+                    println!("用户[{}]签到使用位置：{}.", session.get_stu_name(), pos);
+                    sign.sign_by_location(&pos, session).await?
                 } else {
                     let mut state = SignState::Fail("所有位置均不可用".into());
                     for pos in poss {

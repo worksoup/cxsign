@@ -1,11 +1,15 @@
-#[derive(Debug)]
+use std::f64::consts::PI;
+
+use rand::Rng;
+
+#[derive(Debug, Clone)]
 pub struct Address {
     address: String,
     lon: String,
     lat: String,
     altitude: String,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AddressRange {
     pub pos: Address,
     pub range: u32,
@@ -120,4 +124,36 @@ pub fn find_pos_needed_in_html(html: &str) -> Option<AddressRange> {
             return None;
         },
     })
+}
+
+pub fn pos_rand_shift(pos: AddressRange) -> Address {
+    const R: f64 = 6371393.0;
+    let AddressRange {
+        pos:
+            Address {
+                address,
+                lon,
+                lat,
+                altitude,
+            },
+        range,
+    } = pos;
+    let range_f64 = range as f64;
+    let lat: f64 = lat.parse().unwrap();
+    let lon: f64 = lon.parse().unwrap();
+    let lat = lat * PI / 180.0;
+    let lon = lon * PI / 180.0;
+    let mut r = rand::thread_rng().gen_range(0..range * 3) as f64 / range_f64 / 3.0;
+    let theta = rand::thread_rng().gen_range(0..360) as f64 * PI / 180.0;
+    r = range_f64 / R / (1.0 - theta.cos().powi(2) * lat.sin().powi(2)).sqrt() * r;
+    let lat = (lat + r * theta.sin()) / PI * 180.0;
+    let lon = (lon + r * theta.cos()) / PI * 180.0;
+    let lat = format!("{lat:.6}");
+    let lon = format!("{lon:.6}");
+    Address {
+        address,
+        lon,
+        lat,
+        altitude,
+    }
 }

@@ -53,11 +53,19 @@ pub async fn qrcode_sign_<'a>(
     enc: &str,
     poss: &Vec<Address>,
     sessions: &'a Vec<&SignSession>,
+    no_random_shift: bool,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::qrcode_sign_single(sign, c, enc, poss, session));
+        tasks.push(single_sign::qrcode_sign_single(
+            sign,
+            c,
+            enc,
+            poss,
+            session,
+            no_random_shift,
+        ));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;
@@ -70,11 +78,17 @@ pub async fn location_sign_<'a>(
     sign: &SignActivity,
     poss: &Vec<Address>,
     sessions: &'a Vec<&SignSession>,
+    no_random_shift: bool,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::location_sign_single(sign, poss, session));
+        tasks.push(single_sign::location_sign_single(
+            sign,
+            poss,
+            session,
+            no_random_shift,
+        ));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;
