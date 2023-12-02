@@ -4,6 +4,7 @@
 #![feature(async_closure)]
 #![feature(hash_set_entry)]
 #![feature(map_try_insert)]
+#![feature(let_chains)]
 
 mod activity;
 mod cli;

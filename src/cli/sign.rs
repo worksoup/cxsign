@@ -69,6 +69,7 @@ pub async fn qrcode_sign_<'a>(
 pub async fn location_sign_<'a>(
     sign: &SignActivity,
     poss: &Vec<Address>,
+    auto_fetch_pos: bool,
     sessions: &'a Vec<&SignSession>,
     no_random_shift: bool,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
@@ -78,6 +79,7 @@ pub async fn location_sign_<'a>(
         tasks.push(single_sign::location_sign_single(
             sign,
             poss,
+            auto_fetch_pos,
             session,
             no_random_shift,
         ));

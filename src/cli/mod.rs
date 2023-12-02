@@ -57,22 +57,62 @@ pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
     pic
 }
 async fn location_and_pos_to_poss(
-    sign: &SignActivity,
     db: &DataBase,
     location: Option<i64>,
     pos: &Option<String>,
-) -> Vec<Address> {
+) -> Option<Address> {
     if let Some(ref pos) = pos {
-        vec![Address::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e))]
+        Some(Address::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e)))
     } else if let Some(addr) = location {
         let poss = db.get_pos(addr);
-        vec![poss.1]
+        Some(poss.1)
+    } else {
+        None
+    }
+}
+
+async fn qrcode_sign_by_pic_arg<'a>(
+    sign: &SignActivity,
+    pic: &Option<PathBuf>,
+    location: Option<i64>,
+    db: &DataBase,
+    pos: &Option<String>,
+    sessions: &'a Vec<&SignSession>,
+) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
+    fn print_err_msg(sign: &SignActivity) {
+        eprintln!(
+            "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
+            sign.name
+        );
+    }
+    let poss = if let Some(pos) = location_and_pos_to_poss(db, location, pos).await {
+        vec![pos]
     } else {
         let mut poss = db.get_course_poss_without_posid(sign.course.get_id());
         let mut other = db.get_course_poss_without_posid(-1);
         poss.append(&mut other);
         poss
-    }
+    };
+    let mut states = HashMap::new();
+    if let Some(pic) = pic {
+        if std::fs::metadata(pic).unwrap().is_dir() {
+            if let Some(pic) = picdir_to_pic(pic) {
+                let enc = crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
+                states =
+                    sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
+                        .await?;
+            } else {
+                print_err_msg(sign);
+            }
+        } else {
+            let enc = crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
+            states = sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
+                .await?;
+        }
+    } else {
+        print_err_msg(sign);
+    };
+    Ok(states)
 }
 async fn handle_account_sign<'a>(
     sign: &SignActivity,
@@ -116,61 +156,16 @@ async fn handle_account_sign<'a>(
             states = sign::general_sign_(sign, sessions).await?;
         }
         SignType::QrCode => {
-            let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            fn print_err_msg(sign: &SignActivity) {
-                eprintln!(
-                    "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
-                    sign.name
-                );
-            }
-            async fn try_by_pic_arg<'a>(
-                sign: &SignActivity,
-                pic: &Option<PathBuf>,
-                location: Option<i64>,
-                db: &DataBase,
-                pos: &Option<String>,
-                sessions: &'a Vec<&SignSession>,
-            ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-                let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-                let mut states = HashMap::new();
-                if let Some(pic) = pic {
-                    if std::fs::metadata(pic).unwrap().is_dir() {
-                        if let Some(pic) = picdir_to_pic(pic) {
-                            let enc =
-                                crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
-                            states = sign::qrcode_sign_(
-                                sign,
-                                sign.get_c_of_qrcode_sign(),
-                                &enc,
-                                &poss,
-                                sessions,
-                            )
-                            .await?;
-                        } else {
-                            print_err_msg(sign);
-                        }
-                    } else {
-                        let enc = crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
-                        states = sign::qrcode_sign_(
-                            sign,
-                            sign.get_c_of_qrcode_sign(),
-                            &enc,
-                            &poss,
-                            sessions,
-                        )
-                        .await?;
-                    }
-                } else {
-                    print_err_msg(sign);
-                };
-                Ok(states)
-            }
-
-            if capture {
-                if let Some(enc) =
-                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode(), precise)
-                {
-                    states = sign::qrcode_sign_(
+            let poss = if let Some(pos) = location_and_pos_to_poss(db, location, pos).await {
+                vec![pos]
+            } else {
+                let mut poss = db.get_course_poss_without_posid(sign.course.get_id());
+                let mut other = db.get_course_poss_without_posid(-1);
+                poss.append(&mut other);
+                poss
+            };
+            if capture && let Some(enc) = get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode(), precise) {
+                states = sign::qrcode_sign_(
                         sign,
                         sign.get_c_of_qrcode_sign(),
                         &enc,
@@ -178,16 +173,20 @@ async fn handle_account_sign<'a>(
                         sessions,
                     )
                     .await?;
-                } else {
-                    states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
-                }
             } else {
-                states = try_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
+                states = qrcode_sign_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
             }
         }
         SignType::Location => {
-            let poss = location_and_pos_to_poss(sign, db, location, pos).await;
-            states = sign::location_sign_(sign, &poss, sessions, no_random_shift).await?;
+            if let Some(pos) = location_and_pos_to_poss(db, location, pos).await {
+                states = sign::location_sign_(sign, &vec![pos], false, sessions, no_random_shift)
+                    .await?;
+            } else {
+                let mut poss = db.get_course_poss_without_posid(sign.course.get_id());
+                let mut other = db.get_course_poss_without_posid(-1);
+                poss.append(&mut other);
+                states = sign::location_sign_(sign, &poss, true, sessions, no_random_shift).await?;
+            };
         }
         SignType::Unknown => {
             eprintln!("签到活动[{}]为无效签到类型！", sign.name);

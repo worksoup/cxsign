@@ -76,6 +76,7 @@ pub async fn qrcode_sign_single<'a>(
 pub async fn location_sign_single<'a>(
     sign: &SignActivity,
     poss: &Vec<Address>,
+    auto_fetch_pos: bool,
     session: &'a SignSession,
     no_random_shift: bool,
 ) -> Result<(&'a str, SignState), reqwest::Error> {
@@ -84,8 +85,7 @@ pub async fn location_sign_single<'a>(
         match sign.pre_sign(session).await? {
             SignState::Success => SignState::Success,
             SignState::Fail(msg) => {
-                let needed_pos = crate::utils::address::find_pos_needed_in_html(&msg);
-                if let Some(pos) = needed_pos {
+                if auto_fetch_pos && let Some(pos) = crate::utils::address::find_pos_needed_in_html(&msg) {
                     println!(
                         "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用随机偏移后的位置签到。",
                         session.get_stu_name(),
