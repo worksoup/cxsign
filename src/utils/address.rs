@@ -7,14 +7,18 @@ pub struct Address {
 }
 
 impl Address {
-    pub fn parse_str(pos: &str) -> Self {
+    pub fn parse_str(pos: &str) -> Result<Self, &str> {
         let pos: Vec<&str> = pos.split(',').map(|item| item.trim()).collect();
-        assert_eq!(
-            pos.len(),
-            4,
-            "位置信息格式错误！格式为：`addr,lon,lat,alt`."
-        );
-        Self::new(pos[0], pos[1], pos[2], pos[3])
+        if pos.len() == 4 {
+            Ok(Self::new(
+                pos[0].trim(),
+                pos[1].trim(),
+                pos[2].trim(),
+                pos[3].trim(),
+            ))
+        } else {
+            Err("位置信息格式错误！格式为：`addr,lon,lat,alt`.")
+        }
     }
     pub fn new(address: &str, lat: &str, lon: &str, altitude: &str) -> Address {
         Address {
@@ -39,5 +43,28 @@ impl Address {
     /// 海拔。
     pub fn get_alt(&self) -> &str {
         &self.altitude
+    }
+}
+
+impl std::fmt::Display for Address {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{},{},{},{}",
+            self.address, self.lon, self.lat, self.altitude
+        )
+    }
+}
+
+pub fn add_pos(db: &super::sql::DataBase, course_id: i64, pos: &Address) {
+    // 为指定课程添加位置。
+    let mut posid = 0_i64;
+    loop {
+        if db.has_pos(posid) {
+            posid += 1;
+            continue;
+        }
+        db.add_pos_or(posid, course_id, pos, |_, _, _, _| {});
+        break;
     }
 }

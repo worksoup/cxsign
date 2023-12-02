@@ -1,3 +1,4 @@
+pub mod arg;
 mod sign;
 mod single_sign;
 
@@ -67,7 +68,7 @@ async fn location_and_pos_to_poss(
     pos: &Option<String>,
 ) -> Vec<Address> {
     if let Some(ref pos) = pos {
-        vec![Address::parse_str(pos)]
+        vec![Address::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e))]
     } else if let Some(addr) = location {
         let poss = db.get_pos(addr);
         vec![poss.1]

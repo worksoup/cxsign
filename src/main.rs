@@ -10,13 +10,16 @@ mod cli;
 mod session;
 mod utils;
 
-use clap::{Parser, Subcommand};
-use std::{ops::Deref, path::PathBuf};
-use utils::{address::Address, sql::DataBase, CONFIG_DIR};
+use cli::arg::{AccCmds, Args, MainCmds, PosCmds};
+use utils::{
+    address::{add_pos, Address},
+    sql::DataBase,
+    CONFIG_DIR,
+};
 
 #[tokio::main]
 async fn main() {
-    let args = Args::parse();
+    let args = <Args as clap::Parser>::parse();
     let Args {
         command,
         activity,
@@ -92,45 +95,23 @@ async fn main() {
                 if let Some(pos_sub) = command {
                     match pos_sub {
                         PosCmds::Add { course, pos } => {
-                            if let Some(course_id) = course {
-                                if course_id < 0 {
-                                    eprintln!("警告：课程号小于 0! 请检查是否正确！");
-                                    if course_id == -1 {
+                            let mut course_id = -1_i64;
+                            if let Some(id) = course {
+                                if id < 0 {
+                                    if id == -1 {
                                         eprintln!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
+                                    } else {
+                                        panic!("警告：课程号小于 0! 请检查是否正确！");
                                     }
-                                }
-                                // 为指定课程添加位置。
-                                let mut posid = 0_i64;
-                                loop {
-                                    if db.has_pos(posid) {
-                                        posid += 1;
-                                        continue;
-                                    }
-                                    db.add_pos_or(
-                                        posid,
-                                        course_id,
-                                        &Address::parse_str(&pos),
-                                        |_, _, _, _| {},
-                                    );
-                                    break;
-                                }
-                            } else {
-                                // 添加全局位置。
-                                let mut posid = 0_i64;
-                                loop {
-                                    if db.has_pos(posid) {
-                                        posid += 1;
-                                        continue;
-                                    }
-                                    db.add_pos_or(
-                                        posid,
-                                        -1,
-                                        &Address::parse_str(&pos),
-                                        |_, _, _, _| {},
-                                    );
-                                    break;
+                                } else {
+                                    course_id = id;
                                 }
                             }
+                            add_pos(
+                                &db,
+                                course_id,
+                                &Address::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e)),
+                            )
                         }
                         PosCmds::Remove { posid, yes } => {
                             if !yes {
@@ -144,6 +125,41 @@ async fn main() {
                             }
                             // 删除指定位置。
                             db.delete_pos(posid);
+                        }
+                        PosCmds::Export { output } => {
+                            // 列出所有位置。
+                            let poss = db.get_poss();
+                            let mut contents = String::new();
+                            for pos in poss.values() {
+                                contents += format!("{}${}\n", pos.0, pos.1).as_str()
+                            }
+                            std::fs::write(output, contents)
+                                .expect("文件写入出错，请检查路径是否正确！");
+                        }
+                        PosCmds::Import { input } => {
+                            let contents = std::fs::read_to_string(input)
+                                .expect("文件读取失败，请检查路径是否正确！");
+                            let contents = contents.split('\n');
+                            let mut line_count = 1_i64;
+                            for line in contents {
+                                let data: Vec<&str> = line.split('$').collect();
+                                if data.len() > 1 {
+                                    let mut course_id = -1_i64;
+                                    if let Ok(id) = data[0].trim().parse::<i64>() {
+                                        course_id = id;
+                                    } else {
+                                        eprintln!("警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！");
+                                    }
+                                    if let Ok(pos) = Address::parse_str(data[1]) {
+                                        add_pos(&db, course_id, &pos)
+                                    } else {
+                                        eprintln!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `addr,lon,lat,alt`");
+                                    }
+                                } else {
+                                    eprintln!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
+                                }
+                                line_count += 1;
+                            }
                         }
                     }
                 } else if global {
@@ -168,7 +184,7 @@ async fn main() {
                     let poss = db.get_poss();
                     for pos in poss {
                         println!(
-                            "posid: {}, course_id: {}, addr: {:?}",
+                            "posid: {}, course_id: {}, addr: {}",
                             pos.0, pos.1 .0, pos.1 .1
                         )
                     }
@@ -207,7 +223,7 @@ async fn main() {
                 }
             }
             MainCmds::WhereIsConfig => {
-                println!("{:?}", CONFIG_DIR.deref());
+                println!("{:?}", std::ops::Deref::deref(&CONFIG_DIR));
             }
         }
     } else {
@@ -221,123 +237,4 @@ async fn main() {
         .unwrap();
     }
     utils::print_now();
-}
-
-#[derive(Parser, Debug)]
-#[command(author, version, about = "进行签到。", long_about = None)]
-struct Args {
-    #[command(subcommand)]
-    command: Option<MainCmds>,
-    /// 签到 ID.
-    /// 默认以最近起对所有有效签到顺序进行签到，且缺少参数时会跳过并继续。
-    activity: Option<i64>,
-    /// 签到账号。
-    /// 默认以一定顺序对所有用户进行签到。
-    #[arg(short, long)]
-    account: Option<String>,
-    /// 位置 ID.
-    /// 位置签到或二维码位置签到时需要提供。
-    /// 也可以通过 `--pos` 选项直接指定位置，此时本选项将失效。
-    /// 默认按照先课程位置后全局位置的顺序依次尝试。
-    #[arg(short, long)]
-    location: Option<i64>,
-    /// 通过地址名称、经纬度与海拔直接指定位置。
-    /// 位置签到或二维码位置签到时需要提供。
-    /// 格式为：`addr,lon,lat,alt`.
-    #[arg(long)]
-    pos: Option<String>,
-    /// 本地图片路径。
-    /// 拍照或二维码签到时需要提供。
-    /// 如果是文件，则直接使用该文件作为拍照签到图片或二维码图片文件。
-    /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
-    #[arg(short, long)]
-    pic: Option<PathBuf>,
-    /// 从屏幕上获取二维码。
-    /// 二维码签到时需要提供。
-    #[arg(short, long)]
-    capture: bool,
-    /// 签到码。
-    /// 签到码签到时需要提供。
-    #[arg(short, long)]
-    signcode: Option<String>,
-}
-
-#[derive(Subcommand, Debug)]
-enum MainCmds {
-    /// 账号相关操作（列出、添加、删除）。
-    /// 默认列出所有账号。
-    Account {
-        #[command(subcommand)]
-        command: Option<AccCmds>,
-        /// 重新获取账号信息并缓存。
-        #[arg(short, long)]
-        fresh: bool,
-    },
-    /// 列出所有课程。
-    Course {
-        /// 重新获取课程信息并缓存。
-        #[arg(short, long)]
-        fresh: bool,
-    },
-    /// 列出有效签到。
-    List {
-        /// 列出指定课程的签到。
-        #[arg(short, long)]
-        course: Option<i64>,
-        /// 列出所有签到（包括无效签到）。
-        #[arg(short, long)]
-        all: bool,
-    },
-    /// 位置相关操作（列出、添加、删除）。
-    /// 默认列出所有位置。
-    Pos {
-        #[command(subcommand)]
-        command: Option<PosCmds>,
-        /// 列出绑定指定课程的位置。
-        #[arg(short, long)]
-        course: Option<i64>,
-        /// 列出全局位置。
-        #[arg(short, long)]
-        global: bool,
-    },
-    /// 显示配置文件夹位置。
-    WhereIsConfig,
-}
-
-#[derive(Subcommand, Debug)]
-enum AccCmds {
-    /// 添加账号。
-    Add {
-        /// 账号（手机号）。
-        uname: String,
-    },
-    /// 删除账号。
-    Remove {
-        /// 账号（手机号）。
-        uname: String,
-        /// 无需确认直接删除。
-        #[arg(short, long)]
-        yes: bool,
-    },
-}
-#[derive(Subcommand, Debug)]
-enum PosCmds {
-    /// 添加位置。
-    Add {
-        /// 绑定该位置到指定课程。
-        /// 默认添加为全局位置。
-        #[arg(short, long)]
-        course: Option<i64>,
-        /// 地址名称、经纬度与海拔。
-        /// 格式为：`addr,lon,lat,alt`.
-        pos: String,
-    },
-    /// 删除位置。
-    Remove {
-        /// 位置 ID.
-        posid: i64,
-        /// 无需确认直接删除。
-        #[arg(short, long)]
-        yes: bool,
-    },
 }
