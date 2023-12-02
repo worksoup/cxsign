@@ -19,7 +19,7 @@ pub struct Args {
     #[arg(short, long)]
     pub location: Option<i64>,
     /// 通过地址名称、经纬度与海拔直接指定位置。
-    /// 位置签到或二维码位置签到时需要提供。
+    /// 教师未指定位置签到或二维码签到的签到位置时需要提供。
     /// 格式为：`addr,lon,lat,alt`.
     #[arg(long)]
     pub pos: Option<String>,
