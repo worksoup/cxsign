@@ -127,7 +127,6 @@ pub enum PosCmds {
     Export {
         /// 导出位置。
         /// 无法解析的行将会被跳过。
-        #[arg(short, long)]
         output: PathBuf,
     },
 }
