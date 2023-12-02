@@ -29,3 +29,6 @@ X星签到的命令行工具，可以为每个课程添加单独的地点。支�
  (TODO: 考虑是否有必要为数据库添加主密码。)
 ## 使用方法
 见 [Wiki](https://github.com/worksoup/cxsign/wiki).
+
+## 建议、问题、反馈
+欢迎发 issues 和 pr.
