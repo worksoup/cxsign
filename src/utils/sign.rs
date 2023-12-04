@@ -122,6 +122,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool, precise: bool)
         let display_info = screen.display_info;
         // 先截取整个屏幕。
         let image = screen.capture().unwrap_or_else(|e| panic!("{e:?}"));
+        println!("已截屏。");
         // 如果成功识别到二维码。
         let results = detect_multiple_in_image(image, &mut HashMap::new());
         if results.is_err() {
