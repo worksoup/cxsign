@@ -136,6 +136,7 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool, precise: bool)
             if !url.contains(crate::utils::query::QRCODE_PAT) && url.contains("&enc=") {
                 continue;
             }
+            println!("存在签到二维码。");
             if precise && is_refresh && inquire_confirm("二维码图片是否就绪？", "本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
                 // 如果是定时刷新的二维码，等待二维码刷新。
                 // 获取二维码在屏幕上的位置。
