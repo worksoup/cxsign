@@ -108,20 +108,20 @@ fn detect_multiple_in_image(
 }
 
 pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool, precise: bool) -> Option<String> {
-    let screens = screenshots::Screen::all().unwrap();
+    let screens = screenshots::Screen::all().unwrap_or_else(|e| panic!("{e:?}"));
     // 在所有屏幕中寻找。
-    for screen in screens {
-        if !precise && is_refresh {
-            if !inquire_confirm(
-                "二维码图片是否就绪？",
-                "本程序将在屏幕上寻找签到二维码，待二维码刷新后按下回车进行签到。",
-            ) {
-                return None;
-            }
+    if !precise && is_refresh {
+        if !inquire_confirm(
+            "二维码图片是否就绪？",
+            "本程序将在屏幕上寻找签到二维码，待二维码刷新后按下回车进行签到。",
+        ) {
+            return None;
         }
+    }
+    for screen in screens {
         let display_info = screen.display_info;
         // 先截取整个屏幕。
-        let image = screen.capture().unwrap();
+        let image = screen.capture().unwrap_or_else(|e| panic!("{e:?}"));
         // 如果成功识别到二维码。
         let results = detect_multiple_in_image(image, &mut HashMap::new());
         if results.is_err() {
@@ -142,8 +142,8 @@ pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool, precise: bool)
                 println!("二维码位置：{pos:?}");
                 let image = screen
                     .capture_area(pos.0.x, pos.0.y, pos.1.x, pos.1.y)
-                    .unwrap();
-                let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap();
+                    .unwrap_or_else(|e| panic!("{e:?}"));
+                let results = detect_multiple_in_image(image, &mut HashMap::new()).unwrap_or_else(|e| panic!("{e:?}"));
                 return Some(handle_qrcode_url(results[0].getText()));
             } else {
                 // 如果不是定时刷新的二维码，则不需要提示。
