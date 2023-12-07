@@ -42,7 +42,7 @@ impl DataBase {
         query.read::<i64, _>(0).unwrap() == 1
     }
 
-    fn has_account(&self, uname: &str) -> bool {
+    pub fn has_account(&self, uname: &str) -> bool {
         let mut query = self
             .connection
             .prepare("SELECT count(*) FROM account WHERE uname=?;")

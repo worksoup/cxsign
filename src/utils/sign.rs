@@ -8,32 +8,34 @@ use crate::{activity::sign::SignActivity, session::SignSession, utils::inquire_c
 pub async fn get_signs(
     sessions: &HashMap<String, SignSession>,
 ) -> (
-    HashMap<SignActivity, Vec<&SignSession>>,
-    HashMap<SignActivity, Vec<&SignSession>>,
+    HashMap<SignActivity, HashMap<&String, &SignSession>>,
+    HashMap<SignActivity, HashMap<&String, &SignSession>>,
 ) {
     let mut asigns = HashMap::new();
     let mut osigns = HashMap::new();
-    for session in sessions.values() {
+    for session in sessions {
         let (available_sign_activities, other_sign_activities, _) =
-            session.traverse_activities().await.unwrap();
+            session.1.traverse_activities().await.unwrap();
         for sa in available_sign_activities {
-            let vec = vec![session];
+            let mut map = HashMap::new();
+            map.insert(session.0, session.1);
             if let Err(OccupiedError {
                 mut entry,
                 value: _,
-            }) = asigns.try_insert(sa, vec)
+            }) = asigns.try_insert(sa, map)
             {
-                entry.get_mut().push(session);
+                entry.get_mut().insert(session.0, session.1);
             }
         }
         for sa in other_sign_activities {
-            let vec = vec![session];
+            let mut map = HashMap::new();
+            map.insert(session.0, session.1);
             if let Err(OccupiedError {
                 mut entry,
                 value: _,
-            }) = osigns.try_insert(sa, vec)
+            }) = osigns.try_insert(sa, map)
             {
-                entry.get_mut().push(session);
+                entry.get_mut().insert(session.0, session.1);
             }
         }
     }

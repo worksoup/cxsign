@@ -11,7 +11,7 @@ pub struct Args {
     /// 签到账号。
     /// 默认以一定顺序对所有用户进行签到。
     #[arg(short, long)]
-    pub account: Option<String>,
+    pub accounts: Option<String>,
     /// 位置 ID.
     /// 位置签到或二维码位置签到时需要提供。
     /// 也可以通过 `--pos` 选项直接指定位置，此时本选项将失效。

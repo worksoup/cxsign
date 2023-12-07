@@ -34,14 +34,19 @@ pub async fn add_account_enc(db: &DataBase, uname: String, enc_pwd: &str) {
     }
 }
 
-pub async fn get_sessions(db: &DataBase) -> HashMap<String, SignSession> {
-    let accounts = db.get_accounts();
+pub async fn get_sessions_of_accounts(
+    db: &DataBase,
+    accounts: &Vec<&str>,
+) -> HashMap<String, SignSession> {
+    // let accounts = db.get_accounts();
     let config_dir = crate::utils::CONFIG_DIR.clone();
     let mut s = HashMap::new();
     for a in accounts {
-        let cookies_dir = config_dir.join(a.0.to_string() + ".json");
-        let session = SignSession::load(cookies_dir).await.unwrap();
-        s.insert(a.0, session);
+        if db.has_account(a) {
+            let cookies_dir = config_dir.join(a.to_string() + ".json");
+            let session = SignSession::load(cookies_dir).await.unwrap();
+            s.insert(a.to_string(), session);
+        }
     }
     s
 }

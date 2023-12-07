@@ -3,6 +3,7 @@ mod sign;
 mod single_sign;
 
 use crate::activity::sign::{SignActivity, SignState, SignType};
+use crate::utils;
 use crate::utils::sign::get_refresh_qrcode_sign_params_on_screen;
 use crate::{
     session::SignSession,
@@ -13,7 +14,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
     loop {
-        let ans = crate::utils::inquire_confirm("二维码图片是否就绪？","本程序会读取 `--pic` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。",);
+        let ans = utils::inquire_confirm("二维码图片是否就绪？","本程序会读取 `--pic` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。",);
         if ans {
             break;
         }
@@ -97,7 +98,7 @@ async fn qrcode_sign_by_pic_arg<'a>(
     if let Some(pic) = pic {
         if std::fs::metadata(pic).unwrap().is_dir() {
             if let Some(pic) = picdir_to_pic(pic) {
-                let enc = crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
+                let enc = utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
                 states =
                     sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
                         .await?;
@@ -105,7 +106,7 @@ async fn qrcode_sign_by_pic_arg<'a>(
                 print_err_msg(sign);
             }
         } else {
-            let enc = crate::utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
+            let enc = utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
             states = sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
                 .await?;
         }
@@ -164,15 +165,13 @@ async fn handle_account_sign<'a>(
                 poss.append(&mut other);
                 poss
             };
-            if capture && let Some(enc) = get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode(), precise) {
-                states = sign::qrcode_sign_(
-                        sign,
-                        sign.get_c_of_qrcode_sign(),
-                        &enc,
-                        &poss,
-                        sessions,
-                    )
-                    .await?;
+            if capture
+                && let Some(enc) =
+                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode(), precise)
+            {
+                states =
+                    sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
+                        .await?;
             } else {
                 states = qrcode_sign_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
             }
@@ -222,9 +221,6 @@ async fn handle_account_sign<'a>(
 
 pub async fn sign(
     db: &DataBase,
-    sessions: &HashMap<String, SignSession>,
-    asigns: HashMap<SignActivity, Vec<&SignSession>>,
-    osigns: HashMap<SignActivity, Vec<&SignSession>>,
     activity: Option<i64>,
     account: Option<String>,
     location: Option<i64>,
@@ -235,22 +231,37 @@ pub async fn sign(
     precise: bool,
     no_random_shift: bool,
 ) -> Result<(), reqwest::Error> {
+    let mut account_arg_used = false;
+    let all_unames = db.get_accounts();
+    let unames: Vec<&str> = if let Some(account) = &account {
+        account_arg_used = true;
+        account.split(",").map(|a| a.trim()).collect()
+    } else {
+        all_unames.keys().map(|s| s.as_str()).collect()
+    };
+    let sessions = utils::account::get_sessions_of_accounts(&db, &unames).await;
+    let (asigns, osigns) = utils::sign::get_signs(&sessions).await;
     if let Some(active_id) = activity {
         let s1 = asigns.iter().find(|kv| kv.0.id == active_id.to_string());
         let s2 = osigns.iter().find(|kv| kv.0.id == active_id.to_string());
-        let (sign, mut full_sessions) = {
+        let (sign, full_sessions) = {
             if let Some(s1) = s1 {
                 s1
             } else if let Some(s2) = s2 {
                 s2
             } else {
-                panic!("没有该签到活动！请检查签到活动 ID 是否正确！");
+                if account_arg_used {
+                    panic!("没有该签到活动！请检查签到活动 ID 是否正确或所指定的账号是否存在该签到活动！");
+                } else {
+                    panic!("没有该签到活动！请检查签到活动 ID 是否正确！");
+                }
             }
         };
         let mut accounts = Vec::new();
-        if let Some(ref account) = &account {
-            accounts.push(&sessions[account]);
-            full_sessions = &accounts;
+        for i in full_sessions {
+            if unames.contains(&i.0.as_str()) {
+                accounts.push(*i.1)
+            }
         }
         handle_account_sign(
             sign,
@@ -259,18 +270,19 @@ pub async fn sign(
             db,
             &pos,
             &signcode,
-            full_sessions,
+            &accounts,
             capture,
             precise,
             no_random_shift,
         )
         .await?;
     } else {
-        for (sign, mut full_sessions) in &asigns {
+        for (sign, full_sessions) in &asigns {
             let mut accounts = Vec::new();
-            if let Some(ref account) = &account {
-                accounts.push(&sessions[account]);
-                full_sessions = &accounts;
+            for i in full_sessions {
+                if unames.contains(&i.0.as_str()) {
+                    accounts.push(*i.1)
+                }
             }
             handle_account_sign(
                 sign,
@@ -279,7 +291,7 @@ pub async fn sign(
                 db,
                 &pos,
                 &signcode,
-                full_sessions,
+                &accounts,
                 capture,
                 precise,
                 no_random_shift,

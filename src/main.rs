@@ -1,5 +1,4 @@
 #![feature(ascii_char)]
-#![feature(thread_local_internals)]
 #![feature(lint_reasons)]
 #![feature(async_closure)]
 #![feature(hash_set_entry)]
@@ -24,7 +23,7 @@ async fn main() {
     let Args {
         command,
         activity,
-        account,
+        accounts,
         location,
         pos,
         pic,
@@ -75,7 +74,11 @@ async fn main() {
             MainCmds::Course { fresh } => {
                 if fresh {
                     // 重新获取课程信息并缓存。
-                    let sessions = utils::account::get_sessions(&db).await;
+                    let sessions = utils::account::get_sessions_of_accounts(
+                        &db,
+                        &db.get_accounts().keys().map(|s| s.as_str()).collect(),
+                    )
+                    .await;
                     db.delete_all_course();
                     for (_, session) in sessions {
                         let courses = session.get_courses().await.unwrap();
@@ -217,7 +220,11 @@ async fn main() {
                 }
             }
             MainCmds::List { course, all } => {
-                let sessions = utils::account::get_sessions(&db).await;
+                let sessions = utils::account::get_sessions_of_accounts(
+                    &db,
+                    &db.get_accounts().keys().map(|s| s.as_str()).collect(),
+                )
+                .await;
                 let (available_sign_activities, other_sign_activities) =
                     utils::sign::get_signs(&sessions).await;
                 if let Some(course) = course {
@@ -253,15 +260,10 @@ async fn main() {
             }
         }
     } else {
-        let sessions = utils::account::get_sessions(&db).await;
-        let (asigns, osigns) = utils::sign::get_signs(&sessions).await;
         cli::sign(
             &db,
-            &sessions,
-            asigns,
-            osigns,
             activity,
-            account,
+            accounts,
             location,
             pos,
             pic,
