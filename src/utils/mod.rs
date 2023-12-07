@@ -15,8 +15,13 @@ use std::path::PathBuf;
 use unicode_width::UnicodeWidthStr;
 lazy_static! {
     pub static ref CONFIG_DIR: PathBuf = {
+        let is_testing = std::env::var("TEST_CXSIGN").is_ok();
         let binding = ProjectDirs::from("rt.lea", "worksoup", "cxsign").unwrap();
-        let dir = binding.config_dir().to_owned();
+        let dir = if is_testing {
+            binding.config_dir().join("test").to_owned()
+        } else {
+            binding.config_dir().to_owned()
+        };
         let _ = std::fs::create_dir_all(dir.clone());
         dir
     };
