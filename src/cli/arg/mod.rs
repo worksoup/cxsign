@@ -8,7 +8,7 @@ pub struct Args {
     /// 签到 ID.
     /// 默认以最近起对所有有效签到顺序进行签到，且缺少参数时会跳过并继续。
     pub activity: Option<i64>,
-    /// 签到账号。
+    /// 签到账号，格式为以半角逗号隔开的字符串。
     /// 默认以一定顺序对所有用户进行签到。
     #[arg(short, long)]
     pub accounts: Option<String>,
