@@ -333,3 +333,69 @@ impl DataBase {
         poss
     }
 }
+
+// alias
+impl DataBase {
+    const CREATE_ALIAS_SQL: &'static str =
+        "CREATE TABLE alias (name CHAR (50) UNIQUE NOT NULL,posid INTEGER NOT NULL);";
+
+    fn has_table_alias(&self) -> bool {
+        let mut query = self
+            .connection
+            .prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='alias';")
+            .unwrap();
+        query.next().unwrap();
+        query.read::<i64, _>(0).unwrap() == 1
+    }
+
+    pub fn has_alias(&self, name: &str) -> bool {
+        let mut query = self
+            .connection
+            .prepare("SELECT count(*) FROM alias WHERE name=?;")
+            .unwrap();
+        query.bind((1, name)).unwrap();
+        query.next().unwrap();
+        query.read::<i64, _>(0).unwrap() > 0
+    }
+
+    pub fn delete_alias(&self, name: &str) {
+        if self.has_alias(name) {
+            let mut query = self
+                .connection
+                .prepare("DELETE FROM alias WHERE name=?;")
+                .unwrap();
+            query.bind((1, name)).unwrap();
+            query.next().unwrap();
+        }
+    }
+
+    pub fn add_alias_or<O: Fn(&DataBase, &str, i64)>(&self, name: &str, posid: i64, or: O) {
+        let mut query = self
+            .connection
+            .prepare("INSERT INTO alias(name,posid) values(:name,:posid);")
+            .unwrap();
+        query
+            .bind::<&[(_, sqlite::Value)]>(&[(":name", name.into()), (":posid", posid.into())][..])
+            .unwrap();
+        match query.next() {
+            Ok(_) => (),
+            Err(_) => or(self, name, posid),
+        };
+    }
+    pub fn update_alias(&self, name: &str, posid: i64) {
+        let mut query = self
+            .connection
+            .prepare("UPDATE alias SET name=:name,posid=:posid WHERE name=:name;")
+            .unwrap();
+        query
+            .bind::<&[(_, sqlite::Value)]>(&[(":name", name.into()), (":posid", posid.into())][..])
+            .unwrap();
+        query.next().unwrap();
+    }
+
+    fn create_table_alias(&self) {
+        if !self.has_table_alias() {
+            self.connection.execute(Self::CREATE_ALIAS_SQL).unwrap();
+        }
+    }
+}
