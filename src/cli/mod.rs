@@ -206,6 +206,7 @@ async fn 区分签到类型并进行签到<'a>(
         }
         Enum签到类型::位置签到 => {
             if let Some(pos) = 通过位置字符串决定位置(db, pos).await {
+                println!("解析位置成功，将使用位置 `{}` 签到。", pos);
                 签到结果列表 =
                     sign::位置签到(签到, &vec![pos], false, 签到会话列表, *no_random_shift).await?;
             } else {
