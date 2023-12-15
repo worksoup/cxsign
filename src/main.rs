@@ -24,7 +24,6 @@ async fn main() {
         active_id,
         accounts,
         pos,
-        posid,
         img,
         signcode,
         precise,
@@ -161,8 +160,7 @@ async fn main() {
         }
     } else {
         let 签到可能使用的信息 = cli::arg::CliArgs {
-            位置id: posid,
-            位置字符串或别名: pos,
+            位置字符串: pos,
             图片或图片路径: img,
             签到码: signcode,
             是否精确识别二维码: precise,

@@ -27,16 +27,12 @@ pub struct Args {
     /// 默认以一定顺序对所有用户进行签到。
     #[arg(short, long)]
     pub accounts: Option<String>,
-    /// 位置 ID.
-    /// 位置签到或二维码位置签到时需要提供。
-    /// 也可以通过 `--pos` 选项直接指定位置，此时本选项将失效。
-    /// 默认按照先课程位置后全局位置的顺序依次尝试。
+    /// 指定位置。
+    /// 教师未指定位置的位置签到或需要位置的二维码签到需要提供。
+    /// 格式为：`地址,经度,纬度,海拔`, 不满足格式的字符串将被视为别名。
+    /// 如果该别名不存在，则视为位置 ID.
+    /// 其余情况将按照先课程位置后全局位置的顺序依次尝试。
     #[arg(short, long)]
-    pub posid: Option<i64>,
-    /// 通过地址名称、经纬度与海拔直接指定位置。
-    /// 教师未指定位置签到或二维码签到的签到位置时需要提供。
-    /// 格式为：`地址,经度,纬度,海拔`.
-    #[arg(long)]
     pub pos: Option<String>,
     /// 本地图片路径。
     /// 拍照签到需要提供，二维码签到可选提供。
@@ -147,8 +143,7 @@ pub enum AccCmds {
 }
 
 pub struct CliArgs {
-    pub 位置id: Option<i64>,
-    pub 位置字符串或别名: Option<String>,
+    pub 位置字符串: Option<String>,
     pub 图片或图片路径: Option<std::path::PathBuf>,
     // pub capture: bool,
     pub 是否精确识别二维码: bool,
