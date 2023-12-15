@@ -14,7 +14,7 @@ use lazy_static::lazy_static;
 use std::path::PathBuf;
 use unicode_width::UnicodeWidthStr;
 lazy_static! {
-    pub static ref CONFIG_DIR: PathBuf = {
+    pub static ref 配置文件夹: PathBuf = {
         let is_testing = std::env::var("TEST_CXSIGN").is_ok();
         let binding = ProjectDirs::from("rt.lea", "worksoup", "cxsign").unwrap();
         let dir = if is_testing {

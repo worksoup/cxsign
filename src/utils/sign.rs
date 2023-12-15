@@ -3,16 +3,16 @@ use std::collections::{hash_map::OccupiedError, HashMap};
 use rxing::{Point, PointI, PointU};
 use screenshots::display_info::DisplayInfo;
 
-use crate::{activity::sign::SignActivity, session::SignSession, utils::inquire_confirm};
+use crate::{activity::sign::Struct签到, session::SignSession, utils::inquire_confirm};
 
 pub async fn get_signs(
     sessions: &HashMap<String, SignSession>,
 ) -> (
-    HashMap<SignActivity, HashMap<&String, &SignSession>>,
-    HashMap<SignActivity, HashMap<&String, &SignSession>>,
+    HashMap<Struct签到, HashMap<&String, &SignSession>>,
+    HashMap<Struct签到, HashMap<&String, &SignSession>>,
 ) {
-    let mut asigns = HashMap::new();
-    let mut osigns = HashMap::new();
+    let mut 有效签到 = HashMap::new();
+    let mut 其他签到 = HashMap::new();
     for session in sessions {
         let (available_sign_activities, other_sign_activities, _) =
             session.1.traverse_activities().await.unwrap();
@@ -22,7 +22,7 @@ pub async fn get_signs(
             if let Err(OccupiedError {
                 mut entry,
                 value: _,
-            }) = asigns.try_insert(sa, map)
+            }) = 有效签到.try_insert(sa, map)
             {
                 entry.get_mut().insert(session.0, session.1);
             }
@@ -33,13 +33,13 @@ pub async fn get_signs(
             if let Err(OccupiedError {
                 mut entry,
                 value: _,
-            }) = osigns.try_insert(sa, map)
+            }) = 其他签到.try_insert(sa, map)
             {
                 entry.get_mut().insert(session.0, session.1);
             }
         }
     }
-    (asigns, osigns)
+    (有效签到, 其他签到)
 }
 
 fn handle_qrcode_url(url: &str) -> String {
@@ -109,7 +109,7 @@ fn detect_multiple_in_image(
     )
 }
 
-pub fn get_refresh_qrcode_sign_params_on_screen(is_refresh: bool, precise: bool) -> Option<String> {
+pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) -> Option<String> {
     let screens = screenshots::Screen::all().unwrap_or_else(|e| panic!("{e:?}"));
     // 在所有屏幕中寻找。
     if !precise && is_refresh {
