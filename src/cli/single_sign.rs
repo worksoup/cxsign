@@ -75,7 +75,7 @@ pub async fn 二维码签到_单个账号<'a>(
 
 pub async fn 位置签到_单个账号<'a>(
     sign: &Struct签到,
-    poss: &Vec<Struct位置>,
+    pos_vec: &Vec<Struct位置>,
     auto_fetch_pos: bool,
     session: &'a SignSession,
     no_random_shift: bool,
@@ -101,7 +101,7 @@ pub async fn 位置签到_单个账号<'a>(
                     sign.sign_by_location(&pos, session).await?
                 } else {
                     let mut state = SignState::Fail("所有位置均不可用".into());
-                    for pos in poss {
+                    for pos in pos_vec {
                         match sign.sign_by_location(pos, session).await? {
                             r @ SignState::Success => {
                                 state = r;

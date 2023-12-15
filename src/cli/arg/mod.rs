@@ -1,7 +1,18 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 #[derive(Parser, Debug)]
-#[command(author, version, about = "进行签到。", long_about = None)]
+#[command(author, version, about = "进行签到。", long_about = 
+r#"
+进行签到。
+
+关于签到行为：
+
+普通签到不需要指定任何选项。
+拍照签到可指定 `-p, --pic` 选项，提供照片位置。如不提供则从云盘上获取图片。
+二维码签到可指定 `-p, --pic` 选项，提供照片位置。如不提供则从屏幕上截取。
+位置签到可指定 `    --pos` 或 `-l, --location` 选项。如不提供则根据教师设置的签到范围或数据库中获取。
+手势或签到码签到须指定 `-s, --signcode` 选项，提供签到码。
+"#)]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<MainCmds>,
@@ -20,11 +31,11 @@ pub struct Args {
     pub location: Option<i64>,
     /// 通过地址名称、经纬度与海拔直接指定位置。
     /// 教师未指定位置签到或二维码签到的签到位置时需要提供。
-    /// 格式为：`addr,lon,lat,alt`.
+    /// 格式为：`地址,经度,纬度,海拔`.
     #[arg(long)]
     pub pos: Option<String>,
     /// 本地图片路径。
-    /// 拍照或二维码签到时需要提供。
+    /// 拍照签到需要提供，二维码签到可选提供。
     /// 如果是文件，则直接使用该文件作为拍照签到图片或二维码图片文件。
     /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
     #[arg(short, long)]
@@ -113,7 +124,7 @@ pub enum PosCmds {
         #[arg(short, long)]
         course: Option<i64>,
         /// 地址名称、经纬度与海拔。
-        /// 格式为：`addr,lon,lat,alt`.
+        /// 格式为：`地址,经度,纬度,海拔`.
         pos: String,
     },
     /// 删除位置。
@@ -129,7 +140,7 @@ pub enum PosCmds {
     /// 导入位置。
     Import {
         /// 导入位置。
-        /// 每行一个地址。课程号在前，地址在后，由字符 `$` 隔开。
+        /// 每行一个位置。课程号在前，位置在后，由字符 `$` 隔开。
         input: PathBuf,
     },
     /// 导入位置。

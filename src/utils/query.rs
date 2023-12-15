@@ -17,18 +17,7 @@ static LOGIN_PAGE: &str =
 pub async fn login_page(client: &Client) -> Result<Response, reqwest::Error> {
     client.get(LOGIN_PAGE).send().await
 }
-// 明文密码登录
-static LOGIN: &str = "https://passport2-api.chaoxing.com/v11/loginregister";
-pub async fn login(client: &Client, uname: &str, pwd: &str) -> Result<Response, reqwest::Error> {
-    let body = format!("code={pwd}&cx_xxt_passport=json&uname={uname}&loginType=1&roleSelect=true");
-    let url = {
-        let mut str = String::from(LOGIN);
-        str.push('?');
-        str.push_str(body.as_str());
-        str
-    };
-    client.get(url).send().await
-}
+
 // 非明文密码登录
 static LOGIN_ENC: &str = "http://passport2.chaoxing.com/fanyalogin";
 pub async fn login_enc(
@@ -197,15 +186,8 @@ pub async fn check_signcode(
         .send()
         .await
 }
+
 // 签到信息获取
-static PPT_ACTIVE_INFO: &str = "https://mobilelearn.chaoxing.com/v2/apis/active/getPPTActiveInfo";
-pub async fn ppt_active_info(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
-    client
-        .get(String::from(PPT_ACTIVE_INFO) + "?activeId=" + active_id)
-        .send()
-        .await
-}
-// 签到信息获取 2
 static SIGN_DETAIL: &str = "https://mobilelearn.chaoxing.com/newsign/signDetail";
 pub async fn sign_detail(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     client
@@ -213,13 +195,13 @@ pub async fn sign_detail(client: &Client, active_id: &str) -> Result<Response, r
         .send()
         .await
 }
-// 获取课程（`chaoxing-sign-cli` 并未使用）
+// 获取课程
 static BACK_CLAZZ_DATA: &str = "http://mooc1-api.chaoxing.com/mycourse/backclazzdata";
 pub async fn back_clazz_data(client: &Client) -> Result<Response, reqwest::Error> {
     let url = String::from(BACK_CLAZZ_DATA) + "?view=json&rss=1";
     client.get(url).send().await
 }
-// 查询活动 1
+// 查询活动
 static ACTIVE_LIST: &str = "https://mobilelearn.chaoxing.com/v2/apis/active/student/activelist";
 pub async fn active_list(client: &Client, course: Course) -> Result<Response, reqwest::Error> {
     let url = {
@@ -240,8 +222,7 @@ pub async fn active_list(client: &Client, course: Course) -> Result<Response, re
     // println!("{url}");
     client.get(url).send().await
 }
-// 查询活动 2
-static TASK_ACTIVE_LIST: &str = "https://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist";
+
 // 账号设置页
 static ACCOUNT_MANAGE: &str = "http://passport2.chaoxing.com/mooc/accountManage";
 pub async fn account_manage(client: &Client) -> Result<Response, reqwest::Error> {
