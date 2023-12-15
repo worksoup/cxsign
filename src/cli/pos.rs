@@ -1,8 +1,11 @@
 use std::path::PathBuf;
 
-use crate::utils::{
-    address::{Struct位置, 为数据库添加位置},
-    sql::DataBase,
+use crate::{
+    session::course,
+    utils::{
+        address::{Struct位置, 为数据库添加位置},
+        sql::DataBase,
+    },
 };
 
 pub struct CliPosArgs {
@@ -14,6 +17,7 @@ pub struct CliPosArgs {
     pub alias: Option<String>,
     pub remove: bool,
     pub remove_all: bool,
+    pub remove_all_alias: bool,
     pub course: Option<i64>,
     pub global: bool,
     pub yes: bool,
@@ -29,6 +33,7 @@ pub fn pos(db: &DataBase, cli_pos_args: CliPosArgs) {
         alias,
         remove,
         remove_all,
+        remove_all_alias,
         course,
         global,
         yes,
@@ -39,6 +44,24 @@ pub fn pos(db: &DataBase, cli_pos_args: CliPosArgs) {
             .prompt()
             .unwrap()
     }
+    let positions = if let Some(posid) = posid {
+        if posid >= 0 {
+            vec![posid]
+        } else {
+            Vec::new()
+        }
+    } else {
+        if let Some(course_id) = course {
+            db.get_course_positions_and_posid(course_id)
+                .keys()
+                .map(|id| *id)
+                .collect()
+        } else if global {
+            db.get_poss().keys().map(|id| *id).collect()
+        } else {
+            Vec::new()
+        }
+    };
     if list {
         if global {
             // 列出所有全局位置。
@@ -161,43 +184,53 @@ pub fn pos(db: &DataBase, cli_pos_args: CliPosArgs) {
         } else {
             eprintln!("警告：不能为不存在的位置添加别名！将不做任何事。")
         }
-    } else if let Some(alias) = alias {
-        if remove {
-            if !yes {
-                let ans = confirm("警告：是否删除？");
-                if !ans {
-                    return;
-                }
-            }
-            if db.has_alias(&alias) {
-                db.delete_alias(&alias);
-            } else {
-                eprintln!("警告：该别名并不存在，将不做任何事情。");
-            }
-        } else if remove_all {
-            if !yes {
-                let ans = confirm("警告：是否删除？");
-                if !ans {
-                    return;
-                }
-            }
-            if !yes {
-                let ans = confirm("警告：请再次确认，是否删除？");
-                if !ans {
-                    return;
-                }
-            }
-            db.delete_all_alias();
-        }
-    } else if remove && let Some(posid) = posid {
+    } else if let Some(alias) = alias
+        && remove
+    {
         if !yes {
             let ans = confirm("警告：是否删除？");
             if !ans {
                 return;
             }
         }
+        if db.has_alias(&alias) {
+            db.delete_alias(&alias);
+        } else {
+            eprintln!("警告：该别名并不存在，将不做任何事情。");
+        }
+    } else if remove {
+        if !yes {
+            let ans = confirm("警告：是否删除？");
+            if !ans {
+                return;
+            }
+        }
+        if positions.len() > 1 {
+            if !yes {
+                let ans = confirm("警告：删除数目大于 1, 请再次确认，是否删除？");
+                if !ans {
+                    return;
+                }
+            }
+        }
         // 删除指定位置。
-        db.delete_pos(posid);
+        for posid in positions {
+            db.delete_pos(posid);
+        }
+    } else if remove_all_alias {
+        if !yes {
+            let ans = confirm("警告：是否删除？");
+            if !ans {
+                return;
+            }
+        }
+        if !yes {
+            let ans = confirm("警告：请再次确认，是否删除？");
+            if !ans {
+                return;
+            }
+        }
+        db.delete_all_alias();
     } else if remove_all {
         if !yes {
             let ans = confirm("警告：是否删除？");
