@@ -148,7 +148,7 @@ pub enum AccCmds {
 
 pub struct CliArgs {
     pub 位置id: Option<i64>,
-    pub 位置字符串: Option<String>,
+    pub 位置字符串或别名: Option<String>,
     pub 图片或图片路径: Option<std::path::PathBuf>,
     // pub capture: bool,
     pub 是否精确识别二维码: bool,

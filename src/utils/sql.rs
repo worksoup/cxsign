@@ -279,7 +279,7 @@ impl DataBase {
         }
         poss
     }
-    pub fn get_pos(&self, posid: i64) -> (i64, Struct位置) {
+    pub fn get_pos_by_posid(&self, posid: i64) -> (i64, Struct位置) {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE posid=?;")
@@ -404,6 +404,24 @@ impl DataBase {
     fn create_table_alias(&self) {
         if !self.has_table_alias() {
             self.connection.execute(Self::CREATE_ALIAS_SQL).unwrap();
+        }
+    }
+    pub fn get_pos_by_alias(&self, alias: &str) -> Option<Struct位置> {
+        if self.has_alias(alias) {
+            let mut query = self
+                .connection
+                .prepare("SELECT * FROM alias WHERE name=?;")
+                .unwrap();
+            query.bind((1, alias)).unwrap();
+            let c: Vec<sqlite::Row> = query
+                .iter()
+                .filter_map(|e| if let Ok(e) = e { Some(e) } else { None })
+                .collect();
+            let row = &c[0];
+            let posid: i64 = row.read("posid");
+            Some(self.get_pos_by_posid(posid).1)
+        } else {
+            None
         }
     }
     pub fn get_aliases(&self, posid: i64) -> Vec<String> {

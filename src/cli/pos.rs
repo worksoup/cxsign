@@ -154,13 +154,17 @@ pub fn pos(db: &DataBase, cli_pos_args: CliPosArgs) {
     } else if let Some(ref alias) = alias
         && let Some(posid) = posid
     {
-        db.add_alias_or(alias, posid, |db, alias, posid| {
-            db.update_alias(alias, posid);
-        });
+        if posid < 0 || db.has_pos(posid) {
+            db.add_alias_or(alias, posid, |db, alias, posid| {
+                db.update_alias(alias, posid);
+            });
+        } else {
+            eprintln!("警告：不能为不存在的位置添加别名！将不做任何事。")
+        }
     } else if let Some(alias) = alias {
         if remove {
             if !yes {
-                let ans = confirm("是否删除？");
+                let ans = confirm("警告：是否删除？");
                 if !ans {
                     return;
                 }
@@ -168,17 +172,17 @@ pub fn pos(db: &DataBase, cli_pos_args: CliPosArgs) {
             if db.has_alias(&alias) {
                 db.delete_alias(&alias);
             } else {
-                eprintln!("该别名并不存在，不做任何事情。");
+                eprintln!("警告：该别名并不存在，将不做任何事情。");
             }
         } else if remove_all {
             if !yes {
-                let ans = confirm("是否删除？");
+                let ans = confirm("警告：是否删除？");
                 if !ans {
                     return;
                 }
             }
             if !yes {
-                let ans = confirm("请再次确认，是否删除？");
+                let ans = confirm("警告：请再次确认，是否删除？");
                 if !ans {
                     return;
                 }
@@ -187,7 +191,7 @@ pub fn pos(db: &DataBase, cli_pos_args: CliPosArgs) {
         }
     } else if remove && let Some(posid) = posid {
         if !yes {
-            let ans = confirm("是否删除？");
+            let ans = confirm("警告：是否删除？");
             if !ans {
                 return;
             }
@@ -196,13 +200,13 @@ pub fn pos(db: &DataBase, cli_pos_args: CliPosArgs) {
         db.delete_pos(posid);
     } else if remove_all {
         if !yes {
-            let ans = confirm("是否删除？");
+            let ans = confirm("警告：是否删除？");
             if !ans {
                 return;
             }
         }
         if !yes {
-            let ans = confirm("请再次确认，是否删除？");
+            let ans = confirm("警告：请再次确认，是否删除？");
             if !ans {
                 return;
             }
