@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Deserialize, Serialize, Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Course {
     course_id: i64,
     class_id: i64,
@@ -13,7 +13,7 @@ pub struct Course {
 impl Course {
     pub fn display(&self) {
         println!(
-            "id: {}, name: {}, teacher: {}",
+            "id: {}, 课程名: {}, 任课教师: {}",
             self.course_id, self.name, self.teacherfactor
         )
     }
@@ -32,19 +32,19 @@ impl Course {
             name: name.into(),
         }
     }
-    pub fn get_id(&self) -> i64 {
+    pub fn get_course_id(&self) -> i64 {
         self.course_id
     }
     pub fn get_class_id(&self) -> i64 {
         self.class_id
     }
-    pub fn get_teacher_name(&self) -> &str {
+    pub fn get_任课教师(&self) -> &str {
         &self.teacherfactor
     }
-    pub fn get_image_url(&self) -> &str {
+    pub fn get_封面图url(&self) -> &str {
         &self.imageurl
     }
-    pub fn get_name(&self) -> &str {
+    pub fn get_课程名(&self) -> &str {
         &self.name
     }
 }

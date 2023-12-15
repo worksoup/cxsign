@@ -3,7 +3,7 @@ use crate::session::SignSession;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Response};
 
-use super::address::Address;
+use super::address::Struct位置;
 
 pub static UA: &str = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 (schild:eaf4fb193ec970c0a9775e2a27b0232b) (device:iPhone11,2) Language/zh-Hans com.ssreader.ChaoXingStudy/ChaoXingStudy_3_6.0.2_ios_phone_202209281930_99 (@Kalimdor)_1665876591620212942";
 
@@ -61,7 +61,7 @@ pub async fn pre_sign(
     active_id: &str,
     uid: &str,
 ) -> Result<Response, reqwest::Error> {
-    let course_id = course.get_id();
+    let course_id = course.get_course_id();
     let class_id = course.get_class_id();
     let url = PRE_SIGN;
     let url = format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0");
@@ -75,7 +75,7 @@ pub async fn pre_sign_for_qrcode_sign(
     c: &str,
     enc: &str,
 ) -> Result<Response, reqwest::Error> {
-    let course_id = course.get_id();
+    let course_id = course.get_course_id();
     let class_id = course.get_class_id();
     let url = PRE_SIGN;
     let ex_args = format!("SIGNIN:aid={active_id}&source=15&Code={c}&enc={enc}");
@@ -111,7 +111,7 @@ pub async fn general_sign(
 ) -> Result<Response, reqwest::Error> {
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let url = PPT_SIGN;
     let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&latitude=-1&longitude=-1&appType=15&fid={fid}&name={stu_name}");
     session.get(url).send().await
@@ -123,7 +123,7 @@ pub async fn photo_sign(
 ) -> Result<Response, reqwest::Error> {
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     // NOTE 存疑。
     let name = percent_encoding::utf8_percent_encode(stu_name, percent_encoding::NON_ALPHANUMERIC)
         .to_string();
@@ -135,16 +135,16 @@ pub async fn qrcode_sign(
     session: &SignSession,
     enc: &str,
     active_id: &str,
-    pos: &Address,
+    pos: &Struct位置,
 ) -> Result<Response, reqwest::Error> {
-    let address = pos.get_addr();
-    let lat = pos.get_lat();
-    let lon = pos.get_lon();
-    let altitude = pos.get_alt();
+    let address = pos.get_地址();
+    let lat = pos.get_纬度();
+    let lon = pos.get_经度();
+    let altitude = pos.get_海拔();
     let url = PPT_SIGN;
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let location = format!(
         r#"{{"result":"1","address":"{address}","latitude":{lat},"longitude":{lon},"altitude":{altitude}}}"#
     );
@@ -158,15 +158,15 @@ pub async fn qrcode_sign(
 }
 pub async fn location_sign(
     session: &SignSession,
-    pos: &Address,
+    pos: &Struct位置,
     active_id: &str,
 ) -> Result<Response, reqwest::Error> {
-    let address = pos.get_addr();
-    let lat = pos.get_lat();
-    let lon = pos.get_lon();
+    let address = pos.get_地址();
+    let lat = pos.get_纬度();
+    let lon = pos.get_经度();
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let url = PPT_SIGN;
     let url = format!("{url}?name={stu_name}&address={address}&activeId={active_id}&uid={uid}&clientip=&latitude={lat}&longitude={lon}&fid={fid}&appType=15&ifTiJiao=1&validate=");
     session.get(url).send().await
@@ -179,7 +179,7 @@ pub async fn signcode_sign(
     let url = PPT_SIGN;
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&latitude=-1&longitude=-1&appType=15&fid={fid}&name={stu_name}&signCode={signcode}");
     session.get(url).send().await
 }
@@ -225,7 +225,7 @@ pub async fn active_list(client: &Client, course: Course) -> Result<Response, re
     let url = {
         let mut url = String::from(ACTIVE_LIST);
         url.push_str("?fid=0&courseId=");
-        url.push_str(course.get_id().to_string().as_str());
+        url.push_str(course.get_course_id().to_string().as_str());
         url.push_str("&classId=");
         url.push_str(course.get_class_id().to_string().as_str());
         url.push_str("&showNotStartedActive=0&_=");

@@ -2,15 +2,17 @@ pub mod arg;
 mod sign;
 mod single_sign;
 
-use crate::activity::sign::{SignActivity, SignState, SignType};
+use crate::activity::sign::{SignActivity, SignState, Enum签到类型};
 use crate::utils;
-use crate::utils::sign::get_refresh_qrcode_sign_params_on_screen;
+use crate::utils::sign::截屏获取二维码签到所需参数;
 use crate::{
     session::SignSession,
-    utils::{address::Address, sql::DataBase},
+    utils::{address::Struct位置, sql::DataBase},
 };
 use std::fs::DirEntry;
 use std::{collections::HashMap, path::PathBuf};
+
+use self::arg::CliArgs;
 
 pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
     loop {
@@ -59,79 +61,78 @@ pub fn picdir_to_pic(picdir: &PathBuf) -> Option<PathBuf> {
 }
 async fn location_and_pos_to_poss(
     db: &DataBase,
-    location: Option<i64>,
+    location: &Option<i64>,
     pos: &Option<String>,
-) -> Option<Address> {
+) -> Option<Struct位置> {
     if let Some(ref pos) = pos {
-        Some(Address::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e)))
+        Some(Struct位置::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e)))
     } else if let Some(addr) = location {
-        let poss = db.get_pos(addr);
+        let poss = db.get_pos(*addr);
         Some(poss.1)
     } else {
         None
     }
 }
 
+fn 打印对于sign无法获取二维码时的错误信息(sign: &SignActivity) {
+    eprintln!(
+        "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
+        sign.name
+    );
+}
+
 async fn qrcode_sign_by_pic_arg<'a>(
     sign: &SignActivity,
-    pic: &Option<PathBuf>,
-    location: Option<i64>,
+    pic: &PathBuf,
+    location: &Option<i64>,
     db: &DataBase,
     pos: &Option<String>,
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    fn print_err_msg(sign: &SignActivity) {
-        eprintln!(
-            "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
-            sign.name
-        );
-    }
-    let poss = if let Some(pos) = location_and_pos_to_poss(db, location, pos).await {
+    let pos_vec = if let Some(pos) = location_and_pos_to_poss(db, &location, pos).await {
         vec![pos]
     } else {
-        let mut poss = db.get_course_poss_without_posid(sign.course.get_id());
+        let mut poss = db.get_course_poss_without_posid(sign.course.get_course_id());
         let mut other = db.get_course_poss_without_posid(-1);
         poss.append(&mut other);
         poss
     };
     let mut states = HashMap::new();
-    if let Some(pic) = pic {
-        if std::fs::metadata(pic).unwrap().is_dir() {
-            if let Some(pic) = picdir_to_pic(pic) {
-                let enc = utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
-                states =
-                    sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
-                        .await?;
-            } else {
-                print_err_msg(sign);
-            }
-        } else {
+    if std::fs::metadata(pic).unwrap().is_dir() {
+        if let Some(pic) = picdir_to_pic(pic) {
             let enc = utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
-            states = sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
+            states = sign::二维码签到(sign, sign.get_c_of_qrcode_sign(), &enc, &pos_vec, sessions)
                 .await?;
+        } else {
+            打印对于sign无法获取二维码时的错误信息(sign);
         }
     } else {
-        print_err_msg(sign);
-    };
+        let enc = utils::sign::handle_qrcode_pic_path(pic.to_str().unwrap());
+        states =
+            sign::二维码签到(sign, sign.get_c_of_qrcode_sign(), &enc, &pos_vec, sessions).await?;
+    }
     Ok(states)
 }
-async fn handle_account_sign<'a>(
+async fn 区分签到类型并进行签到<'a>(
     sign: &SignActivity,
-    pic: &Option<PathBuf>,
-    location: Option<i64>,
     db: &DataBase,
-    pos: &Option<String>,
-    signcode: &Option<String>,
     sessions: &'a Vec<&SignSession>,
-    capture: bool,
-    precise: bool,
-    no_random_shift: bool,
+    cli_args: &CliArgs,
 ) -> Result<(), reqwest::Error> {
+    let CliArgs {
+        location,
+        pos,
+        pic,
+        signcode,
+        // capture,
+        precise,
+        no_random_shift,
+    } = cli_args;
     let sign_type = sign.get_sign_type();
     let mut states = HashMap::new();
 
     match sign_type {
-        SignType::Photo => {
+        Enum签到类型::拍照签到 => {
             if let Some(pic) = pic {
                 if let Ok(metadata) = std::fs::metadata(pic) {
                     let pic = if metadata.is_dir() {
@@ -139,7 +140,7 @@ async fn handle_account_sign<'a>(
                     } else {
                         Some(pic.to_owned())
                     };
-                    states = sign::photo_sign_(sign, &pic, sessions).await?;
+                    states = sign::拍照签到(sign, &pic, sessions).await?;
                 } else {
                     eprintln!(
                         "所有用户在拍照签到[{}]中签到失败！未能获取{:?}的元信息！",
@@ -153,50 +154,57 @@ async fn handle_account_sign<'a>(
                 )
             };
         }
-        SignType::Common => {
-            states = sign::general_sign_(sign, sessions).await?;
+        Enum签到类型::普通签到 => {
+            states = sign::普通签到(sign, sessions).await?;
         }
-        SignType::QrCode => {
-            let poss = if let Some(pos) = location_and_pos_to_poss(db, location, pos).await {
+        Enum签到类型::二维码签到 => {
+            let pos_vec = if let Some(pos) = location_and_pos_to_poss(db, location, pos).await {
                 vec![pos]
             } else {
-                let mut poss = db.get_course_poss_without_posid(sign.course.get_id());
+                let mut pos_vec = db.get_course_poss_without_posid(sign.course.get_course_id());
                 let mut other = db.get_course_poss_without_posid(-1);
-                poss.append(&mut other);
-                poss
+                pos_vec.append(&mut other);
+                pos_vec
             };
-            if capture
-                && let Some(enc) =
-                    get_refresh_qrcode_sign_params_on_screen(sign.is_refresh_qrcode(), precise)
+            //  如果有 pic 参数，那么使用它。
+            if let Some(pic) = pic {
+                states = qrcode_sign_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
+            } 
+            // 如果没有则试图截屏。
+            else if let Some(enc) =
+                截屏获取二维码签到所需参数(sign.is_refresh_qrcode(), *precise)
             {
                 states =
-                    sign::qrcode_sign_(sign, sign.get_c_of_qrcode_sign(), &enc, &poss, sessions)
+                    sign::二维码签到(sign, sign.get_c_of_qrcode_sign(), &enc, &pos_vec, sessions)
                         .await?;
-            } else {
-                states = qrcode_sign_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
+            }
+            // 这下是真没有了。
+             else {
+                打印对于sign无法获取二维码时的错误信息(sign);
             }
         }
-        SignType::Location => {
+        Enum签到类型::位置签到 => {
             if let Some(pos) = location_and_pos_to_poss(db, location, pos).await {
-                states = sign::location_sign_(sign, &vec![pos], false, sessions, no_random_shift)
+                states = sign::位置签到(sign, &vec![pos], false, sessions, *no_random_shift)
                     .await?;
             } else {
-                let mut poss = db.get_course_poss_without_posid(sign.course.get_id());
+                let mut poss = db.get_course_poss_without_posid(sign.course.get_course_id());
                 let mut other = db.get_course_poss_without_posid(-1);
                 poss.append(&mut other);
-                states = sign::location_sign_(sign, &poss, true, sessions, no_random_shift).await?;
+                states =
+                    sign::位置签到(sign, &poss, true, sessions, *no_random_shift).await?;
             };
         }
-        SignType::Unknown => {
+        Enum签到类型::非已知签到 => {
             eprintln!("签到活动[{}]为无效签到类型！", sign.name);
         }
         signcode_sign_type => {
             if let Some(signcode) = signcode {
-                states = sign::signcode_sign_(sign, signcode, sessions).await?;
+                states = sign::签到码签到(sign, signcode, sessions).await?;
             } else {
                 let sign_type_str = match signcode_sign_type {
-                    SignType::Gesture => "手势",
-                    SignType::SignCode => "签到码",
+                    Enum签到类型::手势签到 => "手势",
+                    Enum签到类型::签到码签到 => "签到码",
                     _ => unreachable!(),
                 };
                 eprintln!(
@@ -219,85 +227,63 @@ async fn handle_account_sign<'a>(
     Ok(())
 }
 
-pub async fn sign(
+pub async fn 签到(
     db: &DataBase,
     activity: Option<i64>,
-    account: Option<String>,
-    location: Option<i64>,
-    pos: Option<String>,
-    pic: Option<PathBuf>,
-    signcode: Option<String>,
-    capture: bool,
-    precise: bool,
-    no_random_shift: bool,
+    accounts: Option<String>,
+    cli_args: CliArgs,
 ) -> Result<(), reqwest::Error> {
-    let mut account_arg_used = false;
-    let all_unames = db.get_accounts();
-    let unames: Vec<&str> = if let Some(account) = &account {
-        account_arg_used = true;
+    let mut 是否指定了accounts参数 = false;
+    let 用户名_从数据库中获取的所有 = db.get_accounts();
+    let 用户名_签到所需的: Vec<&str> = if let Some(account) = &accounts {
+        是否指定了accounts参数 = true;
         account.split(",").map(|a| a.trim()).collect()
     } else {
-        all_unames.keys().map(|s| s.as_str()).collect()
+        用户名_从数据库中获取的所有.keys().map(|s| s.as_str()).collect()
     };
-    let sessions = utils::account::get_sessions_of_accounts(&db, &unames).await;
-    let (asigns, osigns) = utils::sign::get_signs(&sessions).await;
-    if let Some(active_id) = activity {
-        let s1 = asigns.iter().find(|kv| kv.0.id == active_id.to_string());
-        let s2 = osigns.iter().find(|kv| kv.0.id == active_id.to_string());
-        let (sign, full_sessions) = {
+    let sessions = utils::account::get_sessions_by_unames(&db, &用户名_签到所需的).await;
+    let (有效签到, 其他签到) = utils::sign::get_signs(&sessions).await;
+    let signs = if let Some(active_id) = activity {
+        let s1 = 有效签到.iter().find(|kv| kv.0.id == active_id.to_string());
+        let s2 = 其他签到.iter().find(|kv| kv.0.id == active_id.to_string());
+        let (签到_需要处理的, 所有sessions_对应于_签到_需要处理的) = {
             if let Some(s1) = s1 {
                 s1
             } else if let Some(s2) = s2 {
                 s2
             } else {
-                if account_arg_used {
+                if 是否指定了accounts参数 {
                     panic!("没有该签到活动！请检查签到活动 ID 是否正确或所指定的账号是否存在该签到活动！");
                 } else {
                     panic!("没有该签到活动！请检查签到活动 ID 是否正确！");
                 }
             }
         };
-        let mut accounts = Vec::new();
-        for i in full_sessions {
-            if unames.contains(&i.0.as_str()) {
-                accounts.push(*i.1)
+        let mut 账号对象_签到所需的_vec = Vec::new();
+        for (uname, session) in 所有sessions_对应于_签到_需要处理的 {
+            if 用户名_签到所需的.contains(&uname.as_str()) {
+                账号对象_签到所需的_vec.push(*session)
             }
         }
-        handle_account_sign(
-            sign,
-            &pic,
-            location,
-            db,
-            &pos,
-            &signcode,
-            &accounts,
-            capture,
-            precise,
-            no_random_shift,
-        )
-        .await?;
+        let mut map = HashMap::new();
+        map.insert(签到_需要处理的, 账号对象_签到所需的_vec);
+        map
     } else {
-        for (sign, full_sessions) in &asigns {
-            let mut accounts = Vec::new();
-            for i in full_sessions {
-                if unames.contains(&i.0.as_str()) {
-                    accounts.push(*i.1)
+        let mut signs = HashMap::new();
+        for (sign, full_sessions) in &有效签到 {
+            let mut 账号对象_签到所需的_vec = Vec::new();
+            for (uname, session) in full_sessions {
+                if 用户名_签到所需的.contains(&uname.as_str()) {
+                    账号对象_签到所需的_vec.push(*session)
                 }
             }
-            handle_account_sign(
-                sign,
-                &pic,
-                location,
-                db,
-                &pos,
-                &signcode,
-                &accounts,
-                capture,
-                precise,
-                no_random_shift,
-            )
-            .await?;
+            signs.insert(sign, 账号对象_签到所需的_vec);
         }
+        signs
+    };
+
+    for (sign, sessions) in signs {
+        区分签到类型并进行签到(sign, db, &sessions, &cli_args).await?;
     }
     Ok(())
 }

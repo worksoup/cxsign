@@ -12,9 +12,9 @@ mod utils;
 
 use cli::arg::{AccCmds, Args, MainCmds, PosCmds};
 use utils::{
-    address::{add_pos, Address},
+    address::{为数据库添加位置, Struct位置},
     sql::DataBase,
-    CONFIG_DIR,
+    配置文件夹,
 };
 
 #[tokio::main]
@@ -28,16 +28,15 @@ async fn main() {
         pos,
         pic,
         signcode,
-        capture,
-        no_random_shift,
         precise,
+        no_random_shift,
     } = args;
     let db = DataBase::new();
-    if let Some(sub) = command {
-        match sub {
+    if let Some(sub_cmd) = command {
+        match sub_cmd {
             MainCmds::Account { command, fresh } => {
-                if let Some(acc_sub) = command {
-                    match acc_sub {
+                if let Some(acc_sub_cmd) = command {
+                    match acc_sub_cmd {
                         AccCmds::Add { uname } => {
                             // 添加账号。
                             utils::account::add_account(&db, uname, None).await;
@@ -74,7 +73,7 @@ async fn main() {
             MainCmds::Course { fresh } => {
                 if fresh {
                     // 重新获取课程信息并缓存。
-                    let sessions = utils::account::get_sessions_of_accounts(
+                    let sessions = utils::account::get_sessions_by_unames(
                         &db,
                         &db.get_accounts().keys().map(|s| s.as_str()).collect(),
                     )
@@ -98,8 +97,8 @@ async fn main() {
                 course,
                 global,
             } => {
-                if let Some(pos_sub) = command {
-                    match pos_sub {
+                if let Some(pos_sub_cmd) = command {
+                    match pos_sub_cmd {
                         PosCmds::Add { course, pos } => {
                             let mut course_id = -1_i64;
                             if let Some(id) = course {
@@ -113,10 +112,10 @@ async fn main() {
                                     course_id = id;
                                 }
                             }
-                            add_pos(
+                            为数据库添加位置(
                                 &db,
                                 course_id,
-                                &Address::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e)),
+                                &Struct位置::parse_str(&pos).unwrap_or_else(|e| panic!("{}", e)),
                             )
                         }
                         PosCmds::Remove { posid, yes, all } => {
@@ -178,10 +177,10 @@ async fn main() {
                                         } else {
                                             eprintln!("警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！");
                                         }
-                                        if let Ok(pos) = Address::parse_str(data[1]) {
-                                            add_pos(&db, course_id, &pos)
+                                        if let Ok(pos) = Struct位置::parse_str(data[1]) {
+                                            为数据库添加位置(&db, course_id, &pos)
                                         } else {
-                                            eprintln!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `addr,lon,lat,alt`");
+                                            eprintln!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
                                         }
                                     } else {
                                         eprintln!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
@@ -220,7 +219,7 @@ async fn main() {
                 }
             }
             MainCmds::List { course, all } => {
-                let sessions = utils::account::get_sessions_of_accounts(
+                let sessions = utils::account::get_sessions_by_unames(
                     &db,
                     &db.get_accounts().keys().map(|s| s.as_str()).collect(),
                 )
@@ -230,14 +229,14 @@ async fn main() {
                 if let Some(course) = course {
                     // 列出指定课程的有效签到。
                     for a in available_sign_activities {
-                        if a.0.course.get_id() == course {
+                        if a.0.course.get_course_id() == course {
                             a.0.display(true);
                         }
                     }
                     if all {
                         // 列出指定课程的所有签到。
                         for a in other_sign_activities {
-                            if a.0.course.get_id() == course {
+                            if a.0.course.get_course_id() == course {
                                 a.0.display(true);
                             }
                         }
@@ -256,24 +255,19 @@ async fn main() {
                 }
             }
             MainCmds::WhereIsConfig => {
-                println!("{:?}", std::ops::Deref::deref(&CONFIG_DIR));
+                println!("{:?}", std::ops::Deref::deref(&配置文件夹));
             }
         }
     } else {
-        cli::sign(
-            &db,
-            activity,
-            accounts,
+        let cli_args = cli::arg::CliArgs {
             location,
             pos,
             pic,
             signcode,
-            capture,
             precise,
             no_random_shift,
-        )
-        .await
-        .unwrap();
+        };
+        cli::签到(&db, activity, accounts, cli_args).await.unwrap();
     }
     utils::print_now();
 }

@@ -5,19 +5,19 @@ use futures::{stream::FuturesUnordered, StreamExt};
 use crate::{
     activity::sign::{SignActivity, SignState},
     session::SignSession,
-    utils::{address::Address, photo::Photo},
+    utils::{address::Struct位置, photo::Photo},
 };
 
 use super::single_sign;
 
-pub async fn general_sign_<'a>(
+pub async fn 普通签到<'a>(
     sign: &SignActivity,
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::general_sign_single(sign, session));
+        tasks.push(single_sign::通用签到_单个账号(sign, session));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;
@@ -26,7 +26,7 @@ pub async fn general_sign_<'a>(
     Ok(states)
 }
 
-pub async fn photo_sign_<'a>(
+pub async fn 拍照签到<'a>(
     sign: &SignActivity,
     pic: &Option<PathBuf>,
     sessions: &'a Vec<&SignSession>,
@@ -39,7 +39,7 @@ pub async fn photo_sign_<'a>(
     };
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::photo_sign_single(sign, &photo, session));
+        tasks.push(single_sign::拍照签到_单个账号(sign, &photo, session));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;
@@ -47,17 +47,17 @@ pub async fn photo_sign_<'a>(
     }
     Ok(states)
 }
-pub async fn qrcode_sign_<'a>(
+pub async fn 二维码签到<'a>(
     sign: &SignActivity,
     c: &str,
     enc: &str,
-    poss: &Vec<Address>,
+    pos_vec: &Vec<Struct位置>,
     sessions: &'a Vec<&SignSession>,
 ) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::qrcode_sign_single(sign, c, enc, poss, session));
+        tasks.push(single_sign::二维码签到_单个账号(sign, c, enc, pos_vec, session));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;
@@ -66,9 +66,9 @@ pub async fn qrcode_sign_<'a>(
     Ok(states)
 }
 
-pub async fn location_sign_<'a>(
+pub async fn 位置签到<'a>(
     sign: &SignActivity,
-    poss: &Vec<Address>,
+    poss: &Vec<Struct位置>,
     auto_fetch_pos: bool,
     sessions: &'a Vec<&SignSession>,
     no_random_shift: bool,
@@ -76,7 +76,7 @@ pub async fn location_sign_<'a>(
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::location_sign_single(
+        tasks.push(single_sign::位置签到_单个账号(
             sign,
             poss,
             auto_fetch_pos,
@@ -91,7 +91,7 @@ pub async fn location_sign_<'a>(
     Ok(states)
 }
 
-pub async fn signcode_sign_<'a>(
+pub async fn 签到码签到<'a>(
     sign: &SignActivity,
     signcode: &str,
     sessions: &'a Vec<&SignSession>,
@@ -99,7 +99,7 @@ pub async fn signcode_sign_<'a>(
     let mut states = HashMap::new();
     let mut tasks = FuturesUnordered::new();
     for session in sessions {
-        tasks.push(single_sign::signcode_sign_single(sign, signcode, session));
+        tasks.push(single_sign::签到码签到_单个账号(sign, signcode, session));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;

@@ -6,7 +6,7 @@ use crate::activity::{
     {Activity, OtherActivity},
 };
 use crate::session::course::{Course, GetCoursesR};
-use crate::utils::{self, query::UA, CONFIG_DIR};
+use crate::utils::{self, query::UA, 配置文件夹};
 use cookies::UserCookies;
 use futures::{stream::FuturesUnordered, StreamExt};
 use reqwest::{Client, ClientBuilder};
@@ -20,7 +20,7 @@ use std::{
 #[derive(Debug)]
 pub struct SignSession {
     client: Client,
-    stu_name: String,
+    用户真名: String,
     cookies: UserCookies,
 }
 
@@ -35,7 +35,7 @@ impl Hash for SignSession {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.get_uid().hash(state);
         self.get_fid().hash(state);
-        self.get_stu_name().hash(state);
+        self.get_用户真名().hash(state);
     }
 }
 
@@ -64,11 +64,11 @@ impl SignSession {
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()
             .unwrap();
-        let stu_name = Self::get_stu_name_(&client).await?;
-        println!("用户[{stu_name}]加载 Cookies 成功！");
+        let 用户真名 = Self::get_stu_name_(&client).await?;
+        println!("用户[{用户真名}]加载 Cookies 成功！");
         Ok(SignSession {
             client,
-            stu_name,
+            用户真名,
             cookies,
         })
     }
@@ -79,8 +79,8 @@ impl SignSession {
         self.cookies.get_fid()
     }
 
-    pub fn get_stu_name(&self) -> &str {
-        &self.stu_name
+    pub fn get_用户真名(&self) -> &str {
+        &self.用户真名
     }
 
     pub async fn login(uname: &str, enc_pwd: &str) -> Result<SignSession, reqwest::Error> {
@@ -124,7 +124,7 @@ impl SignSession {
         }
         {
             // Write store back to disk
-            let mut writer = std::fs::File::create(CONFIG_DIR.join(uname.to_string() + ".json"))
+            let mut writer = std::fs::File::create(配置文件夹.join(uname.to_string() + ".json"))
                 .map(std::io::BufWriter::new)
                 .unwrap();
             let store = cookie_store.lock().unwrap();
@@ -140,11 +140,11 @@ impl SignSession {
             r
         };
         let cookies = UserCookies::new(store);
-        let stu_name = Self::get_stu_name_(&client).await?;
-        println!("用户[{stu_name}]登录成功！");
+        let 用户真名 = Self::get_stu_name_(&client).await?;
+        println!("用户[{用户真名}]登录成功！");
         Ok(SignSession {
             client,
-            stu_name,
+            用户真名,
             cookies,
         })
     }
@@ -168,7 +168,7 @@ impl SignSession {
                 }
             }
         }
-        println!("用户[{}]已获取课程列表。", self.stu_name);
+        println!("用户[{}]已获取课程列表。", self.用户真名);
         Ok(arr)
     }
     async fn get_stu_name_(client: &Client) -> Result<String, reqwest::Error> {

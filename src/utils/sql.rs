@@ -1,5 +1,5 @@
 use crate::session::course::Course;
-use crate::utils::address::Address;
+use crate::utils::address::Struct位置;
 use sqlite::Connection;
 use std::{collections::HashMap, fs::File, ops::Deref};
 
@@ -16,7 +16,7 @@ impl Deref for DataBase {
 // self
 impl DataBase {
     pub fn new() -> Self {
-        let db_dir = crate::utils::CONFIG_DIR.join("cx.db");
+        let db_dir = crate::utils::配置文件夹.join("cx.db");
         if db_dir.metadata().is_err() {
             File::create(db_dir.clone()).unwrap();
         }
@@ -61,7 +61,7 @@ impl DataBase {
             query.bind((1, uname)).unwrap();
             query.next().unwrap();
         }
-        std::fs::remove_file(super::CONFIG_DIR.join(uname.to_string() + ".json")).unwrap();
+        std::fs::remove_file(super::配置文件夹.join(uname.to_string() + ".json")).unwrap();
     }
 
     pub fn add_account_or<O: Fn(&DataBase, &str, &str, &str)>(
@@ -142,11 +142,11 @@ impl DataBase {
         query.read::<i64, _>(0).unwrap() == 1
     }
     pub fn add_course_or<O: Fn(&DataBase, &Course)>(&self, course: &Course, or: O) {
-        let id: i64 = course.get_id();
+        let id: i64 = course.get_course_id();
         let clazzid: i64 = course.get_class_id();
-        let name: &str = course.get_name();
-        let teacher: &str = course.get_teacher_name();
-        let image: &str = course.get_image_url();
+        let name: &str = course.get_课程名();
+        let teacher: &str = course.get_任课教师();
+        let image: &str = course.get_封面图url();
         let mut query =self.connection.prepare("INSERT INTO course(id,clazzid,name,teacher,image) values(:id,:clazzid,:name,:teacher,:image);").unwrap();
         query
             .bind::<&[(_, sqlite::Value)]>(
@@ -213,17 +213,17 @@ impl DataBase {
         query.next().unwrap();
         query.read::<i64, _>(0).unwrap() > 0
     }
-    pub fn add_pos_or<O: Fn(&DataBase, i64, i64, &Address)>(
+    pub fn add_pos_or<O: Fn(&DataBase, i64, i64, &Struct位置)>(
         &self,
         posid: i64,
         course_id: i64,
-        pos: &Address,
+        pos: &Struct位置,
         or: O,
     ) {
-        let addr = pos.get_addr();
-        let lat = pos.get_lat();
-        let lon = pos.get_lon();
-        let alt = pos.get_alt();
+        let addr = pos.get_地址();
+        let lat = pos.get_纬度();
+        let lon = pos.get_经度();
+        let alt = pos.get_海拔();
         let mut query =self.connection.prepare("INSERT INTO pos(posid,courseid,addr,lat,lon,alt) values(:posid,:courseid,:addr,:lat,:lon,:alt);").unwrap();
         query
             .bind::<&[(_, sqlite::Value)]>(
@@ -255,7 +255,7 @@ impl DataBase {
             self.connection.execute(Self::CREATE_POS_SQL).unwrap();
         }
     }
-    pub fn get_poss(&self) -> HashMap<i64, (i64, Address)> {
+    pub fn get_poss(&self) -> HashMap<i64, (i64, Struct位置)> {
         let mut query = self.connection.prepare("SELECT * FROM pos;").unwrap();
         let mut poss = HashMap::new();
         for c in query.iter() {
@@ -266,14 +266,14 @@ impl DataBase {
                 let lon = row.read("lon");
                 let alt = row.read("alt");
                 let courseid = row.read("courseid");
-                poss.insert(posid, (courseid, Address::new(addr, lon, lat, alt)));
+                poss.insert(posid, (courseid, Struct位置::new(addr, lon, lat, alt)));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }
         }
         poss
     }
-    pub fn get_pos(&self, posid: i64) -> (i64, Address) {
+    pub fn get_pos(&self, posid: i64) -> (i64, Struct位置) {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE posid=?;")
@@ -289,9 +289,9 @@ impl DataBase {
         let lon = row.read("lon");
         let alt = row.read("alt");
         let courseid = row.read("courseid");
-        (courseid, Address::new(addr, lon, lat, alt))
+        (courseid, Struct位置::new(addr, lon, lat, alt))
     }
-    pub fn get_course_poss(&self, course_id: i64) -> HashMap<i64, Address> {
+    pub fn get_course_poss(&self, course_id: i64) -> HashMap<i64, Struct位置> {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE courseid=?;")
@@ -305,14 +305,14 @@ impl DataBase {
                 let lat = row.read("lat");
                 let lon = row.read("lon");
                 let alt = row.read("alt");
-                poss.insert(posid, Address::new(addr, lon, lat, alt));
+                poss.insert(posid, Struct位置::new(addr, lon, lat, alt));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }
         }
         poss
     }
-    pub fn get_course_poss_without_posid(&self, course_id: i64) -> Vec<Address> {
+    pub fn get_course_poss_without_posid(&self, course_id: i64) -> Vec<Struct位置> {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE courseid=?;")
@@ -325,7 +325,7 @@ impl DataBase {
                 let lat = row.read("lat");
                 let lon = row.read("lon");
                 let alt = row.read("alt");
-                poss.push(Address::new(addr, lon, lat, alt));
+                poss.push(Struct位置::new(addr, lon, lat, alt));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }

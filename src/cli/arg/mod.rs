@@ -29,10 +29,10 @@ pub struct Args {
     /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
     #[arg(short, long)]
     pub pic: Option<PathBuf>,
-    /// 从屏幕上获取二维码。
-    /// 二维码签到时需要提供。
-    #[arg(short, long)]
-    pub capture: bool,
+    // /// 从屏幕上获取二维码。
+    // /// 二维码签到时需要提供。
+    // #[arg(short, long)]
+    // pub capture: bool,
     /// 精确地截取二维码。
     /// 如果二维码识别过慢可以尝试添加添加此选项。
     #[arg(long)]
@@ -138,4 +138,14 @@ pub enum PosCmds {
         /// 无法解析的行将会被跳过。
         output: PathBuf,
     },
+}
+
+pub struct CliArgs {
+    pub location: Option<i64>,
+    pub pos: Option<String>,
+    pub pic: Option<std::path::PathBuf>,
+    // pub capture: bool,
+    pub precise: bool,
+    pub signcode: Option<String>,
+    pub no_random_shift: bool,
 }

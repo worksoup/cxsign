@@ -1,24 +1,24 @@
 use serde_derive::Deserialize;
 
 use crate::session::{course::Course, SignSession};
-use crate::utils::address::Address;
+use crate::utils::address::Struct位置;
 use crate::utils::photo::Photo;
 use crate::utils::{self, get_unicode_correct_display_width};
-pub enum SignType {
+pub enum Enum签到类型 {
     // 拍照签到
-    Photo,
+    拍照签到,
     // 普通签到
-    Common,
+    普通签到,
     // 二维码签到
-    QrCode,
+    二维码签到,
     // 手势签到
-    Gesture,
+    手势签到,
     // 位置签到
-    Location,
+    位置签到,
     // 签到码签到
-    SignCode,
+    签到码签到,
     // 未知
-    Unknown,
+    非已知签到,
 }
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct SignActivity {
@@ -36,21 +36,21 @@ pub enum SignState {
     Fail(String),
 }
 impl SignActivity {
-    pub fn speculate_type_by_text(text: &str) -> SignType {
+    pub fn speculate_type_by_text(text: &str) -> Enum签到类型 {
         if text.contains("拍照") {
-            SignType::Photo
+            Enum签到类型::拍照签到
         } else if text.contains("位置") {
-            SignType::Location
+            Enum签到类型::位置签到
         } else if text.contains("二维码") {
-            SignType::QrCode
+            Enum签到类型::二维码签到
         } else if text.contains("手势") {
             // ?
-            SignType::Gesture
+            Enum签到类型::手势签到
         } else if text.contains("签到码") {
             // ?
-            SignType::SignCode
+            Enum签到类型::签到码签到
         } else {
-            SignType::Common
+            Enum签到类型::普通签到
         }
     }
     pub fn get_sign_result_by_text(text: &str) -> SignState {
@@ -120,8 +120,8 @@ impl SignActivity {
                 self.status,
                 chrono::DateTime::from_timestamp(self.start_time_secs, 0).unwrap(),
                 self.is_available(),
-                self.course.get_id(),
-                self.course.get_name(),
+                self.course.get_course_id(),
+                self.course.get_课程名(),
                 width = name_width,
             );
         }
@@ -216,7 +216,7 @@ impl SignActivity {
         let uid = session.get_uid();
         let response_of_presign =
             utils::query::pre_sign(session, self.course.clone(), active_id, uid).await?;
-        println!("用户[{}]预签到已请求。", session.get_stu_name());
+        println!("用户[{}]预签到已请求。", session.get_用户真名());
         self.pre_sign_internal(active_id, session, response_of_presign)
             .await
     }
@@ -237,29 +237,29 @@ impl SignActivity {
             enc,
         )
         .await?;
-        println!("用户[{}]预签到已请求。", session.get_stu_name());
+        println!("用户[{}]预签到已请求。", session.get_用户真名());
         self.pre_sign_internal(active_id, session, response_of_presign)
             .await
     }
-    pub fn get_sign_type(&self) -> SignType {
+    pub fn get_sign_type(&self) -> Enum签到类型 {
         match self.other_id.parse::<u8>().unwrap_or_else(|e| {
             eprintln!("{}", self.other_id);
-            eprintln!("{}", self.course.get_name());
+            eprintln!("{}", self.course.get_课程名());
             panic!("{e}")
         }) {
             0 => {
                 if self.is_photo() {
-                    SignType::Photo
+                    Enum签到类型::拍照签到
                 } else {
-                    SignType::Common
+                    Enum签到类型::普通签到
                 }
             }
-            1 => SignType::Unknown,
-            2 => SignType::QrCode,
-            3 => SignType::Gesture,
-            4 => SignType::Location,
-            5 => SignType::SignCode,
-            _ => SignType::Unknown,
+            1 => Enum签到类型::非已知签到,
+            2 => Enum签到类型::二维码签到,
+            3 => Enum签到类型::手势签到,
+            4 => Enum签到类型::位置签到,
+            5 => Enum签到类型::签到码签到,
+            _ => Enum签到类型::非已知签到,
         }
     }
 }
@@ -282,7 +282,7 @@ impl SignActivity {
     }
     pub async fn sign_by_location(
         &self,
-        address: &Address,
+        address: &Struct位置,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
         let r = utils::query::location_sign(session, address, self.id.as_str()).await?;
@@ -299,7 +299,7 @@ impl SignActivity {
     pub async fn sign_by_qrcode(
         &self,
         enc: &str,
-        address: &Address,
+        address: &Struct位置,
         session: &SignSession,
     ) -> Result<SignState, reqwest::Error> {
         let r = utils::query::qrcode_sign(session, enc, self.id.as_str(), address).await?;
@@ -345,16 +345,16 @@ impl SignActivity {
     }
     pub async fn chat_group_location_sign(
         &self,
-        address: &Address,
+        address: &Struct位置,
         session: &SignSession,
     ) -> Result<(), reqwest::Error> {
         let r = utils::query::chat_group_location_sign(
             session,
-            address.get_addr(),
+            address.get_地址(),
             self.id.as_str(),
             session.get_uid(),
-            address.get_lat(),
-            address.get_lon(),
+            address.get_纬度(),
+            address.get_经度(),
         )
         .await?;
         println!("{:?}", r.text().await.unwrap());
