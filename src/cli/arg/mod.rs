@@ -96,13 +96,16 @@ pub enum MainCmds {
         #[arg(short, long)]
         new: Option<String>,
         /// 导入位置。
-        /// 每行一个位置。课程号在前，位置在后，由字符 `$` 隔开。
+        /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
+        /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
         #[arg(short, long)]
         import: Option<PathBuf>,
         /// 导出位置。
+        /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
+        /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
         #[arg(short, long)]
         export: Option<PathBuf>,
-        /// 为位置添加别名
+        /// 为位置添加别名。须同时指定
         #[arg(short, long)]
         alias: Option<String>,
         /// 删除位置。
@@ -111,6 +114,9 @@ pub enum MainCmds {
         /// 删除所有位置。
         #[arg(long)]
         remove_all: bool,
+        /// 删除所有别名。
+        #[arg(long)]
+        remove_all_alias: bool,
         /// 指定课程号。
         #[arg(short, long)]
         course: Option<i64>,
