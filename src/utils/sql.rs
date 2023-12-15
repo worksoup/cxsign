@@ -247,9 +247,14 @@ impl DataBase {
         self.connection
             .execute("DELETE FROM pos WHERE posid=".to_string() + posid.to_string().as_str() + ";")
             .unwrap();
+        let aliases = self.get_aliases(posid);
+        for alias in aliases {
+            self.delete_alias(&alias)
+        }
     }
     pub fn delete_all_pos(&self) {
         self.connection.execute("DELETE FROM pos;").unwrap();
+        self.delete_all_alias();
     }
     fn create_table_pos(&self) {
         if !self.has_table_pos() {
