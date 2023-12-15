@@ -25,6 +25,7 @@ impl DataBase {
         db.create_table_account();
         db.create_table_course();
         db.create_table_pos();
+        db.create_table_alias();
         db
     }
 }
@@ -246,9 +247,14 @@ impl DataBase {
         self.connection
             .execute("DELETE FROM pos WHERE posid=".to_string() + posid.to_string().as_str() + ";")
             .unwrap();
+        let aliases = self.get_aliases(posid);
+        for alias in aliases {
+            self.delete_alias(&alias)
+        }
     }
     pub fn delete_all_pos(&self) {
         self.connection.execute("DELETE FROM pos;").unwrap();
+        self.delete_all_alias();
     }
     fn create_table_pos(&self) {
         if !self.has_table_pos() {
@@ -273,7 +279,7 @@ impl DataBase {
         }
         poss
     }
-    pub fn get_pos(&self, posid: i64) -> (i64, Struct位置) {
+    pub fn get_pos_by_posid(&self, posid: i64) -> (i64, Struct位置) {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE posid=?;")
@@ -291,7 +297,7 @@ impl DataBase {
         let courseid = row.read("courseid");
         (courseid, Struct位置::new(addr, lon, lat, alt))
     }
-    pub fn get_course_poss(&self, course_id: i64) -> HashMap<i64, Struct位置> {
+    pub fn get_course_positions_and_posid(&self, course_id: i64) -> HashMap<i64, Struct位置> {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE courseid=?;")
@@ -312,7 +318,7 @@ impl DataBase {
         }
         poss
     }
-    pub fn get_course_poss_without_posid(&self, course_id: i64) -> Vec<Struct位置> {
+    pub fn get_course_positions(&self, course_id: i64) -> Vec<Struct位置> {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE courseid=?;")
@@ -348,47 +354,49 @@ impl DataBase {
         query.read::<i64, _>(0).unwrap() == 1
     }
 
-    pub fn has_alias(&self, name: &str) -> bool {
+    pub fn has_alias(&self, alias: &str) -> bool {
         let mut query = self
             .connection
             .prepare("SELECT count(*) FROM alias WHERE name=?;")
             .unwrap();
-        query.bind((1, name)).unwrap();
+        query.bind((1, alias)).unwrap();
         query.next().unwrap();
         query.read::<i64, _>(0).unwrap() > 0
     }
 
-    pub fn delete_alias(&self, name: &str) {
-        if self.has_alias(name) {
-            let mut query = self
-                .connection
-                .prepare("DELETE FROM alias WHERE name=?;")
-                .unwrap();
-            query.bind((1, name)).unwrap();
-            query.next().unwrap();
-        }
+    pub fn delete_alias(&self, alias: &str) {
+        let mut query = self
+            .connection
+            .prepare("DELETE FROM alias WHERE name=?;")
+            .unwrap();
+        query.bind((1, alias)).unwrap();
+        query.next().unwrap();
     }
 
-    pub fn add_alias_or<O: Fn(&DataBase, &str, i64)>(&self, name: &str, posid: i64, or: O) {
+    pub fn delete_all_alias(&self) {
+        self.connection.execute("DELETE FROM alias;").unwrap();
+    }
+
+    pub fn add_alias_or<O: Fn(&DataBase, &str, i64)>(&self, alias: &str, posid: i64, or: O) {
         let mut query = self
             .connection
             .prepare("INSERT INTO alias(name,posid) values(:name,:posid);")
             .unwrap();
         query
-            .bind::<&[(_, sqlite::Value)]>(&[(":name", name.into()), (":posid", posid.into())][..])
+            .bind::<&[(_, sqlite::Value)]>(&[(":name", alias.into()), (":posid", posid.into())][..])
             .unwrap();
         match query.next() {
             Ok(_) => (),
-            Err(_) => or(self, name, posid),
+            Err(_) => or(self, alias, posid),
         };
     }
-    pub fn update_alias(&self, name: &str, posid: i64) {
+    pub fn update_alias(&self, alias: &str, posid: i64) {
         let mut query = self
             .connection
             .prepare("UPDATE alias SET name=:name,posid=:posid WHERE name=:name;")
             .unwrap();
         query
-            .bind::<&[(_, sqlite::Value)]>(&[(":name", name.into()), (":posid", posid.into())][..])
+            .bind::<&[(_, sqlite::Value)]>(&[(":name", alias.into()), (":posid", posid.into())][..])
             .unwrap();
         query.next().unwrap();
     }
@@ -397,5 +405,40 @@ impl DataBase {
         if !self.has_table_alias() {
             self.connection.execute(Self::CREATE_ALIAS_SQL).unwrap();
         }
+    }
+    pub fn get_pos_by_alias(&self, alias: &str) -> Option<Struct位置> {
+        if self.has_alias(alias) {
+            let mut query = self
+                .connection
+                .prepare("SELECT * FROM alias WHERE name=?;")
+                .unwrap();
+            query.bind((1, alias)).unwrap();
+            let c: Vec<sqlite::Row> = query
+                .iter()
+                .filter_map(|e| if let Ok(e) = e { Some(e) } else { None })
+                .collect();
+            let row = &c[0];
+            let posid: i64 = row.read("posid");
+            Some(self.get_pos_by_posid(posid).1)
+        } else {
+            None
+        }
+    }
+    pub fn get_aliases(&self, posid: i64) -> Vec<String> {
+        let mut query = self
+            .connection
+            .prepare("SELECT * FROM alias WHERE posid=?;")
+            .unwrap();
+        query.bind((1, posid)).unwrap();
+        let mut aliases = Vec::new();
+        for c in query.iter() {
+            if let Ok(row) = c {
+                let name: &str = row.read("name");
+                aliases.push(name.to_owned());
+            } else {
+                eprintln!("位置解析行出错：{c:?}.");
+            }
+        }
+        aliases
     }
 }

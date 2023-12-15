@@ -1,4 +1,5 @@
 pub mod arg;
+pub mod pos;
 mod sign;
 mod single_sign;
 
@@ -59,16 +60,26 @@ pub fn 通过目录决定图片路径(图片所在目录: &PathBuf) -> Option<Pa
     };
     图片路径
 }
-async fn 通过位置id和位置字符串决定位置(
+async fn 通过位置字符串决定位置(
     db: &DataBase,
-    位置id: &Option<i64>,
     位置字符串: &Option<String>,
 ) -> Option<Struct位置> {
     if let Some(ref 位置字符串) = 位置字符串 {
-        Some(Struct位置::从字符串解析(&位置字符串).unwrap_or_else(|e| panic!("{}", e)))
-    } else if let Some(位置id) = 位置id {
-        let (_, 位置) = db.get_pos(*位置id);
-        Some(位置)
+        let 位置字符串 = 位置字符串.trim();
+        if let Ok(位置) = Struct位置::从字符串解析(&位置字符串) {
+            Some(位置)
+        } else if let Some(位置) = db.get_pos_by_alias(位置字符串) {
+            Some(位置)
+        } else if let Ok(位置id) = 位置字符串.parse() {
+            if db.has_pos(位置id) {
+                let (_, 位置) = db.get_pos_by_posid(位置id);
+                Some(位置)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     } else {
         None
     }
@@ -84,20 +95,18 @@ fn 打印对于sign无法获取二维码时的错误信息(sign: &Struct签到) 
 async fn qrcode_sign_by_pic_arg<'a>(
     签到: &Struct签到,
     pic: &PathBuf,
-    location: &Option<i64>,
     db: &DataBase,
     pos: &Option<String>,
     sessions: &'a Vec<&Struct签到会话>,
 ) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
-    let pos_vec =
-        if let Some(pos) = 通过位置id和位置字符串决定位置(db, &location, pos).await {
-            vec![pos]
-        } else {
-            let mut poss = db.get_course_poss_without_posid(签到.课程.get_课程号());
-            let mut other = db.get_course_poss_without_posid(-1);
-            poss.append(&mut other);
-            poss
-        };
+    let pos_vec = if let Some(pos) = 通过位置字符串决定位置(db, pos).await {
+        vec![pos]
+    } else {
+        let mut positions = db.get_course_positions(签到.课程.get_课程号());
+        let mut other = db.get_course_positions(-1);
+        positions.append(&mut other);
+        positions
+    };
     let mut states = HashMap::new();
     if std::fs::metadata(pic).unwrap().is_dir() {
         if let Some(pic) = 通过目录决定图片路径(pic) {
@@ -131,24 +140,22 @@ async fn qrcode_sign_by_pic_arg<'a>(
 }
 
 async fn 区分签到类型并进行签到<'a>(
-    sign: &Struct签到,
+    签到: &Struct签到,
     db: &DataBase,
-    sessions: &'a Vec<&Struct签到会话>,
-    cli_args: &CliArgs,
+    签到会话列表: &'a Vec<&Struct签到会话>,
+    签到可能使用的信息: &CliArgs,
 ) -> Result<(), reqwest::Error> {
     let CliArgs {
-        位置id: location,
         位置字符串: pos,
         图片或图片路径: pic,
         签到码: signcode,
-        // capture,
         是否精确识别二维码: precise,
         是否禁用随机偏移: no_random_shift,
-    } = cli_args;
-    let sign_type = sign.get_sign_type();
+    } = 签到可能使用的信息;
+    let 签到类型 = 签到.get_sign_type();
     let mut 签到结果列表 = HashMap::new();
 
-    match sign_type {
+    match 签到类型 {
         Enum签到类型::拍照签到 => {
             let pic = if let Some(pic) = pic
                 && let Ok(metadata) = std::fs::metadata(pic)
@@ -161,64 +168,61 @@ async fn 区分签到类型并进行签到<'a>(
             } else {
                 None
             };
-            签到结果列表 = sign::拍照签到(sign, &pic, sessions).await?;
+            签到结果列表 = sign::拍照签到(签到, &pic, 签到会话列表).await?;
         }
         Enum签到类型::普通签到 => {
-            签到结果列表 = sign::普通签到(sign, sessions).await?;
+            签到结果列表 = sign::普通签到(签到, 签到会话列表).await?;
         }
         Enum签到类型::二维码签到 => {
-            let pos_vec = if let Some(pos) =
-                通过位置id和位置字符串决定位置(db, location, pos).await
-            {
+            let pos_vec = if let Some(pos) = 通过位置字符串决定位置(db, pos).await {
                 vec![pos]
             } else {
-                let mut pos_vec = db.get_course_poss_without_posid(sign.课程.get_课程号());
-                let mut other = db.get_course_poss_without_posid(-1);
+                let mut pos_vec = db.get_course_positions(签到.课程.get_课程号());
+                let mut other = db.get_course_positions(-1);
                 pos_vec.append(&mut other);
                 pos_vec
             };
             //  如果有 pic 参数，那么使用它。
             if let Some(pic) = pic {
-                签到结果列表 =
-                    qrcode_sign_by_pic_arg(sign, pic, location, db, pos, sessions).await?;
+                签到结果列表 = qrcode_sign_by_pic_arg(签到, pic, db, pos, 签到会话列表).await?;
             }
             // 如果没有则试图截屏。
             else if let Some(enc) =
-                截屏获取二维码签到所需参数(sign.二维码是否刷新(), *precise)
+                截屏获取二维码签到所需参数(签到.二维码是否刷新(), *precise)
             {
                 签到结果列表 = sign::二维码签到(
-                    sign,
-                    sign.get_二维码签到时的c参数(),
+                    签到,
+                    签到.get_二维码签到时的c参数(),
                     &enc,
                     &pos_vec,
-                    sessions,
+                    签到会话列表,
                 )
                 .await?;
             }
             // 这下是真没有了。
             else {
-                打印对于sign无法获取二维码时的错误信息(sign);
+                打印对于sign无法获取二维码时的错误信息(签到);
             }
         }
         Enum签到类型::位置签到 => {
-            if let Some(pos) = 通过位置id和位置字符串决定位置(db, location, pos).await
-            {
+            if let Some(pos) = 通过位置字符串决定位置(db, pos).await {
+                println!("解析位置成功，将使用位置 `{}` 签到。", pos);
                 签到结果列表 =
-                    sign::位置签到(sign, &vec![pos], false, sessions, *no_random_shift).await?;
+                    sign::位置签到(签到, &vec![pos], false, 签到会话列表, *no_random_shift).await?;
             } else {
-                let mut poss = db.get_course_poss_without_posid(sign.课程.get_课程号());
-                let mut other = db.get_course_poss_without_posid(-1);
+                let mut poss = db.get_course_positions(签到.课程.get_课程号());
+                let mut other = db.get_course_positions(-1);
                 poss.append(&mut other);
                 签到结果列表 =
-                    sign::位置签到(sign, &poss, true, sessions, *no_random_shift).await?;
+                    sign::位置签到(签到, &poss, true, 签到会话列表, *no_random_shift).await?;
             };
         }
         Enum签到类型::非已知签到 => {
-            eprintln!("签到活动[{}]为无效签到类型！", sign.签到名);
+            eprintln!("签到活动[{}]为无效签到类型！", 签到.签到名);
         }
         signcode_sign_type => {
             if let Some(signcode) = signcode {
-                签到结果列表 = sign::签到码签到(sign, signcode, sessions).await?;
+                签到结果列表 = sign::签到码签到(签到, signcode, 签到会话列表).await?;
             } else {
                 let sign_type_str = match signcode_sign_type {
                     Enum签到类型::手势签到 => "手势",
@@ -227,13 +231,13 @@ async fn 区分签到类型并进行签到<'a>(
                 };
                 eprintln!(
                     "所有用户在{sign_type_str}签到[{}]中签到失败！需要提供签到码！",
-                    sign.签到名
+                    签到.签到名
                 )
             }
         }
     };
     if !签到结果列表.is_empty() {
-        println!("签到活动[{}]签到结果：", sign.签到名);
+        println!("签到活动[{}]签到结果：", 签到.签到名);
         for (用户真名, 签到结果) in 签到结果列表 {
             if let Enum签到结果::失败 { 失败信息 } = 签到结果 {
                 eprintln!("\t用户[{}]签到失败！失败信息：[{:?}]", 用户真名, 失败信息);
@@ -247,7 +251,7 @@ async fn 区分签到类型并进行签到<'a>(
 
 pub async fn 签到(
     db: &DataBase,
-    activity: Option<i64>,
+    active_id: Option<i64>,
     账号列表字符串: Option<String>,
     签到可能使用的信息: CliArgs,
 ) -> Result<(), reqwest::Error> {
@@ -262,7 +266,7 @@ pub async fn 签到(
     };
     let sessions = utils::account::通过账号获取签到会话(&db, &签到所需的账号列表).await;
     let (有效签到列表, 其他签到列表) = utils::sign::获取所有签到(&sessions).await;
-    let signs = if let Some(active_id) = activity {
+    let signs = if let Some(active_id) = active_id {
         let s1 = 有效签到列表
             .iter()
             .find(|kv| kv.0.活动id == active_id.to_string());
