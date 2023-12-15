@@ -22,7 +22,7 @@ pub struct Args {
     pub command: Option<MainCmds>,
     /// 签到 ID.
     /// 默认以最近起对所有有效签到顺序进行签到，且缺少参数时会跳过并继续。
-    pub activity: Option<i64>,
+    pub active_id: Option<i64>,
     /// 签到账号，格式为以半角逗号隔开的字符串。
     /// 默认以一定顺序对所有用户进行签到。
     #[arg(short, long)]
@@ -32,7 +32,7 @@ pub struct Args {
     /// 也可以通过 `--pos` 选项直接指定位置，此时本选项将失效。
     /// 默认按照先课程位置后全局位置的顺序依次尝试。
     #[arg(short, long)]
-    pub location: Option<i64>,
+    pub posid: Option<i64>,
     /// 通过地址名称、经纬度与海拔直接指定位置。
     /// 教师未指定位置签到或二维码签到的签到位置时需要提供。
     /// 格式为：`地址,经度,纬度,海拔`.
@@ -43,7 +43,7 @@ pub struct Args {
     /// 如果是文件，则直接使用该文件作为拍照签到图片或二维码图片文件。
     /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
     #[arg(short, long)]
-    pub pic: Option<PathBuf>,
+    pub img: Option<PathBuf>,
     // /// 从屏幕上获取二维码。
     // /// 二维码签到时需要提供。
     // #[arg(short, long)]
@@ -90,14 +90,40 @@ pub enum MainCmds {
     /// 位置相关操作（列出、添加、删除）。
     /// 默认列出所有位置。
     Pos {
-        #[command(subcommand)]
-        command: Option<PosCmds>,
-        /// 列出绑定指定课程的位置。
+        /// 指定 posid.
+        posid: Option<i64>,
+        /// 列出位置。
+        #[arg(short, long)]
+        list: bool,
+        /// 添加位置。
+        /// 格式为：`地址,经度,纬度,海拔`.
+        #[arg(short, long)]
+        new: Option<String>,
+        /// 导入位置。
+        /// 每行一个位置。课程号在前，位置在后，由字符 `$` 隔开。
+        #[arg(short, long)]
+        import: Option<PathBuf>,
+        /// 导出位置。
+        #[arg(short, long)]
+        export: Option<PathBuf>,
+        /// 为位置添加别名
+        #[arg(short, long)]
+        alias: Option<String>,
+        /// 删除位置。
+        #[arg(short, long)]
+        remove: bool,
+        /// 删除所有位置。
+        #[arg(long)]
+        remove_all: bool,
+        /// 指定课程号。
         #[arg(short, long)]
         course: Option<i64>,
-        /// 列出全局位置。
+        /// 指定全局。
         #[arg(short, long)]
         global: bool,
+        /// 无需确认直接删除。
+        #[arg(short, long)]
+        yes: bool,
     },
     /// 显示配置文件夹位置。
     WhereIsConfig,
@@ -119,41 +145,6 @@ pub enum AccCmds {
         yes: bool,
     },
 }
-#[derive(Subcommand, Debug)]
-pub enum PosCmds {
-    /// 添加位置。
-    Add {
-        /// 绑定该位置到指定课程。
-        /// 默认添加为全局位置。
-        #[arg(short, long)]
-        course: Option<i64>,
-        /// 地址名称、经纬度与海拔。
-        /// 格式为：`地址,经度,纬度,海拔`.
-        pos: String,
-    },
-    /// 删除位置。
-    Remove {
-        /// 位置 ID.
-        posid: Option<i64>,
-        /// 无需确认直接删除。
-        #[arg(short, long)]
-        yes: bool,
-        #[arg(short, long)]
-        all: bool,
-    },
-    /// 导入位置。
-    Import {
-        /// 导入位置。
-        /// 每行一个位置。课程号在前，位置在后，由字符 `$` 隔开。
-        input: PathBuf,
-    },
-    /// 导入位置。
-    Export {
-        /// 导出位置。
-        /// 无法解析的行将会被跳过。
-        output: PathBuf,
-    },
-}
 
 pub struct CliArgs {
     pub 位置id: Option<i64>,
@@ -164,3 +155,42 @@ pub struct CliArgs {
     pub 签到码: Option<String>,
     pub 是否禁用随机偏移: bool,
 }
+
+// pub enum PosCmds {
+//     /// 添加位置。
+//     Add {
+//         /// 绑定该位置到指定课程。
+//         /// 默认添加为全局位置。
+//         course: Option<i64>,
+//         /// 地址名称、经纬度与海拔。
+//         /// 格式为：`地址,经度,纬度,海拔`.
+//         pos: String,
+//     },
+//     /// 删除位置。
+//     Remove {
+//         /// 位置 ID.
+//         posid: Option<i64>,
+//         /// 无需确认直接删除。
+//         yes: bool,
+//         all: bool,
+//     },
+//     /// 导入位置。
+//     Import {
+//         /// 导入位置。
+//         /// 每行一个位置。课程号在前，位置在后，由字符 `$` 隔开。
+//         input: std::path::PathBuf,
+//     },
+//     /// 导入位置。
+//     Export {
+//         /// 导出位置。
+//         /// 无法解析的行将会被跳过。
+//         output: std::path::PathBuf,
+//     },
+//     // 为位置添加别名
+//     Alias {
+//         // 位置 ID.
+//         posid: i64,
+//         // 别名。
+//         alias: String,
+//     },
+// }

@@ -1,6 +1,7 @@
 pub mod arg;
 mod sign;
 mod single_sign;
+pub mod pos;
 
 use crate::activity::sign::{Enum签到类型, Enum签到结果, Struct签到};
 use crate::utils;
@@ -93,10 +94,10 @@ async fn qrcode_sign_by_pic_arg<'a>(
         if let Some(pos) = 通过位置id和位置字符串决定位置(db, &location, pos).await {
             vec![pos]
         } else {
-            let mut poss = db.get_course_poss_without_posid(签到.课程.get_课程号());
-            let mut other = db.get_course_poss_without_posid(-1);
-            poss.append(&mut other);
-            poss
+            let mut positions = db.get_course_positions(签到.课程.get_课程号());
+            let mut other = db.get_course_positions(-1);
+            positions.append(&mut other);
+            positions
         };
     let mut states = HashMap::new();
     if std::fs::metadata(pic).unwrap().is_dir() {
@@ -172,8 +173,8 @@ async fn 区分签到类型并进行签到<'a>(
             {
                 vec![pos]
             } else {
-                let mut pos_vec = db.get_course_poss_without_posid(sign.课程.get_课程号());
-                let mut other = db.get_course_poss_without_posid(-1);
+                let mut pos_vec = db.get_course_positions(sign.课程.get_课程号());
+                let mut other = db.get_course_positions(-1);
                 pos_vec.append(&mut other);
                 pos_vec
             };
@@ -206,8 +207,8 @@ async fn 区分签到类型并进行签到<'a>(
                 签到结果列表 =
                     sign::位置签到(sign, &vec![pos], false, sessions, *no_random_shift).await?;
             } else {
-                let mut poss = db.get_course_poss_without_posid(sign.课程.get_课程号());
-                let mut other = db.get_course_poss_without_posid(-1);
+                let mut poss = db.get_course_positions(sign.课程.get_课程号());
+                let mut other = db.get_course_positions(-1);
                 poss.append(&mut other);
                 签到结果列表 =
                     sign::位置签到(sign, &poss, true, sessions, *no_random_shift).await?;
@@ -247,7 +248,7 @@ async fn 区分签到类型并进行签到<'a>(
 
 pub async fn 签到(
     db: &DataBase,
-    activity: Option<i64>,
+    active_id: Option<i64>,
     账号列表字符串: Option<String>,
     签到可能使用的信息: CliArgs,
 ) -> Result<(), reqwest::Error> {
@@ -262,7 +263,7 @@ pub async fn 签到(
     };
     let sessions = utils::account::通过账号获取签到会话(&db, &签到所需的账号列表).await;
     let (有效签到列表, 其他签到列表) = utils::sign::获取所有签到(&sessions).await;
-    let signs = if let Some(active_id) = activity {
+    let signs = if let Some(active_id) = active_id {
         let s1 = 有效签到列表
             .iter()
             .find(|kv| kv.0.活动id == active_id.to_string());

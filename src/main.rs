@@ -10,23 +10,22 @@ mod cli;
 mod session;
 mod utils;
 
-use cli::arg::{AccCmds, Args, MainCmds, PosCmds};
-use utils::{
-    address::{Struct位置, 为数据库添加位置},
-    sql::DataBase,
-    配置文件夹,
+use cli::{
+    arg::{AccCmds, Args, MainCmds},
+    pos::CliPosArgs,
 };
+use utils::{sql::DataBase, 配置文件夹};
 
 #[tokio::main]
 async fn main() {
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
-        activity,
+        active_id,
         accounts,
-        location,
         pos,
-        pic,
+        posid,
+        img,
         signcode,
         precise,
         no_random_shift,
@@ -93,130 +92,32 @@ async fn main() {
                 }
             }
             MainCmds::Pos {
-                command,
+                posid,
+                list,
+                new,
+                import,
+                export,
+                alias,
+                remove,
+                remove_all,
                 course,
                 global,
+                yes,
             } => {
-                if let Some(pos_sub_cmd) = command {
-                    match pos_sub_cmd {
-                        PosCmds::Add { course, pos } => {
-                            let mut course_id = -1_i64;
-                            if let Some(id) = course {
-                                if id < 0 {
-                                    if id == -1 {
-                                        eprintln!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
-                                    } else {
-                                        panic!("警告：课程号小于 0! 请检查是否正确！");
-                                    }
-                                } else {
-                                    course_id = id;
-                                }
-                            }
-                            为数据库添加位置(
-                                &db,
-                                course_id,
-                                &Struct位置::从字符串解析(&pos).unwrap_or_else(|e| panic!("{}", e)),
-                            )
-                        }
-                        PosCmds::Remove { posid, yes, all } => {
-                            fn confirm(msg: &str) -> bool {
-                                inquire::Confirm::new(msg)
-                                    .with_default(false)
-                                    .prompt()
-                                    .unwrap()
-                            }
-                            if let Some(posid) = posid {
-                                if !yes {
-                                    let ans = confirm("是否删除？");
-                                    if !ans {
-                                        return;
-                                    }
-                                }
-                                // 删除指定位置。
-                                db.delete_pos(posid);
-                            } else if all {
-                                if !yes {
-                                    let ans = confirm("是否删除？");
-                                    if !ans {
-                                        return;
-                                    }
-                                }
-                                if !yes {
-                                    let ans = confirm("请再次确认，是否删除？");
-                                    if !ans {
-                                        return;
-                                    }
-                                }
-                                db.delete_all_pos();
-                            } else {
-                                panic!("请提供要删除位置的 posid!")
-                            }
-                        }
-                        PosCmds::Export { output } => {
-                            // 列出所有位置。
-                            let poss = db.get_poss();
-                            let mut contents = String::new();
-                            for pos in poss.values() {
-                                contents += format!("{}${}\n", pos.0, pos.1).as_str()
-                            }
-                            std::fs::write(output, contents)
-                                .expect("文件写入出错，请检查路径是否正确！");
-                        }
-                        PosCmds::Import { input } => {
-                            let contents = std::fs::read_to_string(input)
-                                .expect("文件读取失败，请检查路径是否正确！");
-                            let contents = contents.split('\n');
-                            let mut line_count = 1_i64;
-                            for line in contents {
-                                if !line.is_empty() {
-                                    let data: Vec<&str> = line.split('$').collect();
-                                    if data.len() > 1 {
-                                        let mut course_id = -1_i64;
-                                        if let Ok(id) = data[0].trim().parse::<i64>() {
-                                            course_id = id;
-                                        } else {
-                                            eprintln!("警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！");
-                                        }
-                                        if let Ok(pos) = Struct位置::从字符串解析(data[1]) {
-                                            为数据库添加位置(&db, course_id, &pos)
-                                        } else {
-                                            eprintln!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
-                                        }
-                                    } else {
-                                        eprintln!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
-                                    }
-                                }
-                                line_count += 1;
-                            }
-                        }
-                    }
-                } else if global {
-                    // 列出所有全局位置。
-                    let poss = db.get_poss();
-                    for pos in poss {
-                        if pos.1 .0 == -1 {
-                            println!(
-                                "posid: {}, course_id: {}, addr: {:?}",
-                                pos.0, pos.1 .0, pos.1 .1
-                            )
-                        }
-                    }
-                } else if let Some(course_id) = course {
-                    // 列出指定课程的位置。
-                    let poss = db.get_course_poss(course_id);
-                    for pos in poss {
-                        println!("posid: {}, addr: {:?}", pos.0, pos.1)
-                    }
-                } else {
-                    // 列出所有位置。
-                    let poss = db.get_poss();
-                    for pos in poss {
-                        println!(
-                            "posid: {}, course_id: {}, addr: {}",
-                            pos.0, pos.1 .0, pos.1 .1
-                        )
-                    }
-                }
+                let args = CliPosArgs {
+                    posid,
+                    list,
+                    new,
+                    import,
+                    export,
+                    alias,
+                    remove,
+                    remove_all,
+                    course,
+                    global,
+                    yes,
+                };
+                cli::pos::pos(&db, args)
             }
             MainCmds::List { course, all } => {
                 let sessions = utils::account::通过账号获取签到会话(
@@ -260,14 +161,14 @@ async fn main() {
         }
     } else {
         let 签到可能使用的信息 = cli::arg::CliArgs {
-            位置id: location,
+            位置id: posid,
             位置字符串: pos,
-            图片或图片路径: pic,
+            图片或图片路径: img,
             签到码: signcode,
             是否精确识别二维码: precise,
             是否禁用随机偏移: no_random_shift,
         };
-        cli::签到(&db, activity, accounts, 签到可能使用的信息)
+        cli::签到(&db, active_id, accounts, 签到可能使用的信息)
             .await
             .unwrap();
     }

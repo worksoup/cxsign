@@ -55,7 +55,11 @@ impl std::fmt::Display for Struct位置 {
     }
 }
 
-pub fn 为数据库添加位置(db: &super::sql::DataBase, course_id: i64, pos: &Struct位置) {
+pub fn 为数据库添加位置(
+    db: &super::sql::DataBase,
+    course_id: i64,
+    pos: &Struct位置,
+) -> i64 {
     // 为指定课程添加位置。
     let mut posid = 0_i64;
     loop {
@@ -66,6 +70,7 @@ pub fn 为数据库添加位置(db: &super::sql::DataBase, course_id: i64, pos: 
         db.add_pos_or(posid, course_id, pos, |_, _, _, _| {});
         break;
     }
+    posid
 }
 
 pub fn 在html文本中寻找位置及范围(html: &str) -> Option<Struct位置及范围> {
