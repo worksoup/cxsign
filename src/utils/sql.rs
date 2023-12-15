@@ -1,4 +1,4 @@
-use crate::session::course::Course;
+use crate::session::course::Struct课程;
 use crate::utils::address::Struct位置;
 use sqlite::Connection;
 use std::{collections::HashMap, fs::File, ops::Deref};
@@ -141,9 +141,9 @@ impl DataBase {
         query.next().unwrap();
         query.read::<i64, _>(0).unwrap() == 1
     }
-    pub fn add_course_or<O: Fn(&DataBase, &Course)>(&self, course: &Course, or: O) {
-        let id: i64 = course.get_course_id();
-        let clazzid: i64 = course.get_class_id();
+    pub fn add_course_or<O: Fn(&DataBase, &Struct课程)>(&self, course: &Struct课程, or: O) {
+        let id: i64 = course.get_课程号();
+        let clazzid: i64 = course.get_班级号();
         let name: &str = course.get_课程名();
         let teacher: &str = course.get_任课教师();
         let image: &str = course.get_封面图url();
@@ -174,7 +174,7 @@ impl DataBase {
             self.connection.execute(Self::CREATE_COURSE_SQL).unwrap();
         }
     }
-    pub fn get_courses(&self) -> HashMap<i64, Course> {
+    pub fn get_courses(&self) -> HashMap<i64, Struct课程> {
         let mut query = self.connection.prepare("SELECT * FROM course;").unwrap();
         let mut courses = HashMap::new();
         for c in query.iter() {
@@ -184,7 +184,7 @@ impl DataBase {
                 let teacher = row.read::<&str, _>("teacher");
                 let image = row.read::<&str, _>("image");
                 let name = row.read::<&str, _>("name");
-                courses.insert(id, Course::new(id, clazzid, teacher, image, name));
+                courses.insert(id, Struct课程::new(id, clazzid, teacher, image, name));
             } else {
                 eprintln!("课程解析行出错：{c:?}.");
             }

@@ -1,5 +1,5 @@
-use crate::session::course::Course;
-use crate::session::SignSession;
+use crate::session::course::Struct课程;
+use crate::session::Struct签到会话;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Response};
 
@@ -46,26 +46,26 @@ pub async fn login_enc(
 static PRE_SIGN: &str = "https://mobilelearn.chaoxing.com/newsign/preSign";
 pub async fn pre_sign(
     client: &Client,
-    course: Course,
+    course: Struct课程,
     active_id: &str,
     uid: &str,
 ) -> Result<Response, reqwest::Error> {
-    let course_id = course.get_course_id();
-    let class_id = course.get_class_id();
+    let course_id = course.get_课程号();
+    let class_id = course.get_班级号();
     let url = PRE_SIGN;
     let url = format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0");
     client.get(url).send().await
 }
 pub async fn pre_sign_for_qrcode_sign(
     client: &Client,
-    course: Course,
+    course: Struct课程,
     active_id: &str,
     uid: &str,
     c: &str,
     enc: &str,
 ) -> Result<Response, reqwest::Error> {
-    let course_id = course.get_course_id();
-    let class_id = course.get_class_id();
+    let course_id = course.get_课程号();
+    let class_id = course.get_班级号();
     let url = PRE_SIGN;
     let ex_args = format!("SIGNIN:aid={active_id}&source=15&Code={c}&enc={enc}");
     let ex_args = "&rcode=".to_owned()
@@ -95,7 +95,7 @@ pub async fn analysis2(client: &Client, code: &str) -> Result<Response, reqwest:
 // 签到
 static PPT_SIGN: &str = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax";
 pub async fn general_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     active_id: &str,
 ) -> Result<Response, reqwest::Error> {
     let uid = session.get_uid();
@@ -106,7 +106,7 @@ pub async fn general_sign(
     session.get(url).send().await
 }
 pub async fn photo_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     active_id: &str,
     object_id: &str,
 ) -> Result<Response, reqwest::Error> {
@@ -121,7 +121,7 @@ pub async fn photo_sign(
     session.get(url).send().await
 }
 pub async fn qrcode_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     enc: &str,
     active_id: &str,
     pos: &Struct位置,
@@ -146,7 +146,7 @@ pub async fn qrcode_sign(
     session.get(url).send().await
 }
 pub async fn location_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     pos: &Struct位置,
     active_id: &str,
 ) -> Result<Response, reqwest::Error> {
@@ -161,7 +161,7 @@ pub async fn location_sign(
     session.get(url).send().await
 }
 pub async fn signcode_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     active_id: &str,
     signcode: &str,
 ) -> Result<Response, reqwest::Error> {
@@ -203,13 +203,13 @@ pub async fn back_clazz_data(client: &Client) -> Result<Response, reqwest::Error
 }
 // 查询活动
 static ACTIVE_LIST: &str = "https://mobilelearn.chaoxing.com/v2/apis/active/student/activelist";
-pub async fn active_list(client: &Client, course: Course) -> Result<Response, reqwest::Error> {
+pub async fn active_list(client: &Client, course: Struct课程) -> Result<Response, reqwest::Error> {
     let url = {
         let mut url = String::from(ACTIVE_LIST);
         url.push_str("?fid=0&courseId=");
-        url.push_str(course.get_course_id().to_string().as_str());
+        url.push_str(course.get_课程号().to_string().as_str());
         url.push_str("&classId=");
-        url.push_str(course.get_class_id().to_string().as_str());
+        url.push_str(course.get_班级号().to_string().as_str());
         url.push_str("&showNotStartedActive=0&_=");
         let time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

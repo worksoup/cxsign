@@ -15,7 +15,7 @@ pub struct Struct位置及范围 {
     pub 范围: u32,
 }
 impl Struct位置 {
-    pub fn parse_str(pos: &str) -> Result<Self, &str> {
+    pub fn 从字符串解析(pos: &str) -> Result<Self, &str> {
         let pos: Vec<&str> = pos.split(',').map(|item| item.trim()).collect();
         if pos.len() == 4 {
             Ok(Self::new(pos[0], pos[1], pos[2], pos[3]))
@@ -122,7 +122,9 @@ pub fn 在html文本中寻找位置及范围(html: &str) -> Option<Struct位置�
     })
 }
 
-pub fn 根据位置及范围获取随机偏移后的位置(位置及范围: Struct位置及范围) -> Struct位置 {
+pub fn 根据位置及范围获取随机偏移后的位置(
+    位置及范围: Struct位置及范围,
+) -> Struct位置 {
     const 地球半径: f64 = 6371393.0;
     let Struct位置及范围 {
         位置:

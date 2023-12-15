@@ -1,42 +1,44 @@
 pub mod sign;
-use crate::session::{course::Course, SignSession};
+use crate::session::{course::Struct课程, Struct签到会话};
 use serde_derive::{Deserialize, Serialize};
 use sign::Struct签到;
 
 #[derive(Debug)]
-pub enum Activity {
-    Sign(Struct签到),
-    Other(OtherActivity),
+pub enum Enum活动 {
+    签到(Struct签到),
+    非签到活动(Struct非签到活动),
 }
 
-impl Activity {
-    pub async fn from_course(
-        session: &SignSession,
-        c: Course,
-    ) -> Result<Vec<Activity>, reqwest::Error> {
-        let r = crate::utils::query::active_list(session, c.clone()).await?;
+impl Enum活动 {
+    pub async fn 获取课程的所有活动(
+        签到会话: &Struct签到会话,
+        c: Struct课程,
+    ) -> Result<Vec<Enum活动>, reqwest::Error> {
+        let r = crate::utils::query::active_list(签到会话, c.clone()).await?;
         let r: GetActivityR = r.json().await.unwrap();
-        let mut arr = Vec::new();
+        let mut 活动列表 = Vec::new();
         if let Some(data) = r.data {
             for ar in data.activeList {
                 if let Some(other_id) = ar.otherId {
                     let other_id_i64: i64 = other_id.parse().unwrap();
                     if (0..=5).contains(&other_id_i64) {
-                        let active_id = ar.id.to_string();
-                        let detail =
-                            Struct签到::get_sign_detial_by_active_id(active_id.as_str(), session)
-                                .await?;
-                        arr.push(Activity::Sign(Struct签到 {
-                            id: active_id,
-                            name: ar.nameOne,
-                            course: c.clone(),
+                        let 活动id = ar.id.to_string();
+                        let detail = Struct签到::通过active_id获取签到信息(
+                            活动id.as_str(),
+                            签到会话,
+                        )
+                        .await?;
+                        活动列表.push(Enum活动::签到(Struct签到 {
+                            活动id,
+                            签到名: ar.nameOne,
+                            课程: c.clone(),
                             other_id,
-                            status: ar.status,
-                            start_time_secs: (ar.startTime / 1000) as i64,
-                            detail,
+                            状态码: ar.status,
+                            开始时间戳: (ar.startTime / 1000) as i64,
+                            签到信息: detail,
                         }))
                     } else {
-                        arr.push(Activity::Other(OtherActivity {
+                        活动列表.push(Enum活动::非签到活动(Struct非签到活动 {
                             id: ar.id.to_string(),
                             name: ar.nameOne,
                             course: c.clone(),
@@ -45,7 +47,7 @@ impl Activity {
                         }))
                     }
                 } else {
-                    arr.push(Activity::Other(OtherActivity {
+                    活动列表.push(Enum活动::非签到活动(Struct非签到活动 {
                         id: ar.id.to_string(),
                         name: ar.nameOne,
                         course: c.clone(),
@@ -55,15 +57,15 @@ impl Activity {
                 }
             }
         }
-        Ok(arr)
+        Ok(活动列表)
     }
 }
 
 #[derive(Debug)]
-pub struct OtherActivity {
+pub struct Struct非签到活动 {
     pub id: String,
     pub name: String,
-    pub course: Course,
+    pub course: Struct课程,
     pub status: i32,
     pub start_time_secs: i64,
 }

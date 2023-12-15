@@ -1,8 +1,11 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 #[derive(Parser, Debug)]
-#[command(author, version, about = "进行签到。", long_about = 
-r#"
+#[command(
+    author,
+    version,
+    about = "进行签到。",
+    long_about = r#"
 进行签到。
 
 关于签到行为：
@@ -12,7 +15,8 @@ r#"
 二维码签到可指定 `-p, --pic` 选项，提供照片位置。如不提供则从屏幕上截取。
 位置签到可指定 `    --pos` 或 `-l, --location` 选项。如不提供则根据教师设置的签到范围或数据库中获取。
 手势或签到码签到须指定 `-s, --signcode` 选项，提供签到码。
-"#)]
+"#
+)]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<MainCmds>,
@@ -152,11 +156,11 @@ pub enum PosCmds {
 }
 
 pub struct CliArgs {
-    pub location: Option<i64>,
-    pub pos: Option<String>,
-    pub pic: Option<std::path::PathBuf>,
+    pub 位置id: Option<i64>,
+    pub 位置字符串: Option<String>,
+    pub 图片或图片路径: Option<std::path::PathBuf>,
     // pub capture: bool,
-    pub precise: bool,
-    pub signcode: Option<String>,
-    pub no_random_shift: bool,
+    pub 是否精确识别二维码: bool,
+    pub 签到码: Option<String>,
+    pub 是否禁用随机偏移: bool,
 }
