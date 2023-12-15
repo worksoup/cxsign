@@ -21,7 +21,7 @@ pub enum Enum签到类型 {
     非已知签到,
 }
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct SignActivity {
+pub struct Struct签到 {
     pub id: String,
     pub name: String,
     pub course: Course,
@@ -35,7 +35,7 @@ pub enum SignState {
     Success,
     Fail(String),
 }
-impl SignActivity {
+impl Struct签到 {
     pub fn speculate_type_by_text(text: &str) -> Enum签到类型 {
         if text.contains("拍照") {
             Enum签到类型::拍照签到
@@ -99,7 +99,7 @@ pub struct SignDetail {
     is_refresh_qrcode: bool,
     c: String,
 }
-impl SignActivity {
+impl Struct签到 {
     pub fn display(&self, already_course: bool) {
         let name_width = get_unicode_correct_display_width(self.name.as_str(), 12);
         if already_course {
@@ -185,11 +185,11 @@ impl SignActivity {
         };
         #[cfg(debug_assertions)]
         println!("code: {code:?}");
-        let response_of_analysis2 = utils::query::analysis2(session, code).await?;
+        let _response_of_analysis2 = utils::query::analysis2(session, code).await?;
         #[cfg(debug_assertions)]
         println!(
             "analysis 结果：{}",
-            response_of_analysis2.text().await.unwrap()
+            _response_of_analysis2.text().await.unwrap()
         );
         let presign_status = {
             let html = response_of_presign.text().await.unwrap();
@@ -263,7 +263,7 @@ impl SignActivity {
         }
     }
 }
-impl SignActivity {
+impl Struct签到 {
     pub async fn sign_common(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
         let r = utils::query::general_sign(session, self.id.as_str()).await?;
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
@@ -306,7 +306,7 @@ impl SignActivity {
         Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
     }
 }
-impl SignActivity {
+impl Struct签到 {
     pub async fn chat_group_pre_sign(
         &self,
         chat_id: &str,

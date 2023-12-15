@@ -1,4 +1,4 @@
-use crate::activity::sign::{SignActivity, SignState};
+use crate::activity::sign::{Struct签到, SignState};
 use crate::utils::address::根据位置及范围获取随机偏移后的位置;
 use crate::{
     session::SignSession,
@@ -6,7 +6,7 @@ use crate::{
 };
 
 pub async fn 拍照签到_单个账号<'a>(
-    sign: &SignActivity,
+    sign: &Struct签到,
     photo: &Photo,
     session: &'a SignSession,
 ) -> Result<(&'a str, SignState), reqwest::Error> {
@@ -20,7 +20,7 @@ pub async fn 拍照签到_单个账号<'a>(
 }
 
 pub async fn 通用签到_单个账号<'a>(
-    sign: &SignActivity,
+    sign: &Struct签到,
     session: &'a SignSession,
 ) -> Result<(&'a str, SignState), reqwest::Error> {
     Ok((
@@ -33,7 +33,7 @@ pub async fn 通用签到_单个账号<'a>(
 }
 
 pub async fn 二维码签到_单个账号<'a>(
-    sign: &SignActivity,
+    sign: &Struct签到,
     c: &str,
     enc: &str,
     pos_vec: &Vec<Struct位置>,
@@ -74,7 +74,7 @@ pub async fn 二维码签到_单个账号<'a>(
 }
 
 pub async fn 位置签到_单个账号<'a>(
-    sign: &SignActivity,
+    sign: &Struct签到,
     poss: &Vec<Struct位置>,
     auto_fetch_pos: bool,
     session: &'a SignSession,
@@ -126,7 +126,7 @@ pub async fn 位置签到_单个账号<'a>(
 }
 
 pub async fn 签到码签到_单个账号<'a>(
-    sign: &SignActivity,
+    sign: &Struct签到,
     signcode: &str,
     session: &'a SignSession,
 ) -> Result<(&'a str, SignState), reqwest::Error> {

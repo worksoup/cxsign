@@ -2,7 +2,7 @@ pub mod cookies;
 pub mod course;
 
 use crate::activity::{
-    sign::SignActivity,
+    sign::Struct签到,
     {Activity, OtherActivity},
 };
 use crate::session::course::{Course, GetCoursesR};
@@ -215,7 +215,7 @@ impl SignSession {
 impl SignSession {
     pub async fn traverse_activities(
         &self,
-    ) -> Result<(Vec<SignActivity>, Vec<SignActivity>, Vec<OtherActivity>), reqwest::Error> {
+    ) -> Result<(Vec<Struct签到>, Vec<Struct签到>, Vec<OtherActivity>), reqwest::Error> {
         let mut available_sign_activities = Vec::new();
         let mut other_sign_activities = Vec::new();
         let mut other_activities = Vec::new();

@@ -1,11 +1,11 @@
 pub mod sign;
 use crate::session::{course::Course, SignSession};
 use serde_derive::{Deserialize, Serialize};
-use sign::SignActivity;
+use sign::Struct签到;
 
 #[derive(Debug)]
 pub enum Activity {
-    Sign(SignActivity),
+    Sign(Struct签到),
     Other(OtherActivity),
 }
 
@@ -24,9 +24,9 @@ impl Activity {
                     if (0..=5).contains(&other_id_i64) {
                         let active_id = ar.id.to_string();
                         let detail =
-                            SignActivity::get_sign_detial_by_active_id(active_id.as_str(), session)
+                            Struct签到::get_sign_detial_by_active_id(active_id.as_str(), session)
                                 .await?;
-                        arr.push(Activity::Sign(SignActivity {
+                        arr.push(Activity::Sign(Struct签到 {
                             id: active_id,
                             name: ar.nameOne,
                             course: c.clone(),

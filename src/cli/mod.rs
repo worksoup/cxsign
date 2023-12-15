@@ -2,7 +2,7 @@ pub mod arg;
 mod sign;
 mod single_sign;
 
-use crate::activity::sign::{SignActivity, SignState, Enum签到类型};
+use crate::activity::sign::{Struct签到, SignState, Enum签到类型};
 use crate::utils;
 use crate::utils::sign::截屏获取二维码签到所需参数;
 use crate::{
@@ -74,7 +74,7 @@ async fn location_and_pos_to_poss(
     }
 }
 
-fn 打印对于sign无法获取二维码时的错误信息(sign: &SignActivity) {
+fn 打印对于sign无法获取二维码时的错误信息(sign: &Struct签到) {
     eprintln!(
         "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
         sign.name
@@ -82,7 +82,7 @@ fn 打印对于sign无法获取二维码时的错误信息(sign: &SignActivity) 
 }
 
 async fn qrcode_sign_by_pic_arg<'a>(
-    sign: &SignActivity,
+    sign: &Struct签到,
     pic: &PathBuf,
     location: &Option<i64>,
     db: &DataBase,
@@ -114,7 +114,7 @@ async fn qrcode_sign_by_pic_arg<'a>(
     Ok(states)
 }
 async fn 区分签到类型并进行签到<'a>(
-    sign: &SignActivity,
+    sign: &Struct签到,
     db: &DataBase,
     sessions: &'a Vec<&SignSession>,
     cli_args: &CliArgs,

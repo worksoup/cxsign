@@ -3,13 +3,13 @@ use std::collections::{hash_map::OccupiedError, HashMap};
 use rxing::{Point, PointI, PointU};
 use screenshots::display_info::DisplayInfo;
 
-use crate::{activity::sign::SignActivity, session::SignSession, utils::inquire_confirm};
+use crate::{activity::sign::Struct签到, session::SignSession, utils::inquire_confirm};
 
 pub async fn get_signs(
     sessions: &HashMap<String, SignSession>,
 ) -> (
-    HashMap<SignActivity, HashMap<&String, &SignSession>>,
-    HashMap<SignActivity, HashMap<&String, &SignSession>>,
+    HashMap<Struct签到, HashMap<&String, &SignSession>>,
+    HashMap<Struct签到, HashMap<&String, &SignSession>>,
 ) {
     let mut 有效签到 = HashMap::new();
     let mut 其他签到 = HashMap::new();
