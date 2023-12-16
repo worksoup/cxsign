@@ -124,12 +124,12 @@ pub async fn qrcode_sign(
     session: &Struct签到会话,
     enc: &str,
     active_id: &str,
-    pos: &Struct位置,
+    位置: &Struct位置,
 ) -> Result<Response, reqwest::Error> {
-    let address = pos.get_地址();
-    let lat = pos.get_纬度();
-    let lon = pos.get_经度();
-    let altitude = pos.get_海拔();
+    let address = 位置.get_地址();
+    let lat = 位置.get_纬度();
+    let lon = 位置.get_经度();
+    let altitude = 位置.get_海拔();
     let url = PPT_SIGN;
     let uid = session.get_uid();
     let fid = session.get_fid();
@@ -147,12 +147,12 @@ pub async fn qrcode_sign(
 }
 pub async fn location_sign(
     session: &Struct签到会话,
-    pos: &Struct位置,
+    位置: &Struct位置,
     active_id: &str,
 ) -> Result<Response, reqwest::Error> {
-    let address = pos.get_地址();
-    let lat = pos.get_纬度();
-    let lon = pos.get_经度();
+    let address = 位置.get_地址();
+    let lat = 位置.get_纬度();
+    let lon = 位置.get_经度();
     let uid = session.get_uid();
     let fid = session.get_fid();
     let stu_name = session.get_用户真名();

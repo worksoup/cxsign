@@ -98,7 +98,7 @@ async fn main() {
                 export,
                 alias,
                 remove,
-                remove_positions,
+                remove_locations,
                 remove_aliases,
                 course,
                 global,
@@ -112,13 +112,13 @@ async fn main() {
                     export,
                     alias,
                     remove,
-                    remove_positions,
+                    remove_locations,
                     remove_aliases,
                     course,
                     global,
                     yes,
                 };
-                cli::location::pos(&db, args)
+                cli::location::location(&db, args)
             }
             MainCmds::List { course, all } => {
                 let sessions = utils::account::通过账号获取签到会话(

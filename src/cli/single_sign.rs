@@ -38,7 +38,7 @@ pub async fn 二维码签到_单个账号<'a>(
     sign: &Struct签到,
     c: &str,
     enc: &str,
-    pos_vec: &Vec<Struct位置>,
+    位置列表: &Vec<Struct位置>,
     session: &'a Struct签到会话,
 ) -> Result<(&'a str, Enum签到结果), reqwest::Error> {
     Ok((
@@ -53,8 +53,8 @@ pub async fn 二维码签到_单个账号<'a>(
                 let mut state = Enum签到结果::失败 {
                     失败信息: "所有位置均不可用".into(),
                 };
-                for pos in pos_vec {
-                    match sign.作为二维码签到处理(enc, pos, session).await? {
+                for 位置 in 位置列表 {
+                    match sign.作为二维码签到处理(enc, 位置, session).await? {
                         r @ Enum签到结果::成功 => {
                             state = r;
                             break;
@@ -64,7 +64,7 @@ pub async fn 二维码签到_单个账号<'a>(
                                 "用户[{}]在二维码签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
                                 session.get_用户真名(),
                                 sign.签到名,
-                                pos,
+                                位置,
                                 失败信息
                             );
                         }
@@ -89,30 +89,30 @@ pub async fn 位置签到_单个账号<'a>(
             Enum签到结果::成功 => Enum签到结果::成功,
             Enum签到结果::失败 { 失败信息 } => {
                 if 是否自动获取签到位置
-                    && let Some(pos) =
+                    && let Some(位置及范围) =
                         crate::utils::address::在html文本中寻找位置及范围(&失败信息)
                 {
                     println!(
                         "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用随机偏移后的位置签到。",
                         签到会话.get_用户真名(),
-                        pos.位置,
-                        pos.范围
+                        位置及范围.位置,
+                        位置及范围.范围
                     );
-                    let pos = if 是否禁用随机偏移 {
-                        pos.位置
+                    let 位置 = if 是否禁用随机偏移 {
+                        位置及范围.位置
                     } else {
-                        根据位置及范围获取随机偏移后的位置(pos)
+                        根据位置及范围获取随机偏移后的位置(位置及范围)
                     };
-                    println!("用户[{}]签到使用位置：{}.", 签到会话.get_用户真名(), pos);
-                    签到.作为位置签到处理(&pos, 签到会话).await?
+                    println!("用户[{}]签到使用位置：{}.", 签到会话.get_用户真名(), 位置);
+                    签到.作为位置签到处理(&位置, 签到会话).await?
                 } else {
-                    let mut state = Enum签到结果::失败 {
+                    let mut 签到结果 = Enum签到结果::失败 {
                         失败信息: "所有位置均不可用".into(),
                     };
-                    for pos in 位置列表 {
-                        match 签到.作为位置签到处理(pos, 签到会话).await? {
+                    for 位置 in 位置列表 {
+                        match 签到.作为位置签到处理(位置, 签到会话).await? {
                             r @ Enum签到结果::成功 => {
-                                state = r;
+                                签到结果 = r;
                                 break;
                             }
                             Enum签到结果::失败 { 失败信息 } => {
@@ -120,13 +120,13 @@ pub async fn 位置签到_单个账号<'a>(
                                     "用户[{}]在位置签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
                                     签到会话.get_用户真名(),
                                     签到.签到名,
-                                    pos,
+                                    位置,
                                     失败信息
                                 );
                             }
                         };
                     }
-                    state
+                    签到结果
                 }
             }
         },

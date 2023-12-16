@@ -13,7 +13,7 @@ use std::path::PathBuf;
 普通签到不需要指定任何选项。
 拍照签到可指定 `-p, --pic` 选项，提供照片位置。如不提供则从云盘上获取图片。
 二维码签到可指定 `-p, --pic` 选项，提供照片位置。如不提供则从屏幕上截取。
-位置签到可指定 `    --pos` 或 `-l, --location` 选项。如不提供则根据教师设置的签到范围或数据库中获取。
+位置签到可指定 `-l, --location` 选项。如不提供则根据教师设置的签到范围或数据库中获取。
 手势或签到码签到须指定 `-s, --signcode` 选项，提供签到码。
 "#
 )]
@@ -113,7 +113,7 @@ pub enum MainCmds {
         remove: bool,
         /// 删除所有位置。
         #[arg(long)]
-        remove_positions: bool,
+        remove_locations: bool,
         /// 删除所有别名。
         #[arg(long)]
         remove_aliases: bool,

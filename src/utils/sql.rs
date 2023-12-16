@@ -193,7 +193,7 @@ impl DataBase {
         courses
     }
 }
-// pos
+// 位置
 impl DataBase {
     const CREATE_POS_SQL: &'static str ="CREATE TABLE pos(posid INTEGER UNIQUE NOT NULL,courseid INTEGER NOT NULL,addr TEXT NOT NULL,lon TEXT NOT NULL,lat TEXT NOT NULL,alt TEXT NOT NULL);";
 
@@ -214,17 +214,17 @@ impl DataBase {
         query.next().unwrap();
         query.read::<i64, _>(0).unwrap() > 0
     }
-    pub fn add_pos_or<O: Fn(&DataBase, i64, i64, &Struct位置)>(
+    pub fn 添加位置_失败后则<O: Fn(&DataBase, i64, i64, &Struct位置)>(
         &self,
         位置id: i64,
         course_id: i64,
-        pos: &Struct位置,
+        位置: &Struct位置,
         or: O,
     ) {
-        let addr = pos.get_地址();
-        let lat = pos.get_纬度();
-        let lon = pos.get_经度();
-        let alt = pos.get_海拔();
+        let addr = 位置.get_地址();
+        let lat = 位置.get_纬度();
+        let lon = 位置.get_经度();
+        let alt = 位置.get_海拔();
         let mut query =self.connection.prepare("INSERT INTO pos(posid,courseid,addr,lat,lon,alt) values(:posid,:courseid,:addr,:lat,:lon,:alt);").unwrap();
         query
             .bind::<&[(_, sqlite::Value)]>(
@@ -240,7 +240,7 @@ impl DataBase {
             .unwrap();
         match query.next() {
             Ok(_) => (),
-            Err(_) => or(self, 位置id, course_id, pos),
+            Err(_) => or(self, 位置id, course_id, 位置),
         }
     }
     pub fn 删除为某id的位置(&self, 位置id: i64) {
@@ -261,9 +261,9 @@ impl DataBase {
             self.connection.execute(Self::CREATE_POS_SQL).unwrap();
         }
     }
-    pub fn get_poss(&self) -> HashMap<i64, (i64, Struct位置)> {
+    pub fn 获取所有位置(&self) -> HashMap<i64, (i64, Struct位置)> {
         let mut query = self.connection.prepare("SELECT * FROM pos;").unwrap();
-        let mut poss = HashMap::new();
+        let mut 位置列表 = HashMap::new();
         for c in query.iter() {
             if let Ok(row) = c {
                 let 位置id = row.read("posid");
@@ -272,12 +272,12 @@ impl DataBase {
                 let 经度 = row.read("lon");
                 let 海拔 = row.read("alt");
                 let 课程号 = row.read("courseid");
-                poss.insert(位置id, (课程号, Struct位置::new(地址, 经度, 纬度, 海拔)));
+                位置列表.insert(位置id, (课程号, Struct位置::new(地址, 经度, 纬度, 海拔)));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }
         }
-        poss
+        位置列表
     }
     pub fn 获取为某id的位置(&self, 位置id: i64) -> (i64, Struct位置) {
         let mut query = self
@@ -303,7 +303,7 @@ impl DataBase {
             .prepare("SELECT * FROM pos WHERE courseid=?;")
             .unwrap();
         query.bind((1, course_id)).unwrap();
-        let mut poss = HashMap::new();
+        let mut 位置列表 = HashMap::new();
         for c in query.iter() {
             if let Ok(row) = c {
                 let 位置id = row.read("posid");
@@ -311,32 +311,32 @@ impl DataBase {
                 let 纬度 = row.read("lat");
                 let 经度 = row.read("lon");
                 let 海拔 = row.read("alt");
-                poss.insert(位置id, Struct位置::new(地址, 经度, 纬度, 海拔));
+                位置列表.insert(位置id, Struct位置::new(地址, 经度, 纬度, 海拔));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }
         }
-        poss
+        位置列表
     }
-    pub fn get_course_positions(&self, course_id: i64) -> Vec<Struct位置> {
+    pub fn 获取特定课程的位置(&self, course_id: i64) -> Vec<Struct位置> {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE courseid=?;")
             .unwrap();
         query.bind((1, course_id)).unwrap();
-        let mut poss = Vec::new();
+        let mut 位置列表 = Vec::new();
         for c in query.iter() {
             if let Ok(row) = c {
                 let addr = row.read("addr");
                 let lat = row.read("lat");
                 let lon = row.read("lon");
                 let alt = row.read("alt");
-                poss.push(Struct位置::new(addr, lon, lat, alt));
+                位置列表.push(Struct位置::new(addr, lon, lat, alt));
             } else {
                 eprintln!("位置解析行出错：{c:?}.");
             }
         }
-        poss
+        位置列表
     }
 }
 
@@ -406,7 +406,7 @@ impl DataBase {
             self.connection.execute(Self::CREATE_ALIAS_SQL).unwrap();
         }
     }
-    pub fn get_pos_by_alias(&self, alias: &str) -> Option<Struct位置> {
+    pub fn 获取为某别名的位置(&self, alias: &str) -> Option<Struct位置> {
         if self.has_alias(alias) {
             let mut query = self
                 .connection

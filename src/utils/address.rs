@@ -15,10 +15,10 @@ pub struct Struct位置及范围 {
     pub 范围: u32,
 }
 impl Struct位置 {
-    pub fn 从字符串解析(pos: &str) -> Result<Self, &str> {
-        let pos: Vec<&str> = pos.split(',').map(|item| item.trim()).collect();
-        if pos.len() == 4 {
-            Ok(Self::new(pos[0], pos[1], pos[2], pos[3]))
+    pub fn 从字符串解析(位置字符串: &str) -> Result<Self, &str> {
+        let 位置字符串: Vec<&str> = 位置字符串.split(',').map(|item| item.trim()).collect();
+        if 位置字符串.len() == 4 {
+            Ok(Self::new(位置字符串[0], 位置字符串[1], 位置字符串[2], 位置字符串[3]))
         } else {
             Err("位置信息格式错误！格式为：`地址,经度,纬度,海拔`.")
         }
@@ -58,7 +58,7 @@ impl std::fmt::Display for Struct位置 {
 pub fn 为数据库添加位置(
     db: &super::sql::DataBase,
     course_id: i64,
-    pos: &Struct位置,
+    位置: &Struct位置,
 ) -> i64 {
     // 为指定课程添加位置。
     let mut 位置id = 0_i64;
@@ -67,7 +67,7 @@ pub fn 为数据库添加位置(
             位置id += 1;
             continue;
         }
-        db.add_pos_or(位置id, course_id, pos, |_, _, _, _| {});
+        db.添加位置_失败后则(位置id, course_id, 位置, |_, _, _, _| {});
         break;
     }
     位置id

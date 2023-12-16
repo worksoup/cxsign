@@ -13,14 +13,14 @@ pub struct Struct位置操作使用的信息 {
     pub export: Option<PathBuf>,
     pub alias: Option<String>,
     pub remove: bool,
-    pub remove_positions: bool,
+    pub remove_locations: bool,
     pub remove_aliases: bool,
     pub course: Option<i64>,
     pub global: bool,
     pub yes: bool,
 }
 
-pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用的信息) {
+pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作使用的信息) {
     fn confirm(msg: &str) -> bool {
         inquire::Confirm::new(msg)
             .with_default(false)
@@ -35,7 +35,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
         export,
         alias,
         remove,
-        remove_positions,
+        remove_locations,
         remove_aliases,
         course,
         global,
@@ -47,7 +47,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                 || import.is_some()
                 || export.is_some()
                 || remove
-                || remove_positions
+                || remove_locations
                 || remove_aliases
                 || global
                 || yes
@@ -83,7 +83,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                 || export.is_some()
                 || alias.is_some()
                 || remove
-                || remove_positions
+                || remove_locations
                 || remove_aliases
                 || course.is_some()
                 || global
@@ -109,14 +109,14 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                             "警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！"
                         );
                     }
-                    if let Ok(pos) = Struct位置::从字符串解析(data[1]) {
-                        let 位置id = 为数据库添加位置(&db, course_id, &pos);
+                    if let Ok(位置) = Struct位置::从字符串解析(data[1]) {
+                        let 位置id = 为数据库添加位置(&db, course_id, &位置);
                         if data.len() > 2 {
-                            let aliases: Vec<_> = data[2].split('/').map(|s| s.trim()).collect();
-                            for alias in aliases {
-                                if !alias.is_empty() {
-                                    db.add_alias_or(alias, 位置id, |db, alias, 位置id| {
-                                        db.update_alias(alias, 位置id);
+                            let 别名列表: Vec<_> = data[2].split('/').map(|s| s.trim()).collect();
+                            for 别名 in 别名列表 {
+                                if !别名.is_empty() {
+                                    db.add_alias_or(别名, 位置id, |db, 别名, 位置id| {
+                                        db.update_alias(别名, 位置id);
                                     })
                                 }
                             }
@@ -135,7 +135,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             lication_id.is_some()
                 || alias.is_some()
                 || remove
-                || remove_positions
+                || remove_locations
                 || remove_aliases
                 || course.is_some()
                 || global
@@ -146,9 +146,9 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                 "本行命令将被解释为导出位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
             )
         }
-        let positions = db.get_poss();
+        let 位置列表 = db.获取所有位置();
         let mut contents = String::new();
-        for (位置id, 位置) in positions {
+        for (位置id, 位置) in 位置列表 {
             let aliases = db.get_aliases(位置id);
             let mut aliases_contents = String::new();
             if !aliases.is_empty() {
@@ -167,7 +167,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
         && let Some(位置id) = lication_id
     {
         let over_args =
-            || remove || remove_positions || remove_aliases || course.is_some() || global || yes;
+            || remove || remove_locations || remove_aliases || course.is_some() || global || yes;
         if over_args() {
             eprintln!(
                 "本行命令将被解释为设置别名。需要 `location_id` 参数。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
@@ -181,7 +181,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             eprintln!("警告：不能为不存在的位置添加别名！将不做任何事。")
         }
     } else if remove {
-        let over_args = || remove_positions || remove_aliases || course.is_some() || global;
+        let over_args = || remove_locations || remove_aliases || course.is_some() || global;
         if !yes {
             let ans = confirm("警告：是否删除？");
             if !ans {
@@ -207,7 +207,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             }
             db.删除为某id的位置(位置id);
         }
-    } else if remove_aliases || remove_positions {
+    } else if remove_aliases || remove_locations {
         if course.is_some() && global {
             eprintln!("选项`-c, --course` 和 `-g, --global` 不会同时起效，将解释为前者。")
         }
@@ -217,12 +217,12 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                 .map(|id| *id)
                 .collect()
         } else if global {
-            db.get_poss()
+            db.获取所有位置()
                 .keys()
                 .filter_map(|id| if (*id) == -1 { Some(*id) } else { None })
                 .collect()
         } else {
-            db.get_poss().keys().map(|id| *id).collect()
+            db.获取所有位置().keys().map(|id| *id).collect()
         };
         if !yes {
             let ans = confirm("警告：是否删除？");
@@ -240,7 +240,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
         }
         // 删除指定位置。
         if remove_aliases {
-            if remove_positions || alias.is_some() || lication_id.is_some() {
+            if remove_locations || alias.is_some() || lication_id.is_some() {
                 if alias.is_none() && lication_id.is_none() {
                     eprintln!(
                         "本行命令将被解释为删除一类位置的别名。`    --remove-all` 选项将不起效。"
@@ -271,39 +271,39 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
     if list {
         if global {
             // 列出所有全局位置。
-            let poss = db.get_poss();
-            for pos in poss {
-                if pos.1 .0 == -1 {
+            let 位置列表 = db.获取所有位置();
+            for 位置 in 位置列表 {
+                if 位置.1 .0 == -1 {
                     println!(
                         "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                        pos.0,
-                        pos.1 .0,
-                        pos.1 .1,
-                        db.get_aliases(pos.0)
+                        位置.0,
+                        位置.1 .0,
+                        位置.1 .1,
+                        db.get_aliases(位置.0)
                     )
                 }
             }
         } else if let Some(course_id) = course {
             // 列出指定课程的位置。
-            let poss = db.获取特定课程的位置和其id(course_id);
-            for pos in poss {
+            let 位置列表 = db.获取特定课程的位置和其id(course_id);
+            for 位置 in 位置列表 {
                 println!(
                     "位置id: {}, 位置: {},\n\t别名: {:?}",
-                    pos.0,
-                    pos.1,
-                    db.get_aliases(pos.0)
+                    位置.0,
+                    位置.1,
+                    db.get_aliases(位置.0)
                 )
             }
         } else {
             // 列出所有位置。
-            let poss = db.get_poss();
-            for pos in poss {
+            let 位置列表 = db.获取所有位置();
+            for 位置 in 位置列表 {
                 println!(
                     "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                    pos.0,
-                    pos.1 .0,
-                    pos.1 .1,
-                    db.get_aliases(pos.0)
+                    位置.0,
+                    位置.1 .0,
+                    位置.1 .1,
+                    db.get_aliases(位置.0)
                 )
             }
         }
