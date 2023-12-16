@@ -61,16 +61,16 @@ pub fn 为数据库添加位置(
     pos: &Struct位置,
 ) -> i64 {
     // 为指定课程添加位置。
-    let mut posid = 0_i64;
+    let mut 位置id = 0_i64;
     loop {
-        if db.has_pos(posid) {
-            posid += 1;
+        if db.是否存在为某id的位置(位置id) {
+            位置id += 1;
             continue;
         }
-        db.add_pos_or(posid, course_id, pos, |_, _, _, _| {});
+        db.add_pos_or(位置id, course_id, pos, |_, _, _, _| {});
         break;
     }
-    posid
+    位置id
 }
 
 pub fn 在html文本中寻找位置及范围(html: &str) -> Option<Struct位置及范围> {

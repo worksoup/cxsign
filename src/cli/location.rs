@@ -67,14 +67,14 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                 course_id = id;
             }
         }
-        let posid = 为数据库添加位置(
+        let 位置id = 为数据库添加位置(
             &db,
             course_id,
             &Struct位置::从字符串解析(&new).unwrap_or_else(|e| panic!("{}", e)),
         );
         if let Some(alias) = alias {
-            db.add_alias_or(&alias, posid, |db, alias, posid| {
-                db.update_alias(alias, posid);
+            db.add_alias_or(&alias, 位置id, |db, alias, 位置id| {
+                db.update_alias(alias, 位置id);
             })
         }
     } else if let Some(import) = import {
@@ -110,13 +110,13 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                         );
                     }
                     if let Ok(pos) = Struct位置::从字符串解析(data[1]) {
-                        let posid = 为数据库添加位置(&db, course_id, &pos);
+                        let 位置id = 为数据库添加位置(&db, course_id, &pos);
                         if data.len() > 2 {
                             let aliases: Vec<_> = data[2].split('/').map(|s| s.trim()).collect();
                             for alias in aliases {
                                 if !alias.is_empty() {
-                                    db.add_alias_or(alias, posid, |db, alias, posid| {
-                                        db.update_alias(alias, posid);
+                                    db.add_alias_or(alias, 位置id, |db, alias, 位置id| {
+                                        db.update_alias(alias, 位置id);
                                     })
                                 }
                             }
@@ -148,8 +148,8 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
         }
         let positions = db.get_poss();
         let mut contents = String::new();
-        for (posid, pos) in positions {
-            let aliases = db.get_aliases(posid);
+        for (位置id, 位置) in positions {
+            let aliases = db.get_aliases(位置id);
             let mut aliases_contents = String::new();
             if !aliases.is_empty() {
                 aliases_contents.push_str(&aliases[0]);
@@ -160,22 +160,22 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             }
             #[cfg(debug_assertions)]
             println!("{aliases:?}");
-            contents += format!("{}${}${}\n", pos.0, pos.1, aliases_contents).as_str()
+            contents += format!("{}${}${}\n", 位置.0, 位置.1, aliases_contents).as_str()
         }
         std::fs::write(export, contents).expect("文件写入出错，请检查路径是否正确！");
     } else if let Some(ref alias) = alias
-        && let Some(posid) = lication_id
+        && let Some(位置id) = lication_id
     {
         let over_args =
             || remove || remove_positions || remove_aliases || course.is_some() || global || yes;
         if over_args() {
             eprintln!(
-                "本行命令将被解释为设置别名。需要 `posid` 参数。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
+                "本行命令将被解释为设置别名。需要 `location_id` 参数。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
             )
         }
-        if posid < 0 || db.has_pos(posid) {
-            db.add_alias_or(alias, posid, |db, alias, posid| {
-                db.update_alias(alias, posid);
+        if 位置id < 0 || db.是否存在为某id的位置(位置id) {
+            db.add_alias_or(alias, 位置id, |db, alias, 位置id| {
+                db.update_alias(alias, 位置id);
             });
         } else {
             eprintln!("警告：不能为不存在的位置添加别名！将不做任何事。")
@@ -199,20 +199,20 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             } else {
                 eprintln!("警告：该别名并不存在，将不做任何事情。");
             }
-        } else if let Some(posid) = lication_id {
+        } else if let Some(位置id) = lication_id {
             if over_args() {
                 eprintln!(
                     "本行命令将被解释为删除地址。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                 )
             }
-            db.delete_pos(posid);
+            db.删除为某id的位置(位置id);
         }
     } else if remove_aliases || remove_positions {
         if course.is_some() && global {
             eprintln!("选项`-c, --course` 和 `-g, --global` 不会同时起效，将解释为前者。")
         }
-        let positions: Vec<_> = if let Some(course_id) = course {
-            db.get_course_positions_and_posid(course_id)
+        let 待操作位置列表: Vec<_> = if let Some(course_id) = course {
+            db.获取特定课程的位置和其id(course_id)
                 .keys()
                 .map(|id| *id)
                 .collect()
@@ -230,7 +230,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                 return;
             }
         }
-        if positions.len() > 1 {
+        if 待操作位置列表.len() > 1 {
             if !yes {
                 let ans = confirm("警告：删除数目大于 1, 请再次确认，是否删除？");
                 if !ans {
@@ -251,8 +251,8 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                     )
                 }
             }
-            for posid in positions {
-                let aliases = db.get_aliases(posid);
+            for 位置id in 待操作位置列表 {
+                let aliases = db.get_aliases(位置id);
                 for alias in aliases {
                     db.delete_alias(&alias);
                 }
@@ -263,8 +263,8 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
                         "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                     )
             }
-            for posid in positions {
-                db.delete_pos(posid);
+            for 位置id in 待操作位置列表 {
+                db.删除为某id的位置(位置id);
             }
         }
     }
@@ -275,7 +275,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             for pos in poss {
                 if pos.1 .0 == -1 {
                     println!(
-                        "posid: {}, course_id: {}, addr: {},\n\talias: {:?}",
+                        "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
                         pos.0,
                         pos.1 .0,
                         pos.1 .1,
@@ -285,10 +285,10 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             }
         } else if let Some(course_id) = course {
             // 列出指定课程的位置。
-            let poss = db.get_course_positions_and_posid(course_id);
+            let poss = db.获取特定课程的位置和其id(course_id);
             for pos in poss {
                 println!(
-                    "posid: {}, addr: {},\n\talias: {:?}",
+                    "位置id: {}, 位置: {},\n\t别名: {:?}",
                     pos.0,
                     pos.1,
                     db.get_aliases(pos.0)
@@ -299,7 +299,7 @@ pub fn pos(db: &DataBase, 位置操作使用的信息: Struct位置操作使用�
             let poss = db.get_poss();
             for pos in poss {
                 println!(
-                    "posid: {}, course_id: {}, addr: {},\n\talias: {:?}",
+                    "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
                     pos.0,
                     pos.1 .0,
                     pos.1 .1,

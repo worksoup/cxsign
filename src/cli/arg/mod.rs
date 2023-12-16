@@ -85,8 +85,8 @@ pub enum MainCmds {
     },
     /// 位置相关操作（列出、添加、删除）。
     /// 默认列出所有位置。
-    Pos {
-        /// 指定 posid.
+    Location {
+        /// 指定位置id.
         lication_id: Option<i64>,
         /// 列出位置。
         #[arg(short, long)]
@@ -156,42 +156,3 @@ pub struct CliArgs {
     pub 签到码: Option<String>,
     pub 是否禁用随机偏移: bool,
 }
-
-// pub enum PosCmds {
-//     /// 添加位置。
-//     Add {
-//         /// 绑定该位置到指定课程。
-//         /// 默认添加为全局位置。
-//         course: Option<i64>,
-//         /// 地址名称、经纬度与海拔。
-//         /// 格式为：`地址,经度,纬度,海拔`.
-//         pos: String,
-//     },
-//     /// 删除位置。
-//     Remove {
-//         /// 位置 ID.
-//         posid: Option<i64>,
-//         /// 无需确认直接删除。
-//         yes: bool,
-//         all: bool,
-//     },
-//     /// 导入位置。
-//     Import {
-//         /// 导入位置。
-//         /// 每行一个位置。课程号在前，位置在后，由字符 `$` 隔开。
-//         input: std::path::PathBuf,
-//     },
-//     /// 导入位置。
-//     Export {
-//         /// 导出位置。
-//         /// 无法解析的行将会被跳过。
-//         output: std::path::PathBuf,
-//     },
-//     // 为位置添加别名
-//     Alias {
-//         // 位置 ID.
-//         posid: i64,
-//         // 别名。
-//         alias: String,
-//     },
-// }

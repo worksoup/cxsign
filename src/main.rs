@@ -90,7 +90,7 @@ async fn main() {
                     println!("{}", c.1);
                 }
             }
-            MainCmds::Pos {
+            MainCmds::Location {
                 lication_id,
                 list,
                 new,

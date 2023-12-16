@@ -71,8 +71,8 @@ async fn 通过位置字符串决定位置(
         } else if let Some(位置) = db.get_pos_by_alias(位置字符串) {
             Some(位置)
         } else if let Ok(位置id) = 位置字符串.parse() {
-            if db.has_pos(位置id) {
-                let (_, 位置) = db.get_pos_by_posid(位置id);
+            if db.是否存在为某id的位置(位置id) {
+                let (_, 位置) = db.获取为某id的位置(位置id);
                 Some(位置)
             } else {
                 None
