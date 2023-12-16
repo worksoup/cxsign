@@ -14,7 +14,7 @@ use lazy_static::lazy_static;
 use std::path::PathBuf;
 use unicode_width::UnicodeWidthStr;
 lazy_static! {
-    pub static ref CONFIG_DIR: PathBuf = {
+    pub static ref 配置文件夹: PathBuf = {
         let is_testing = std::env::var("TEST_CXSIGN").is_ok();
         let binding = ProjectDirs::from("rt.lea", "worksoup", "cxsign").unwrap();
         let dir = if is_testing {
@@ -27,16 +27,16 @@ lazy_static! {
     };
 }
 
-pub fn print_now() {
+pub fn 打印当前时间() {
     let str = chrono::DateTime::<chrono::Local>::from(std::time::SystemTime::now())
         .format("%+")
         .to_string();
     println!("{str}");
 }
 
-pub fn inquire_confirm(message: &str, help_message: &str) -> bool {
-    inquire::Confirm::new(message)
-        .with_help_message(help_message)
+pub fn 请求确认(询问文本: &str, 提示文本: &str) -> bool {
+    inquire::Confirm::new(询问文本)
+        .with_help_message(提示文本)
         .with_default_value_formatter(&|v| if v { "是[默认]" } else { "否[默认]" }.into())
         .with_formatter(&|v| if v { "是" } else { "否" }.into())
         .with_parser(&|s| match inquire::Confirm::DEFAULT_PARSER(s) {
@@ -57,12 +57,12 @@ pub fn inquire_confirm(message: &str, help_message: &str) -> bool {
         .unwrap()
 }
 
-pub fn encrypto_pwd(pwd: &str) -> String {
-    fn pkcs7(pwd: &str) -> Vec<[u8; 8]> {
-        assert!(pwd.len() > 7);
-        assert!(pwd.len() < 17);
+pub fn des加密(密码文本: &str) -> String {
+    fn pkcs7填充(密码文本: &str) -> Vec<[u8; 8]> {
+        assert!(密码文本.len() > 7);
+        assert!(密码文本.len() < 17);
         let mut r = Vec::new();
-        let pwd = pwd.as_bytes();
+        let pwd = 密码文本.as_bytes();
         let len = pwd.len();
         let batch = len / 8;
         let m = len % 8;
@@ -86,20 +86,23 @@ pub fn encrypto_pwd(pwd: &str) -> String {
     let key = b"u2oh6Vu^".to_owned();
     let key = GenericArray::from(key);
     let des = Des::new(&key);
-    let pwd = pkcs7(pwd);
-    let mut a = Vec::new();
-    for b in pwd {
-        let mut b = GenericArray::from(b);
-        des.encrypt_block(&mut b);
-        let mut b = b.to_vec();
-        a.append(&mut b);
+    let 填充分块后的密码 = pkcs7填充(密码文本);
+    let mut 加密后的数据块 = Vec::new();
+    for 块 in 填充分块后的密码 {
+        let mut 块 = GenericArray::from(块);
+        des.encrypt_block(&mut 块);
+        let mut 块 = 块.to_vec();
+        加密后的数据块.append(&mut 块);
     }
-    hex::encode(a)
+    hex::encode(加密后的数据块)
 }
 
-pub fn get_unicode_correct_display_width(s: &str, perfer_width: usize) -> usize {
-    if UnicodeWidthStr::width(s) > perfer_width {
-        perfer_width
+pub fn 获取unicode字符串定宽显示时应当设置的宽度(
+    s: &str,
+    希望显示的宽度: usize,
+) -> usize {
+    if UnicodeWidthStr::width(s) > 希望显示的宽度 {
+        希望显示的宽度
     } else {
         UnicodeWidthStr::width(s) + 12 - s.len()
     }

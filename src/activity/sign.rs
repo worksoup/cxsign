@@ -1,73 +1,73 @@
 use serde_derive::Deserialize;
 
-use crate::session::{course::Course, SignSession};
-use crate::utils::address::Address;
-use crate::utils::photo::Photo;
-use crate::utils::{self, get_unicode_correct_display_width};
-pub enum SignType {
+use crate::session::{course::Struct课程, Struct签到会话};
+use crate::utils::address::Struct位置;
+use crate::utils::photo::Struct在线图片;
+use crate::utils::{self, 获取unicode字符串定宽显示时应当设置的宽度};
+pub enum Enum签到类型 {
     // 拍照签到
-    Photo,
+    拍照签到,
     // 普通签到
-    Common,
+    普通签到,
     // 二维码签到
-    QrCode,
+    二维码签到,
     // 手势签到
-    Gesture,
+    手势签到,
     // 位置签到
-    Location,
+    位置签到,
     // 签到码签到
-    SignCode,
+    签到码签到,
     // 未知
-    Unknown,
+    非已知签到,
 }
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct SignActivity {
-    pub id: String,
-    pub name: String,
-    pub course: Course,
+pub struct Struct签到 {
+    pub 活动id: String,
+    pub 签到名: String,
+    pub 课程: Struct课程,
     pub other_id: String,
-    pub status: i32,
-    pub start_time_secs: i64,
-    pub detail: SignDetail,
+    pub 状态码: i32,
+    pub 开始时间戳: i64,
+    pub 签到信息: Struct签到信息,
 }
 #[derive(Debug)]
-pub enum SignState {
-    Success,
-    Fail(String),
+pub enum Enum签到结果 {
+    成功,
+    失败 { 失败信息: String },
 }
-impl SignActivity {
-    pub fn speculate_type_by_text(text: &str) -> SignType {
+impl Struct签到 {
+    pub fn speculate_type_by_text(text: &str) -> Enum签到类型 {
         if text.contains("拍照") {
-            SignType::Photo
+            Enum签到类型::拍照签到
         } else if text.contains("位置") {
-            SignType::Location
+            Enum签到类型::位置签到
         } else if text.contains("二维码") {
-            SignType::QrCode
+            Enum签到类型::二维码签到
         } else if text.contains("手势") {
             // ?
-            SignType::Gesture
+            Enum签到类型::手势签到
         } else if text.contains("签到码") {
             // ?
-            SignType::SignCode
+            Enum签到类型::签到码签到
         } else {
-            SignType::Common
+            Enum签到类型::普通签到
         }
     }
-    pub fn get_sign_result_by_text(text: &str) -> SignState {
+    pub fn 通过文本判断签到结果(text: &str) -> Enum签到结果 {
         match text {
-            "success" => SignState::Success,
-            msg => SignState::Fail(
-                if msg.is_empty() {
+            "success" => Enum签到结果::成功,
+            信息 => Enum签到结果::失败 {
+                失败信息: if 信息.is_empty() {
                     "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。"
                 } else {
-                    msg
+                    信息
                 }
                 .into(),
-            ),
+            },
         }
     }
-    async fn check_signcode(
-        session: &SignSession,
+    async fn 检查签到码是否正确(
+        session: &Struct签到会话,
         active_id: &str,
         signcode: &str,
     ) -> Result<bool, reqwest::Error> {
@@ -88,93 +88,93 @@ impl SignActivity {
 pub struct SignActivityRaw {
     pub id: String,
     pub name: String,
-    pub course: Course,
+    pub course: Struct课程,
     pub other_id: String,
     pub status: i32,
     pub start_time_secs: i64,
 }
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct SignDetail {
+pub struct Struct签到信息 {
     is_photo: bool,
     is_refresh_qrcode: bool,
     c: String,
 }
-impl SignActivity {
+impl Struct签到 {
     pub fn display(&self, already_course: bool) {
-        let name_width = get_unicode_correct_display_width(self.name.as_str(), 12);
+        let name_width = 获取unicode字符串定宽显示时应当设置的宽度(self.签到名.as_str(), 12);
         if already_course {
             println!(
                 "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}",
-                self.id,
-                self.name,
-                self.status,
-                chrono::DateTime::from_timestamp(self.start_time_secs, 0).unwrap(),
-                self.is_available(),
+                self.活动id,
+                self.签到名,
+                self.状态码,
+                chrono::DateTime::from_timestamp(self.开始时间戳, 0).unwrap(),
+                self.是否有效(),
                 width = name_width,
             );
         } else {
             println!(
                 "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}, course: {}/{}",
-                self.id,
-                self.name,
-                self.status,
-                chrono::DateTime::from_timestamp(self.start_time_secs, 0).unwrap(),
-                self.is_available(),
-                self.course.get_id(),
-                self.course.get_name(),
+                self.活动id,
+                self.签到名,
+                self.状态码,
+                chrono::DateTime::from_timestamp(self.开始时间戳, 0).unwrap(),
+                self.是否有效(),
+                self.课程.get_课程号(),
+                self.课程.get_课程名(),
                 width = name_width,
             );
         }
     }
-    pub fn is_available(&self) -> bool {
+    pub fn 是否有效(&self) -> bool {
         let time = std::time::SystemTime::from(
-            chrono::DateTime::from_timestamp(self.start_time_secs, 0).unwrap(),
+            chrono::DateTime::from_timestamp(self.开始时间戳, 0).unwrap(),
         );
         let one_hour = std::time::Duration::from_secs(7200);
-        self.status == 1 && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
+        self.状态码 == 1 && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
     }
 
-    fn is_photo(&self) -> bool {
-        self.detail.is_photo
+    fn 是否为拍照签到(&self) -> bool {
+        self.签到信息.is_photo
     }
 
-    pub fn is_refresh_qrcode(&self) -> bool {
-        self.detail.is_refresh_qrcode
+    pub fn 二维码是否刷新(&self) -> bool {
+        self.签到信息.is_refresh_qrcode
     }
 
-    pub fn get_c_of_qrcode_sign(&self) -> &str {
-        &self.detail.c
+    pub fn get_二维码签到时的c参数(&self) -> &str {
+        &self.签到信息.c
     }
 
-    pub async fn get_sign_detial_by_active_id(
+    pub async fn 通过active_id获取签到信息(
         active_id: &str,
-        session: &SignSession,
-    ) -> Result<SignDetail, reqwest::Error> {
+        session: &Struct签到会话,
+    ) -> Result<Struct签到信息, reqwest::Error> {
         #[derive(Deserialize)]
         #[allow(non_snake_case)]
-        struct SignDetailRaw {
+        struct GetSignDetailR {
             ifPhoto: i64,
             ifRefreshEwm: i64,
             signCode: Option<String>,
         }
         let r = utils::query::sign_detail(session, active_id).await?;
-        let SignDetailRaw {
+        let GetSignDetailR {
             ifPhoto,
             ifRefreshEwm,
             signCode,
         } = r.json().await?;
-        Ok(SignDetail {
+        Ok(Struct签到信息 {
             is_photo: ifPhoto > 0,
             is_refresh_qrcode: ifRefreshEwm > 0,
             c: if let Some(c) = signCode { c } else { "".into() },
         })
     }
-    async fn pre_sign_internal(
+    async fn 预签到_analysis部分(
         &self,
         active_id: &str,
-        session: &SignSession,
+        session: &Struct签到会话,
         response_of_presign: reqwest::Response,
-    ) -> Result<SignState, reqwest::Error> {
+    ) -> Result<Enum签到结果, reqwest::Error> {
         let response_of_analysis = utils::query::analysis(session, active_id).await?;
         let data = response_of_analysis.text().await.unwrap();
         let code = {
@@ -185,11 +185,11 @@ impl SignActivity {
         };
         #[cfg(debug_assertions)]
         println!("code: {code:?}");
-        let response_of_analysis2 = utils::query::analysis2(session, code).await?;
+        let _response_of_analysis2 = utils::query::analysis2(session, code).await?;
         #[cfg(debug_assertions)]
         println!(
             "analysis 结果：{}",
-            response_of_analysis2.text().await.unwrap()
+            _response_of_analysis2.text().await.unwrap()
         );
         let presign_status = {
             let html = response_of_presign.text().await.unwrap();
@@ -198,122 +198,145 @@ impl SignActivity {
             if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
                 let html = &html[start_of_statuscontent_h1 + 19..html.len()];
                 let end_of_statuscontent_h1 = html.find('<').unwrap();
-                let statuscontent_h1_content = html[0..end_of_statuscontent_h1].trim();
-                if statuscontent_h1_content == "签到成功" {
-                    SignState::Success
+                let id为statuscontent的h1的内容 = html[0..end_of_statuscontent_h1].trim();
+                if id为statuscontent的h1的内容 == "签到成功" {
+                    Enum签到结果::成功
                 } else {
-                    SignState::Fail(statuscontent_h1_content.into())
+                    Enum签到结果::失败 {
+                        失败信息: id为statuscontent的h1的内容.into(),
+                    }
                 }
             } else {
-                SignState::Fail(html.into())
+                Enum签到结果::失败 {
+                    失败信息: html.into(),
+                }
             }
         };
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         Ok(presign_status)
     }
-    pub async fn pre_sign(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
-        let active_id = self.id.as_str();
+    pub async fn 预签到(
+        &self,
+        session: &Struct签到会话,
+    ) -> Result<Enum签到结果, reqwest::Error> {
+        let active_id = self.活动id.as_str();
         let uid = session.get_uid();
         let response_of_presign =
-            utils::query::pre_sign(session, self.course.clone(), active_id, uid).await?;
-        println!("用户[{}]预签到已请求。", session.get_stu_name());
-        self.pre_sign_internal(active_id, session, response_of_presign)
+            utils::query::pre_sign(session, self.课程.clone(), active_id, uid).await?;
+        println!("用户[{}]预签到已请求。", session.get_用户真名());
+        self.预签到_analysis部分(active_id, session, response_of_presign)
             .await
     }
-    pub async fn pre_sign_for_refresh_qrcode_sign(
+    pub async fn 预签到_对于有刷新二维码签到(
         &self,
         c: &str,
         enc: &str,
-        session: &SignSession,
-    ) -> Result<SignState, reqwest::Error> {
-        let active_id = self.id.as_str();
+        session: &Struct签到会话,
+    ) -> Result<Enum签到结果, reqwest::Error> {
+        let active_id = self.活动id.as_str();
         let uid = session.get_uid();
         let response_of_presign = utils::query::pre_sign_for_qrcode_sign(
             session,
-            self.course.clone(),
+            self.课程.clone(),
             active_id,
             uid,
             c,
             enc,
         )
         .await?;
-        println!("用户[{}]预签到已请求。", session.get_stu_name());
-        self.pre_sign_internal(active_id, session, response_of_presign)
+        println!("用户[{}]预签到已请求。", session.get_用户真名());
+        self.预签到_analysis部分(active_id, session, response_of_presign)
             .await
     }
-    pub fn get_sign_type(&self) -> SignType {
+    pub fn get_sign_type(&self) -> Enum签到类型 {
         match self.other_id.parse::<u8>().unwrap_or_else(|e| {
             eprintln!("{}", self.other_id);
-            eprintln!("{}", self.course.get_name());
+            eprintln!("{}", self.课程.get_课程名());
             panic!("{e}")
         }) {
             0 => {
-                if self.is_photo() {
-                    SignType::Photo
+                if self.是否为拍照签到() {
+                    Enum签到类型::拍照签到
                 } else {
-                    SignType::Common
+                    Enum签到类型::普通签到
                 }
             }
-            1 => SignType::Unknown,
-            2 => SignType::QrCode,
-            3 => SignType::Gesture,
-            4 => SignType::Location,
-            5 => SignType::SignCode,
-            _ => SignType::Unknown,
+            1 => Enum签到类型::非已知签到,
+            2 => Enum签到类型::二维码签到,
+            3 => Enum签到类型::手势签到,
+            4 => Enum签到类型::位置签到,
+            5 => Enum签到类型::签到码签到,
+            _ => Enum签到类型::非已知签到,
         }
     }
 }
-impl SignActivity {
-    pub async fn sign_common(&self, session: &SignSession) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::general_sign(session, self.id.as_str()).await?;
-        Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
-    }
-    pub async fn sign_by_signcode(
+impl Struct签到 {
+    pub async fn 作为普通签到处理(
         &self,
-        session: &SignSession,
+        session: &Struct签到会话,
+    ) -> Result<Enum签到结果, reqwest::Error> {
+        let r = utils::query::general_sign(session, self.活动id.as_str()).await?;
+        Ok(Self::通过文本判断签到结果(
+            &r.text().await.unwrap(),
+        ))
+    }
+    pub async fn 作为签到码签到处理(
+        &self,
+        session: &Struct签到会话,
         signcode: &str,
-    ) -> Result<SignState, reqwest::Error> {
-        if Self::check_signcode(session, &self.id, signcode).await? {
-            let r = utils::query::signcode_sign(session, self.id.as_str(), signcode).await?;
-            Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
+    ) -> Result<Enum签到结果, reqwest::Error> {
+        if Self::检查签到码是否正确(session, &self.活动id, signcode).await? {
+            let r = utils::query::signcode_sign(session, self.活动id.as_str(), signcode).await?;
+            Ok(Self::通过文本判断签到结果(
+                &r.text().await.unwrap(),
+            ))
         } else {
-            Ok(SignState::Fail("签到码或手势不正确".into()))
+            Ok(Enum签到结果::失败 {
+                失败信息: "签到码或手势不正确".into(),
+            })
         }
     }
-    pub async fn sign_by_location(
+    pub async fn 作为位置签到处理(
         &self,
-        address: &Address,
-        session: &SignSession,
-    ) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::location_sign(session, address, self.id.as_str()).await?;
-        Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
+        address: &Struct位置,
+        session: &Struct签到会话,
+    ) -> Result<Enum签到结果, reqwest::Error> {
+        let r = utils::query::location_sign(session, address, self.活动id.as_str()).await?;
+        Ok(Self::通过文本判断签到结果(
+            &r.text().await.unwrap(),
+        ))
     }
-    pub async fn sign_by_photo(
+    pub async fn 作为拍照签到处理(
         &self,
-        photo: &Photo,
-        session: &SignSession,
-    ) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::photo_sign(session, self.id.as_str(), photo.get_object_id()).await?;
-        Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
+        photo: &Struct在线图片,
+        session: &Struct签到会话,
+    ) -> Result<Enum签到结果, reqwest::Error> {
+        let r = utils::query::photo_sign(session, self.活动id.as_str(), photo.get_object_id())
+            .await?;
+        Ok(Self::通过文本判断签到结果(
+            &r.text().await.unwrap(),
+        ))
     }
-    pub async fn sign_by_qrcode(
+    pub async fn 作为二维码签到处理(
         &self,
         enc: &str,
-        address: &Address,
-        session: &SignSession,
-    ) -> Result<SignState, reqwest::Error> {
-        let r = utils::query::qrcode_sign(session, enc, self.id.as_str(), address).await?;
-        Ok(Self::get_sign_result_by_text(&r.text().await.unwrap()))
+        address: &Struct位置,
+        session: &Struct签到会话,
+    ) -> Result<Enum签到结果, reqwest::Error> {
+        let r = utils::query::qrcode_sign(session, enc, self.活动id.as_str(), address).await?;
+        Ok(Self::通过文本判断签到结果(
+            &r.text().await.unwrap(),
+        ))
     }
 }
-impl SignActivity {
+impl Struct签到 {
     pub async fn chat_group_pre_sign(
         &self,
         chat_id: &str,
         tuid: &str,
-        session: &SignSession,
+        session: &Struct签到会话,
     ) -> Result<(), reqwest::Error> {
-        let id = self.id.as_str();
+        let id = self.活动id.as_str();
         let uid = session.get_uid();
         let _r = utils::query::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
 
@@ -321,21 +344,25 @@ impl SignActivity {
     }
     pub async fn chat_group_general_sign(
         &self,
-        session: &SignSession,
+        session: &Struct签到会话,
     ) -> Result<(), reqwest::Error> {
-        let r = utils::query::chat_group_general_sign(session, self.id.as_str(), session.get_uid())
-            .await?;
+        let r = utils::query::chat_group_general_sign(
+            session,
+            self.活动id.as_str(),
+            session.get_uid(),
+        )
+        .await?;
         println!("{:?}", r.text().await.unwrap());
         Ok(())
     }
     pub async fn chat_group_signcode_sign(
         &self,
-        session: &SignSession,
+        session: &Struct签到会话,
         signcode: &str,
     ) -> Result<(), reqwest::Error> {
         let r = utils::query::chat_group_signcode_sign(
             session,
-            self.id.as_str(),
+            self.活动id.as_str(),
             session.get_uid(),
             signcode,
         )
@@ -345,16 +372,16 @@ impl SignActivity {
     }
     pub async fn chat_group_location_sign(
         &self,
-        address: &Address,
-        session: &SignSession,
+        address: &Struct位置,
+        session: &Struct签到会话,
     ) -> Result<(), reqwest::Error> {
         let r = utils::query::chat_group_location_sign(
             session,
-            address.get_addr(),
-            self.id.as_str(),
+            address.get_地址(),
+            self.活动id.as_str(),
             session.get_uid(),
-            address.get_lat(),
-            address.get_lon(),
+            address.get_纬度(),
+            address.get_经度(),
         )
         .await?;
         println!("{:?}", r.text().await.unwrap());
@@ -362,12 +389,12 @@ impl SignActivity {
     }
     pub async fn chat_group_photo_sign(
         &self,
-        photo: &Photo,
-        session: &SignSession,
+        photo: &Struct在线图片,
+        session: &Struct签到会话,
     ) -> Result<(), reqwest::Error> {
         let r = utils::query::chat_group_photo_sign(
             session,
-            self.id.as_str(),
+            self.活动id.as_str(),
             session.get_uid(),
             photo.get_object_id(),
         )

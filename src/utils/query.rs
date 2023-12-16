@@ -1,9 +1,9 @@
-use crate::session::course::Course;
-use crate::session::SignSession;
+use crate::session::course::Struct课程;
+use crate::session::Struct签到会话;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Response};
 
-use super::address::Address;
+use super::address::Struct位置;
 
 pub static UA: &str = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 (schild:eaf4fb193ec970c0a9775e2a27b0232b) (device:iPhone11,2) Language/zh-Hans com.ssreader.ChaoXingStudy/ChaoXingStudy_3_6.0.2_ios_phone_202209281930_99 (@Kalimdor)_1665876591620212942";
 
@@ -17,18 +17,7 @@ static LOGIN_PAGE: &str =
 pub async fn login_page(client: &Client) -> Result<Response, reqwest::Error> {
     client.get(LOGIN_PAGE).send().await
 }
-// 明文密码登录
-static LOGIN: &str = "https://passport2-api.chaoxing.com/v11/loginregister";
-pub async fn login(client: &Client, uname: &str, pwd: &str) -> Result<Response, reqwest::Error> {
-    let body = format!("code={pwd}&cx_xxt_passport=json&uname={uname}&loginType=1&roleSelect=true");
-    let url = {
-        let mut str = String::from(LOGIN);
-        str.push('?');
-        str.push_str(body.as_str());
-        str
-    };
-    client.get(url).send().await
-}
+
 // 非明文密码登录
 static LOGIN_ENC: &str = "http://passport2.chaoxing.com/fanyalogin";
 pub async fn login_enc(
@@ -57,26 +46,26 @@ pub async fn login_enc(
 static PRE_SIGN: &str = "https://mobilelearn.chaoxing.com/newsign/preSign";
 pub async fn pre_sign(
     client: &Client,
-    course: Course,
+    course: Struct课程,
     active_id: &str,
     uid: &str,
 ) -> Result<Response, reqwest::Error> {
-    let course_id = course.get_id();
-    let class_id = course.get_class_id();
+    let course_id = course.get_课程号();
+    let class_id = course.get_班级号();
     let url = PRE_SIGN;
     let url = format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0");
     client.get(url).send().await
 }
 pub async fn pre_sign_for_qrcode_sign(
     client: &Client,
-    course: Course,
+    course: Struct课程,
     active_id: &str,
     uid: &str,
     c: &str,
     enc: &str,
 ) -> Result<Response, reqwest::Error> {
-    let course_id = course.get_id();
-    let class_id = course.get_class_id();
+    let course_id = course.get_课程号();
+    let class_id = course.get_班级号();
     let url = PRE_SIGN;
     let ex_args = format!("SIGNIN:aid={active_id}&source=15&Code={c}&enc={enc}");
     let ex_args = "&rcode=".to_owned()
@@ -106,24 +95,24 @@ pub async fn analysis2(client: &Client, code: &str) -> Result<Response, reqwest:
 // 签到
 static PPT_SIGN: &str = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax";
 pub async fn general_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     active_id: &str,
 ) -> Result<Response, reqwest::Error> {
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let url = PPT_SIGN;
     let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&latitude=-1&longitude=-1&appType=15&fid={fid}&name={stu_name}");
     session.get(url).send().await
 }
 pub async fn photo_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     active_id: &str,
     object_id: &str,
 ) -> Result<Response, reqwest::Error> {
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     // NOTE 存疑。
     let name = percent_encoding::utf8_percent_encode(stu_name, percent_encoding::NON_ALPHANUMERIC)
         .to_string();
@@ -132,19 +121,19 @@ pub async fn photo_sign(
     session.get(url).send().await
 }
 pub async fn qrcode_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     enc: &str,
     active_id: &str,
-    pos: &Address,
+    位置: &Struct位置,
 ) -> Result<Response, reqwest::Error> {
-    let address = pos.get_addr();
-    let lat = pos.get_lat();
-    let lon = pos.get_lon();
-    let altitude = pos.get_alt();
+    let address = 位置.get_地址();
+    let lat = 位置.get_纬度();
+    let lon = 位置.get_经度();
+    let altitude = 位置.get_海拔();
     let url = PPT_SIGN;
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let location = format!(
         r#"{{"result":"1","address":"{address}","latitude":{lat},"longitude":{lon},"altitude":{altitude}}}"#
     );
@@ -157,29 +146,29 @@ pub async fn qrcode_sign(
     session.get(url).send().await
 }
 pub async fn location_sign(
-    session: &SignSession,
-    pos: &Address,
+    session: &Struct签到会话,
+    位置: &Struct位置,
     active_id: &str,
 ) -> Result<Response, reqwest::Error> {
-    let address = pos.get_addr();
-    let lat = pos.get_lat();
-    let lon = pos.get_lon();
+    let address = 位置.get_地址();
+    let lat = 位置.get_纬度();
+    let lon = 位置.get_经度();
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let url = PPT_SIGN;
     let url = format!("{url}?name={stu_name}&address={address}&activeId={active_id}&uid={uid}&clientip=&latitude={lat}&longitude={lon}&fid={fid}&appType=15&ifTiJiao=1&validate=");
     session.get(url).send().await
 }
 pub async fn signcode_sign(
-    session: &SignSession,
+    session: &Struct签到会话,
     active_id: &str,
     signcode: &str,
 ) -> Result<Response, reqwest::Error> {
     let url = PPT_SIGN;
     let uid = session.get_uid();
     let fid = session.get_fid();
-    let stu_name = session.get_stu_name();
+    let stu_name = session.get_用户真名();
     let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&latitude=-1&longitude=-1&appType=15&fid={fid}&name={stu_name}&signCode={signcode}");
     session.get(url).send().await
 }
@@ -197,15 +186,8 @@ pub async fn check_signcode(
         .send()
         .await
 }
+
 // 签到信息获取
-static PPT_ACTIVE_INFO: &str = "https://mobilelearn.chaoxing.com/v2/apis/active/getPPTActiveInfo";
-pub async fn ppt_active_info(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
-    client
-        .get(String::from(PPT_ACTIVE_INFO) + "?activeId=" + active_id)
-        .send()
-        .await
-}
-// 签到信息获取 2
 static SIGN_DETAIL: &str = "https://mobilelearn.chaoxing.com/newsign/signDetail";
 pub async fn sign_detail(client: &Client, active_id: &str) -> Result<Response, reqwest::Error> {
     client
@@ -213,21 +195,21 @@ pub async fn sign_detail(client: &Client, active_id: &str) -> Result<Response, r
         .send()
         .await
 }
-// 获取课程（`chaoxing-sign-cli` 并未使用）
+// 获取课程
 static BACK_CLAZZ_DATA: &str = "http://mooc1-api.chaoxing.com/mycourse/backclazzdata";
 pub async fn back_clazz_data(client: &Client) -> Result<Response, reqwest::Error> {
     let url = String::from(BACK_CLAZZ_DATA) + "?view=json&rss=1";
     client.get(url).send().await
 }
-// 查询活动 1
+// 查询活动
 static ACTIVE_LIST: &str = "https://mobilelearn.chaoxing.com/v2/apis/active/student/activelist";
-pub async fn active_list(client: &Client, course: Course) -> Result<Response, reqwest::Error> {
+pub async fn active_list(client: &Client, course: Struct课程) -> Result<Response, reqwest::Error> {
     let url = {
         let mut url = String::from(ACTIVE_LIST);
         url.push_str("?fid=0&courseId=");
-        url.push_str(course.get_id().to_string().as_str());
+        url.push_str(course.get_课程号().to_string().as_str());
         url.push_str("&classId=");
-        url.push_str(course.get_class_id().to_string().as_str());
+        url.push_str(course.get_班级号().to_string().as_str());
         url.push_str("&showNotStartedActive=0&_=");
         let time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -240,8 +222,7 @@ pub async fn active_list(client: &Client, course: Course) -> Result<Response, re
     // println!("{url}");
     client.get(url).send().await
 }
-// 查询活动 2
-static TASK_ACTIVE_LIST: &str = "https://mobilelearn.chaoxing.com/ppt/activeAPI/taskactivelist";
+
 // 账号设置页
 static ACCOUNT_MANAGE: &str = "http://passport2.chaoxing.com/mooc/accountManage";
 pub async fn account_manage(client: &Client) -> Result<Response, reqwest::Error> {

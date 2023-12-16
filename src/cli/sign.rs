@@ -3,107 +3,136 @@ use std::{collections::HashMap, path::PathBuf};
 use futures::{stream::FuturesUnordered, StreamExt};
 
 use crate::{
-    activity::sign::{SignActivity, SignState},
-    session::SignSession,
-    utils::{address::Address, photo::Photo},
+    activity::sign::{Enum签到结果, Struct签到},
+    session::Struct签到会话,
+    utils::{address::Struct位置, photo::Struct在线图片},
 };
 
 use super::single_sign;
 
-pub async fn general_sign_<'a>(
-    sign: &SignActivity,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
+pub async fn 普通签到<'a>(
+    签到: &Struct签到,
+    签到会话列表: &'a Vec<&Struct签到会话>,
+) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
+    let mut 用户真名_签到结果_哈希表 = HashMap::new();
     let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::general_sign_single(sign, session));
+    for 签到会话 in 签到会话列表 {
+        tasks.push(single_sign::通用签到_单个账号(签到, 签到会话));
     }
     while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
+        let (用户真名, 签到结果) = tmp?;
+        用户真名_签到结果_哈希表.insert(用户真名, 签到结果);
     }
-    Ok(states)
+    Ok(用户真名_签到结果_哈希表)
 }
 
-pub async fn photo_sign_<'a>(
-    sign: &SignActivity,
+pub async fn 拍照签到<'a>(
+    签到: &Struct签到,
     pic: &Option<PathBuf>,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
-    let photo = if let Some(pic) = &pic {
-        Photo::from_file(sessions[0], pic).await
+    签到会话列表: &'a Vec<&Struct签到会话>,
+) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
+    let mut 用户真名_签到结果_哈希表 = HashMap::new();
+    let mut 索引到在线图片 = HashMap::new();
+    let mut 签到到索引 = HashMap::new();
+    if let Some(pic) = &pic {
+        let 在线图片 = Struct在线图片::上传文件获取(签到会话列表[0], pic).await;
+        索引到在线图片.insert(0, 在线图片);
+        for session in 签到会话列表 {
+            签到到索引.insert(session, 0);
+        }
     } else {
-        Photo::default(sessions[0]).await
-    };
+        let mut 索引 = 0;
+        for 签到会话 in 签到会话列表 {
+            let 在线图片 = Struct在线图片::默认(签到会话).await;
+            if let Some(在线图片) = 在线图片 {
+                索引到在线图片.insert(索引, 在线图片);
+                索引 += 1;
+            } else {
+                签到到索引.insert(签到会话, 索引);
+            }
+        }
+    }
     let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::photo_sign_single(sign, &photo, session));
+    for 签到会话 in 签到会话列表 {
+        tasks.push(single_sign::拍照签到_单个账号(
+            签到,
+            &索引到在线图片[&签到到索引[签到会话]],
+            签到会话,
+        ));
     }
     while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
+        let (用户名称, 签到结果) = tmp?;
+        用户真名_签到结果_哈希表.insert(用户名称, 签到结果);
     }
-    Ok(states)
+    Ok(用户真名_签到结果_哈希表)
 }
-pub async fn qrcode_sign_<'a>(
-    sign: &SignActivity,
+pub async fn 二维码签到<'a>(
+    签到: &Struct签到,
     c: &str,
     enc: &str,
-    poss: &Vec<Address>,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
+    位置列表: &Vec<Struct位置>,
+    签到会话列表: &'a Vec<&Struct签到会话>,
+) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
+    let mut 用户真名_签到结果_哈希表 = HashMap::new();
     let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::qrcode_sign_single(sign, c, enc, poss, session));
+    for 签到会话 in 签到会话列表 {
+        tasks.push(single_sign::二维码签到_单个账号(
+            签到,
+            c,
+            enc,
+            位置列表,
+            签到会话,
+        ));
     }
     while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
+        let (用户真名, 签到结果) = tmp?;
+        用户真名_签到结果_哈希表.insert(用户真名, 签到结果);
     }
-    Ok(states)
+    Ok(用户真名_签到结果_哈希表)
 }
 
-pub async fn location_sign_<'a>(
-    sign: &SignActivity,
-    poss: &Vec<Address>,
-    auto_fetch_pos: bool,
-    sessions: &'a Vec<&SignSession>,
-    no_random_shift: bool,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
+pub async fn 位置签到<'a>(
+    签到: &Struct签到,
+    位置列表: &Vec<Struct位置>,
+    是否自动获取签到位置: bool,
+    签到会话列表: &'a Vec<&Struct签到会话>,
+    是否禁用随机偏移: bool,
+) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
+    let mut 用户真名_签到结果_哈希表 = HashMap::new();
     let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::location_sign_single(
-            sign,
-            poss,
-            auto_fetch_pos,
-            session,
-            no_random_shift,
+    for 签到会话 in 签到会话列表 {
+        tasks.push(single_sign::位置签到_单个账号(
+            签到,
+            位置列表,
+            是否自动获取签到位置,
+            签到会话,
+            是否禁用随机偏移,
         ));
     }
     while let Some(tmp) = tasks.next().await {
         let (name, state) = tmp?;
-        states.insert(name, state);
+        用户真名_签到结果_哈希表.insert(name, state);
     }
-    Ok(states)
+    Ok(用户真名_签到结果_哈希表)
 }
 
-pub async fn signcode_sign_<'a>(
-    sign: &SignActivity,
-    signcode: &str,
-    sessions: &'a Vec<&SignSession>,
-) -> Result<HashMap<&'a str, SignState>, reqwest::Error> {
-    let mut states = HashMap::new();
+pub async fn 签到码签到<'a>(
+    签到: &Struct签到,
+    签到码: &str,
+    签到会话列表: &'a Vec<&Struct签到会话>,
+) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
+    let mut 用户真名_签到结果_哈希表 = HashMap::new();
     let mut tasks = FuturesUnordered::new();
-    for session in sessions {
-        tasks.push(single_sign::signcode_sign_single(sign, signcode, session));
+    for 签到会话 in 签到会话列表 {
+        tasks.push(single_sign::签到码签到_单个账号(
+            签到,
+            签到码,
+            签到会话,
+        ));
     }
     while let Some(tmp) = tasks.next().await {
-        let (name, state) = tmp?;
-        states.insert(name, state);
+        let (用户真名, 签到结果) = tmp?;
+        用户真名_签到结果_哈希表.insert(用户真名, 签到结果);
     }
-    Ok(states)
+    Ok(用户真名_签到结果_哈希表)
 }

@@ -3,76 +3,77 @@ use std::f64::consts::PI;
 use rand::Rng;
 
 #[derive(Debug, Clone)]
-pub struct Address {
-    address: String,
-    lon: String,
-    lat: String,
-    altitude: String,
+pub struct Struct位置 {
+    地址: String,
+    经度: String,
+    纬度: String,
+    海拔: String,
 }
 #[derive(Debug, Clone)]
-pub struct AddressRange {
-    pub pos: Address,
-    pub range: u32,
+pub struct Struct位置及范围 {
+    pub 位置: Struct位置,
+    pub 范围: u32,
 }
-impl Address {
-    pub fn parse_str(pos: &str) -> Result<Self, &str> {
-        let pos: Vec<&str> = pos.split(',').map(|item| item.trim()).collect();
-        if pos.len() == 4 {
-            Ok(Self::new(pos[0], pos[1], pos[2], pos[3]))
+impl Struct位置 {
+    pub fn 从字符串解析(位置字符串: &str) -> Result<Self, &str> {
+        let 位置字符串: Vec<&str> = 位置字符串.split(',').map(|item| item.trim()).collect();
+        if 位置字符串.len() == 4 {
+            Ok(Self::new(位置字符串[0], 位置字符串[1], 位置字符串[2], 位置字符串[3]))
         } else {
-            Err("位置信息格式错误！格式为：`addr,lon,lat,alt`.")
+            Err("位置信息格式错误！格式为：`地址,经度,纬度,海拔`.")
         }
     }
-    pub fn new(address: &str, lon: &str, lat: &str, altitude: &str) -> Address {
-        Address {
-            address: address.into(),
-            lon: lon.into(),
-            lat: lat.into(),
-            altitude: altitude.into(),
+    pub fn new(地址: &str, 经度: &str, 纬度: &str, 海拔: &str) -> Struct位置 {
+        Struct位置 {
+            地址: 地址.into(),
+            经度: 经度.into(),
+            纬度: 纬度.into(),
+            海拔: 海拔.into(),
         }
     }
     /// 地址。
-    pub fn get_addr(&self) -> &str {
-        &self.address
+    pub fn get_地址(&self) -> &str {
+        &self.地址
     }
     /// 纬度。
-    pub fn get_lat(&self) -> &str {
-        &self.lat
+    pub fn get_纬度(&self) -> &str {
+        &self.纬度
     }
     /// 经度。
-    pub fn get_lon(&self) -> &str {
-        &self.lon
+    pub fn get_经度(&self) -> &str {
+        &self.经度
     }
     /// 海拔。
-    pub fn get_alt(&self) -> &str {
-        &self.altitude
+    pub fn get_海拔(&self) -> &str {
+        &self.海拔
     }
 }
 
-impl std::fmt::Display for Address {
+impl std::fmt::Display for Struct位置 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{},{},{},{}",
-            self.address, self.lon, self.lat, self.altitude
-        )
+        write!(f, "{},{},{},{}", self.地址, self.经度, self.纬度, self.海拔)
     }
 }
 
-pub fn add_pos(db: &super::sql::DataBase, course_id: i64, pos: &Address) {
+pub fn 为数据库添加位置(
+    db: &super::sql::DataBase,
+    course_id: i64,
+    位置: &Struct位置,
+) -> i64 {
     // 为指定课程添加位置。
-    let mut posid = 0_i64;
+    let mut 位置id = 0_i64;
     loop {
-        if db.has_pos(posid) {
-            posid += 1;
+        if db.是否存在为某id的位置(位置id) {
+            位置id += 1;
             continue;
         }
-        db.add_pos_or(posid, course_id, pos, |_, _, _, _| {});
+        db.添加位置_失败后则(位置id, course_id, 位置, |_, _, _, _| {});
         break;
     }
+    位置id
 }
 
-pub fn find_pos_needed_in_html(html: &str) -> Option<AddressRange> {
+pub fn 在html文本中寻找位置及范围(html: &str) -> Option<Struct位置及范围> {
     let p = vec![
         "id=\"locationText\"",
         "id=\"locationLongitude\"",
@@ -111,14 +112,14 @@ pub fn find_pos_needed_in_html(html: &str) -> Option<AddressRange> {
             return None;
         }
     }
-    Some(AddressRange {
-        pos: Address {
-            address: results3[0].to_owned(),
-            lon: results3[1].to_owned(),
-            lat: results3[2].to_owned(),
-            altitude: "1108".to_string(),
+    Some(Struct位置及范围 {
+        位置: Struct位置 {
+            地址: results3[0].to_owned(),
+            经度: results3[1].to_owned(),
+            纬度: results3[2].to_owned(),
+            海拔: "1108".to_string(),
         },
-        range: if let Ok(s) = results3[3].trim_end_matches('米').parse() {
+        范围: if let Ok(s) = results3[3].trim_end_matches('米').parse() {
             s
         } else {
             return None;
@@ -126,34 +127,36 @@ pub fn find_pos_needed_in_html(html: &str) -> Option<AddressRange> {
     })
 }
 
-pub fn pos_rand_shift(pos: AddressRange) -> Address {
-    const R: f64 = 6371393.0;
-    let AddressRange {
-        pos:
-            Address {
-                address,
-                lon,
-                lat,
-                altitude,
+pub fn 根据位置及范围获取随机偏移后的位置(
+    位置及范围: Struct位置及范围,
+) -> Struct位置 {
+    const 地球半径: f64 = 6371393.0;
+    let Struct位置及范围 {
+        位置:
+            Struct位置 {
+                地址,
+                经度,
+                纬度,
+                海拔,
             },
-        range,
-    } = pos;
-    let range_f64 = range as f64;
-    let lat: f64 = lat.parse().unwrap();
-    let lon: f64 = lon.parse().unwrap();
-    let lat = lat * PI / 180.0;
-    let lon = lon * PI / 180.0;
-    let mut r = rand::thread_rng().gen_range(0..range * 3) as f64 / range_f64 / 3.0;
+        范围,
+    } = 位置及范围;
+    let f64_范围 = 范围 as f64;
+    let 纬度: f64 = 纬度.parse().unwrap();
+    let 经度: f64 = 经度.parse().unwrap();
+    let 纬度 = 纬度 * PI / 180.0;
+    let 经度 = 经度 * PI / 180.0;
+    let mut r = rand::thread_rng().gen_range(0..范围 * 3) as f64 / f64_范围 / 3.0;
     let theta = rand::thread_rng().gen_range(0..360) as f64 * PI / 180.0;
-    r = range_f64 / R / (1.0 - theta.cos().powi(2) * lat.sin().powi(2)).sqrt() * r;
-    let lat = (lat + r * theta.sin()) / PI * 180.0;
-    let lon = (lon + r * theta.cos()) / PI * 180.0;
-    let lat = format!("{lat:.6}");
-    let lon = format!("{lon:.6}");
-    Address {
-        address,
-        lon,
-        lat,
-        altitude,
+    r = f64_范围 / 地球半径 / (1.0 - theta.cos().powi(2) * 纬度.sin().powi(2)).sqrt() * r;
+    let 纬度 = (纬度 + r * theta.sin()) / PI * 180.0;
+    let 经度 = (经度 + r * theta.cos()) / PI * 180.0;
+    let 纬度 = format!("{纬度:.6}");
+    let 经度 = format!("{经度:.6}");
+    Struct位置 {
+        地址,
+        经度,
+        纬度,
+        海拔,
     }
 }

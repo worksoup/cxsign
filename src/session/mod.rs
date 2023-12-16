@@ -2,11 +2,11 @@ pub mod cookies;
 pub mod course;
 
 use crate::activity::{
-    sign::SignActivity,
-    {Activity, OtherActivity},
+    sign::Struct签到,
+    {Enum活动, Struct非签到活动},
 };
-use crate::session::course::{Course, GetCoursesR};
-use crate::utils::{self, query::UA, CONFIG_DIR};
+use crate::session::course::{GetCoursesR, Struct课程};
+use crate::utils::{self, query::UA, 配置文件夹};
 use cookies::UserCookies;
 use futures::{stream::FuturesUnordered, StreamExt};
 use reqwest::{Client, ClientBuilder};
@@ -18,35 +18,36 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct SignSession {
+pub struct Struct签到会话 {
     client: Client,
-    stu_name: String,
+    用户真名: String,
     cookies: UserCookies,
 }
 
-impl PartialEq for SignSession {
+impl PartialEq for Struct签到会话 {
     fn eq(&self, other: &Self) -> bool {
         self.get_uid() == other.get_uid()
     }
 }
-impl Eq for SignSession {}
+impl Eq for Struct签到会话 {}
 
-impl Hash for SignSession {
+impl Hash for Struct签到会话 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.get_uid().hash(state);
         self.get_fid().hash(state);
-        self.get_stu_name().hash(state);
+        self.get_用户真名().hash(state);
     }
 }
 
-impl SignSession {
-    pub async fn load<P: AsRef<std::path::Path>>(cookies_dir: P) -> Result<Self, reqwest::Error> {
+impl Struct签到会话 {
+    pub async fn 从cookies文件加载<P: AsRef<std::path::Path>>(
+        cookies路径: P,
+    ) -> Result<Self, reqwest::Error> {
         let cookie_store = {
-            let file = std::fs::File::open(cookies_dir)
+            let cookies文件 = std::fs::File::open(cookies路径)
                 .map(std::io::BufReader::new)
                 .unwrap();
-            // use re-exported version of `CookieStore` for crate compatibility
-            reqwest_cookie_store::CookieStore::load_json(file).unwrap()
+            reqwest_cookie_store::CookieStore::load_json(cookies文件).unwrap()
         };
         let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
         let cookie_store = std::sync::Arc::new(cookie_store);
@@ -64,11 +65,11 @@ impl SignSession {
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()
             .unwrap();
-        let stu_name = Self::get_stu_name_(&client).await?;
-        println!("用户[{stu_name}]加载 Cookies 成功！");
-        Ok(SignSession {
+        let 用户真名 = Self::获取用户真名(&client).await?;
+        println!("用户[{用户真名}]加载 Cookies 成功！");
+        Ok(Struct签到会话 {
             client,
-            stu_name,
+            用户真名,
             cookies,
         })
     }
@@ -79,11 +80,14 @@ impl SignSession {
         self.cookies.get_fid()
     }
 
-    pub fn get_stu_name(&self) -> &str {
-        &self.stu_name
+    pub fn get_用户真名(&self) -> &str {
+        &self.用户真名
     }
 
-    pub async fn login(uname: &str, enc_pwd: &str) -> Result<SignSession, reqwest::Error> {
+    pub async fn 通过账号密码登录(
+        账号: &str,
+        加密过的密码: &str,
+    ) -> Result<Struct签到会话, reqwest::Error> {
         let cookie_store = reqwest_cookie_store::CookieStore::new(None);
         let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
         let cookie_store = std::sync::Arc::new(cookie_store);
@@ -91,7 +95,7 @@ impl SignSession {
             .user_agent(UA)
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()?;
-        let response = utils::query::login_enc(&client, uname, enc_pwd).await?;
+        let response = utils::query::login_enc(&client, 账号, 加密过的密码).await?;
         /// TODO: 存疑
         #[derive(Deserialize)]
         struct LoginR {
@@ -124,7 +128,7 @@ impl SignSession {
         }
         {
             // Write store back to disk
-            let mut writer = std::fs::File::create(CONFIG_DIR.join(uname.to_string() + ".json"))
+            let mut writer = std::fs::File::create(配置文件夹.join(账号.to_string() + ".json"))
                 .map(std::io::BufWriter::new)
                 .unwrap();
             let store = cookie_store.lock().unwrap();
@@ -140,16 +144,16 @@ impl SignSession {
             r
         };
         let cookies = UserCookies::new(store);
-        let stu_name = Self::get_stu_name_(&client).await?;
-        println!("用户[{stu_name}]登录成功！");
-        Ok(SignSession {
+        let 用户真名 = Self::获取用户真名(&client).await?;
+        println!("用户[{用户真名}]登录成功！");
+        Ok(Struct签到会话 {
             client,
-            stu_name,
+            用户真名,
             cookies,
         })
     }
 
-    pub async fn get_courses(&self) -> Result<Vec<Course>, reqwest::Error> {
+    pub async fn 获取课程列表(&self) -> Result<Vec<Struct课程>, reqwest::Error> {
         let r = utils::query::back_clazz_data(self.deref()).await?;
         let r: GetCoursesR = r.json().await.unwrap();
         let mut arr = Vec::new();
@@ -157,7 +161,7 @@ impl SignSession {
             if let Some(data) = c.content.course {
                 for course in data.data {
                     if c.key.is_i64() {
-                        arr.push(Course::new(
+                        arr.push(Struct课程::new(
                             course.id,
                             c.key.as_i64().unwrap(),
                             course.teacherfactor.as_str(),
@@ -168,10 +172,10 @@ impl SignSession {
                 }
             }
         }
-        println!("用户[{}]已获取课程列表。", self.stu_name);
+        println!("用户[{}]已获取课程列表。", self.用户真名);
         Ok(arr)
     }
-    async fn get_stu_name_(client: &Client) -> Result<String, reqwest::Error> {
+    async fn 获取用户真名(client: &Client) -> Result<String, reqwest::Error> {
         let r = utils::query::account_manage(client).await?;
         let html_content = r.text().await?;
         #[cfg(debug_assertions)]
@@ -185,7 +189,7 @@ impl SignSession {
             .trim();
         Ok(name.to_owned())
     }
-    pub async fn get_pan_token(&self) -> Result<String, reqwest::Error> {
+    pub async fn 获取网盘token(&self) -> Result<String, reqwest::Error> {
         let r = utils::query::pan_token(self).await?;
         #[derive(Deserialize)]
         struct Tmp {
@@ -195,12 +199,12 @@ impl SignSession {
         Ok(r._token)
     }
 
-    pub async fn upload_photo(
+    pub async fn 上传在线图片(
         &self,
         buffer: Vec<u8>,
         file_name: &str,
     ) -> Result<String, reqwest::Error> {
-        let token = self.get_pan_token().await?;
+        let token = self.获取网盘token().await?;
         let r = utils::query::pan_upload(self, buffer, self.get_uid(), &token, file_name).await?;
         #[derive(Deserialize)]
         #[allow(non_snake_case)]
@@ -212,42 +216,37 @@ impl SignSession {
     }
 }
 
-impl SignSession {
-    pub async fn traverse_activities(
+impl Struct签到会话 {
+    pub async fn 遍历课程以获取所有活动(
         &self,
-    ) -> Result<(Vec<SignActivity>, Vec<SignActivity>, Vec<OtherActivity>), reqwest::Error> {
-        let mut available_sign_activities = Vec::new();
-        let mut other_sign_activities = Vec::new();
-        let mut other_activities = Vec::new();
+    ) -> Result<(Vec<Struct签到>, Vec<Struct签到>, Vec<Struct非签到活动>), reqwest::Error> {
+        let mut 有效签到列表 = Vec::new();
+        let mut 其他签到列表 = Vec::new();
+        let mut 非签到活动列表 = Vec::new();
         let mut tasks = FuturesUnordered::new();
-        let courses = self.get_courses().await?;
-        for c in courses {
-            tasks.push(Activity::from_course(self, c));
+        let 课程列表 = self.获取课程列表().await?;
+        for c in 课程列表 {
+            tasks.push(Enum活动::获取课程的所有活动(self, c));
         }
         while let Some(item) = tasks.next().await {
             for a in item? {
-                if let Activity::Sign(sa) = a {
-                    if sa.is_available() {
-                        available_sign_activities.push(sa);
+                if let Enum活动::签到(签到) = a {
+                    if 签到.是否有效() {
+                        有效签到列表.push(签到);
                     } else {
-                        other_sign_activities.push(sa);
+                        其他签到列表.push(签到);
                     }
-                } else if let Activity::Other(oa) = a {
-                    other_activities.push(oa);
+                } else if let Enum活动::非签到活动(非签到活动) = a {
+                    非签到活动列表.push(非签到活动);
                 }
             }
         }
-        available_sign_activities
-            .sort_by(|a1, a2| -> Ordering { a1.start_time_secs.cmp(&a2.start_time_secs) });
-        Ok((
-            available_sign_activities,
-            other_sign_activities,
-            other_activities,
-        ))
+        有效签到列表.sort_by(|a1, a2| -> Ordering { a1.开始时间戳.cmp(&a2.开始时间戳) });
+        Ok((有效签到列表, 其他签到列表, 非签到活动列表))
     }
 }
 
-impl Deref for SignSession {
+impl Deref for Struct签到会话 {
     type Target = Client;
     fn deref(&self) -> &Client {
         &self.client
