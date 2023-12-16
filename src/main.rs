@@ -12,7 +12,7 @@ mod utils;
 
 use cli::{
     arg::{AccCmds, Args, MainCmds},
-    pos::CliPosArgs,
+    location::Struct位置操作使用的信息,
 };
 use utils::{sql::DataBase, 配置文件夹};
 
@@ -23,10 +23,10 @@ async fn main() {
         command,
         active_id,
         accounts,
-        pos,
-        img,
+        location,
+        image,
         signcode,
-        precise,
+        precisely,
         no_random_shift,
     } = args;
     let db = DataBase::new();
@@ -91,34 +91,34 @@ async fn main() {
                 }
             }
             MainCmds::Pos {
-                posid,
+                lication_id,
                 list,
                 new,
                 import,
                 export,
                 alias,
                 remove,
-                remove_all,
-                remove_all_alias,
+                remove_positions,
+                remove_aliases,
                 course,
                 global,
                 yes,
             } => {
-                let args = CliPosArgs {
-                    posid,
+                let args = Struct位置操作使用的信息 {
+                    lication_id,
                     list,
                     new,
                     import,
                     export,
                     alias,
                     remove,
-                    remove_all,
-                    remove_all_alias,
+                    remove_positions,
+                    remove_aliases,
                     course,
                     global,
                     yes,
                 };
-                cli::pos::pos(&db, args)
+                cli::location::pos(&db, args)
             }
             MainCmds::List { course, all } => {
                 let sessions = utils::account::通过账号获取签到会话(
@@ -162,10 +162,10 @@ async fn main() {
         }
     } else {
         let 签到可能使用的信息 = cli::arg::CliArgs {
-            位置字符串: pos,
-            图片或图片路径: img,
+            位置字符串: location,
+            图片或图片路径: image,
             签到码: signcode,
-            是否精确识别二维码: precise,
+            是否精确识别二维码: precisely,
             是否禁用随机偏移: no_random_shift,
         };
         cli::签到(&db, active_id, accounts, 签到可能使用的信息)

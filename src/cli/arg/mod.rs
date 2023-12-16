@@ -33,13 +33,13 @@ pub struct Args {
     /// 如果该别名不存在，则视为位置 ID.
     /// 其余情况将按照先课程位置后全局位置的顺序依次尝试。
     #[arg(short, long)]
-    pub pos: Option<String>,
+    pub location: Option<String>,
     /// 本地图片路径。
     /// 拍照签到需要提供，二维码签到可选提供。
     /// 如果是文件，则直接使用该文件作为拍照签到图片或二维码图片文件。
     /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
     #[arg(short, long)]
-    pub img: Option<PathBuf>,
+    pub image: Option<PathBuf>,
     // /// 从屏幕上获取二维码。
     // /// 二维码签到时需要提供。
     // #[arg(short, long)]
@@ -47,7 +47,7 @@ pub struct Args {
     /// 精确地截取二维码。
     /// 如果二维码识别过慢可以尝试添加添加此选项。
     #[arg(long)]
-    pub precise: bool,
+    pub precisely: bool,
     /// 签到码。
     /// 签到码签到时需要提供。
     #[arg(short, long)]
@@ -87,7 +87,7 @@ pub enum MainCmds {
     /// 默认列出所有位置。
     Pos {
         /// 指定 posid.
-        posid: Option<i64>,
+        lication_id: Option<i64>,
         /// 列出位置。
         #[arg(short, long)]
         list: bool,
@@ -113,10 +113,10 @@ pub enum MainCmds {
         remove: bool,
         /// 删除所有位置。
         #[arg(long)]
-        remove_all: bool,
+        remove_positions: bool,
         /// 删除所有别名。
         #[arg(long)]
-        remove_all_alias: bool,
+        remove_aliases: bool,
         /// 指定课程号。
         #[arg(short, long)]
         course: Option<i64>,
