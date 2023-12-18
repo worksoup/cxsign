@@ -368,74 +368,74 @@ impl Struct签到 {
     }
 }
 impl Struct签到 {
-    pub async fn chat_group_pre_sign(
-        &self,
-        chat_id: &str,
-        tuid: &str,
-        session: &Struct签到会话,
-    ) -> Result<(), reqwest::Error> {
-        let id = self.活动id.as_str();
-        let uid = session.get_uid();
-        let _r = utils::query::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
+    // pub async fn chat_group_pre_sign(
+    //     &self,
+    //     chat_id: &str,
+    //     tuid: &str,
+    //     session: &Struct签到会话,
+    // ) -> Result<(), reqwest::Error> {
+    //     let id = self.活动id.as_str();
+    //     let uid = session.get_uid();
+    //     let _r = utils::query::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
 
-        Ok(())
-    }
-    pub async fn chat_group_general_sign(
-        &self,
-        session: &Struct签到会话,
-    ) -> Result<(), reqwest::Error> {
-        let r =
-            utils::query::chat_group_general_sign(session, self.活动id.as_str(), session.get_uid())
-                .await?;
-        println!("{:?}", r.text().await.unwrap());
-        Ok(())
-    }
-    pub async fn chat_group_signcode_sign(
-        &self,
-        session: &Struct签到会话,
-        signcode: &str,
-    ) -> Result<(), reqwest::Error> {
-        let r = utils::query::chat_group_signcode_sign(
-            session,
-            self.活动id.as_str(),
-            session.get_uid(),
-            signcode,
-        )
-        .await?;
-        println!("{:?}", r.text().await.unwrap());
-        Ok(())
-    }
-    pub async fn chat_group_location_sign(
-        &self,
-        address: &Struct位置,
-        session: &Struct签到会话,
-    ) -> Result<(), reqwest::Error> {
-        let r = utils::query::chat_group_location_sign(
-            session,
-            address.get_地址(),
-            self.活动id.as_str(),
-            session.get_uid(),
-            address.get_纬度(),
-            address.get_经度(),
-        )
-        .await?;
-        println!("{:?}", r.text().await.unwrap());
-        Ok(())
-    }
-    pub async fn chat_group_photo_sign(
-        &self,
-        photo: &Struct在线图片,
-        session: &Struct签到会话,
-    ) -> Result<(), reqwest::Error> {
-        let r = utils::query::chat_group_photo_sign(
-            session,
-            self.活动id.as_str(),
-            session.get_uid(),
-            photo.get_object_id(),
-        )
-        .await?;
-        println!("{:?}", r.text().await.unwrap());
+    //     Ok(())
+    // }
+    // pub async fn chat_group_general_sign(
+    //     &self,
+    //     session: &Struct签到会话,
+    // ) -> Result<(), reqwest::Error> {
+    //     let r =
+    //         utils::query::chat_group_general_sign(session, self.活动id.as_str(), session.get_uid())
+    //             .await?;
+    //     println!("{:?}", r.text().await.unwrap());
+    //     Ok(())
+    // }
+    // pub async fn chat_group_signcode_sign(
+    //     &self,
+    //     session: &Struct签到会话,
+    //     signcode: &str,
+    // ) -> Result<(), reqwest::Error> {
+    //     let r = utils::query::chat_group_signcode_sign(
+    //         session,
+    //         self.活动id.as_str(),
+    //         session.get_uid(),
+    //         signcode,
+    //     )
+    //     .await?;
+    //     println!("{:?}", r.text().await.unwrap());
+    //     Ok(())
+    // }
+    // pub async fn chat_group_location_sign(
+    //     &self,
+    //     address: &Struct位置,
+    //     session: &Struct签到会话,
+    // ) -> Result<(), reqwest::Error> {
+    //     let r = utils::query::chat_group_location_sign(
+    //         session,
+    //         address.get_地址(),
+    //         self.活动id.as_str(),
+    //         session.get_uid(),
+    //         address.get_纬度(),
+    //         address.get_经度(),
+    //     )
+    //     .await?;
+    //     println!("{:?}", r.text().await.unwrap());
+    //     Ok(())
+    // }
+    // pub async fn chat_group_photo_sign(
+    //     &self,
+    //     photo: &Struct在线图片,
+    //     session: &Struct签到会话,
+    // ) -> Result<(), reqwest::Error> {
+    //     let r = utils::query::chat_group_photo_sign(
+    //         session,
+    //         self.活动id.as_str(),
+    //         session.get_uid(),
+    //         photo.get_object_id(),
+    //     )
+    //     .await?;
+    //     println!("{:?}", r.text().await.unwrap());
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 }
