@@ -3,6 +3,7 @@ use serde_derive::Deserialize;
 use crate::session::{course::Struct课程, Struct签到会话};
 use crate::utils::address::Struct位置;
 use crate::utils::photo::Struct在线图片;
+use crate::utils::query::get_attend_info;
 use crate::utils::{self, 获取unicode字符串定宽显示时应当设置的宽度};
 pub enum Enum签到类型 {
     // 拍照签到
@@ -35,7 +36,43 @@ pub enum Enum签到结果 {
     成功,
     失败 { 失败信息: String },
 }
+
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
+#[repr(i64)]
+pub enum Enum签到后状态 {
+    #[default]
+    未签 = 0,
+    签到成功 = 1,
+    教师代签 = 2,
+    请假 = 4,
+    缺勤 = 5,
+    病假 = 7,
+    事假 = 8,
+    迟到 = 9,
+    早退 = 10,
+    签到已过期 = 11,
+    公假 = 12,
+}
+
 impl Struct签到 {
+    pub async fn 获取签到后状态(
+        &self,
+        签到会话: &Struct签到会话,
+    ) -> Result<Enum签到后状态, reqwest::Error> {
+        let r = get_attend_info(&签到会话, &self.活动id).await?;
+        #[derive(Deserialize)]
+        struct Data原始数据 {
+            #[allow(unused)]
+            status: i64,
+        }
+        #[derive(Deserialize)]
+        struct 原始数据 {
+            #[allow(unused)]
+            data: Data原始数据,
+        }
+        let r: 原始数据 = r.json().await.unwrap();
+        Ok(r.data.status.into())
+    }
     pub fn speculate_type_by_text(text: &str) -> Enum签到类型 {
         if text.contains("拍照") {
             Enum签到类型::拍照签到
@@ -101,7 +138,8 @@ pub struct Struct签到信息 {
 }
 impl Struct签到 {
     pub fn display(&self, already_course: bool) {
-        let name_width = 获取unicode字符串定宽显示时应当设置的宽度(self.签到名.as_str(), 12);
+        let name_width =
+            获取unicode字符串定宽显示时应当设置的宽度(self.签到名.as_str(), 12);
         if already_course {
             println!(
                 "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}",
@@ -311,8 +349,8 @@ impl Struct签到 {
         photo: &Struct在线图片,
         session: &Struct签到会话,
     ) -> Result<Enum签到结果, reqwest::Error> {
-        let r = utils::query::photo_sign(session, self.活动id.as_str(), photo.get_object_id())
-            .await?;
+        let r =
+            utils::query::photo_sign(session, self.活动id.as_str(), photo.get_object_id()).await?;
         Ok(Self::通过文本判断签到结果(
             &r.text().await.unwrap(),
         ))
@@ -346,12 +384,9 @@ impl Struct签到 {
         &self,
         session: &Struct签到会话,
     ) -> Result<(), reqwest::Error> {
-        let r = utils::query::chat_group_general_sign(
-            session,
-            self.活动id.as_str(),
-            session.get_uid(),
-        )
-        .await?;
+        let r =
+            utils::query::chat_group_general_sign(session, self.活动id.as_str(), session.get_uid())
+                .await?;
         println!("{:?}", r.text().await.unwrap());
         Ok(())
     }
