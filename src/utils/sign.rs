@@ -138,7 +138,7 @@ pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) 
         for 扫描结果 in &扫描结果列表 {
             let url = 扫描结果.getText();
             // 如果符合要求的二维码。
-            if !url.contains(crate::utils::query::QRCODE_PAT) && url.contains("&enc=") {
+            if !url.contains(crate::protocol::QRCODE_PAT) && url.contains("&enc=") {
                 continue;
             }
             println!("存在签到二维码。");
