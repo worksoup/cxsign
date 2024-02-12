@@ -1,10 +1,12 @@
+use crate::protocol;
 use serde_derive::Deserialize;
 
+use crate::protocol::get_attend_info;
 use crate::session::{course::Struct课程, Struct签到会话};
 use crate::utils::address::Struct位置;
 use crate::utils::photo::Struct在线图片;
-use crate::utils::query::get_attend_info;
-use crate::utils::{self, 获取unicode字符串定宽显示时应当设置的宽度};
+use crate::utils::获取unicode字符串定宽显示时应当设置的宽度;
+
 pub enum Enum签到类型 {
     // 拍照签到
     拍照签到,
@@ -21,6 +23,7 @@ pub enum Enum签到类型 {
     // 未知
     非已知签到,
 }
+
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Struct签到 {
     pub 活动id: String,
@@ -31,6 +34,7 @@ pub struct Struct签到 {
     pub 开始时间戳: i64,
     pub 签到信息: Struct签到信息,
 }
+
 #[derive(Debug)]
 pub enum Enum签到结果 {
     成功,
@@ -113,7 +117,7 @@ impl Struct签到 {
             #[allow(unused)]
             result: i64,
         }
-        let CheckR { result } = utils::query::check_signcode(session, active_id, signcode)
+        let CheckR { result } = crate::protocol::check_signcode(session, active_id, signcode)
             .await?
             .json()
             .await
@@ -121,6 +125,7 @@ impl Struct签到 {
         Ok(result == 1)
     }
 }
+
 #[derive(Debug)]
 pub struct SignActivityRaw {
     pub id: String,
@@ -130,12 +135,14 @@ pub struct SignActivityRaw {
     pub status: i32,
     pub start_time_secs: i64,
 }
+
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Struct签到信息 {
     is_photo: bool,
     is_refresh_qrcode: bool,
     c: String,
 }
+
 impl Struct签到 {
     pub fn display(&self, already_course: bool) {
         let name_width =
@@ -195,7 +202,7 @@ impl Struct签到 {
             ifRefreshEwm: i64,
             signCode: Option<String>,
         }
-        let r = utils::query::sign_detail(session, active_id).await?;
+        let r = protocol::sign_detail(session, active_id).await?;
         let GetSignDetailR {
             ifPhoto,
             ifRefreshEwm,
@@ -213,7 +220,7 @@ impl Struct签到 {
         session: &Struct签到会话,
         response_of_presign: reqwest::Response,
     ) -> Result<Enum签到结果, reqwest::Error> {
-        let response_of_analysis = utils::query::analysis(session, active_id).await?;
+        let response_of_analysis = protocol::analysis(session, active_id).await?;
         let data = response_of_analysis.text().await.unwrap();
         let code = {
             let start_of_code = data.find("code='+'").unwrap() + 8;
@@ -223,7 +230,7 @@ impl Struct签到 {
         };
         #[cfg(debug_assertions)]
         println!("code: {code:?}");
-        let _response_of_analysis2 = utils::query::analysis2(session, code).await?;
+        let _response_of_analysis2 = protocol::analysis2(session, code).await?;
         #[cfg(debug_assertions)]
         println!(
             "analysis 结果：{}",
@@ -260,7 +267,7 @@ impl Struct签到 {
         let active_id = self.活动id.as_str();
         let uid = session.get_uid();
         let response_of_presign =
-            utils::query::pre_sign(session, self.课程.clone(), active_id, uid).await?;
+            protocol::pre_sign(session, self.课程.clone(), active_id, uid, false, "", "").await?;
         println!("用户[{}]预签到已请求。", session.get_用户真名());
         self.预签到_analysis部分(active_id, session, response_of_presign)
             .await
@@ -273,15 +280,8 @@ impl Struct签到 {
     ) -> Result<Enum签到结果, reqwest::Error> {
         let active_id = self.活动id.as_str();
         let uid = session.get_uid();
-        let response_of_presign = utils::query::pre_sign_for_qrcode_sign(
-            session,
-            self.课程.clone(),
-            active_id,
-            uid,
-            c,
-            enc,
-        )
-        .await?;
+        let response_of_presign =
+            protocol::pre_sign(session, self.课程.clone(), active_id, uid, true, c, enc).await?;
         println!("用户[{}]预签到已请求。", session.get_用户真名());
         self.预签到_analysis部分(active_id, session, response_of_presign)
             .await
@@ -308,12 +308,13 @@ impl Struct签到 {
         }
     }
 }
+
 impl Struct签到 {
     pub async fn 作为普通签到处理(
         &self,
         session: &Struct签到会话,
     ) -> Result<Enum签到结果, reqwest::Error> {
-        let r = utils::query::general_sign(session, self.活动id.as_str()).await?;
+        let r = protocol::general_sign(session, self.活动id.as_str()).await?;
         Ok(Self::通过文本判断签到结果(
             &r.text().await.unwrap(),
         ))
@@ -324,7 +325,7 @@ impl Struct签到 {
         signcode: &str,
     ) -> Result<Enum签到结果, reqwest::Error> {
         if Self::检查签到码是否正确(session, &self.活动id, signcode).await? {
-            let r = utils::query::signcode_sign(session, self.活动id.as_str(), signcode).await?;
+            let r = protocol::signcode_sign(session, self.活动id.as_str(), signcode).await?;
             Ok(Self::通过文本判断签到结果(
                 &r.text().await.unwrap(),
             ))
@@ -338,8 +339,10 @@ impl Struct签到 {
         &self,
         address: &Struct位置,
         session: &Struct签到会话,
+        是否限定位置: bool,
     ) -> Result<Enum签到结果, reqwest::Error> {
-        let r = utils::query::location_sign(session, address, self.活动id.as_str()).await?;
+        let r =
+            protocol::location_sign(session, address, self.活动id.as_str(), 是否限定位置).await?;
         Ok(Self::通过文本判断签到结果(
             &r.text().await.unwrap(),
         ))
@@ -349,8 +352,7 @@ impl Struct签到 {
         photo: &Struct在线图片,
         session: &Struct签到会话,
     ) -> Result<Enum签到结果, reqwest::Error> {
-        let r =
-            utils::query::photo_sign(session, self.活动id.as_str(), photo.get_object_id()).await?;
+        let r = protocol::photo_sign(session, self.活动id.as_str(), photo.get_object_id()).await?;
         Ok(Self::通过文本判断签到结果(
             &r.text().await.unwrap(),
         ))
@@ -361,12 +363,13 @@ impl Struct签到 {
         address: &Struct位置,
         session: &Struct签到会话,
     ) -> Result<Enum签到结果, reqwest::Error> {
-        let r = utils::query::qrcode_sign(session, enc, self.活动id.as_str(), address).await?;
+        let r = protocol::qrcode_sign(session, enc, self.活动id.as_str(), address).await?;
         Ok(Self::通过文本判断签到结果(
             &r.text().await.unwrap(),
         ))
     }
 }
+
 impl Struct签到 {
     // pub async fn chat_group_pre_sign(
     //     &self,
@@ -376,7 +379,7 @@ impl Struct签到 {
     // ) -> Result<(), reqwest::Error> {
     //     let id = self.活动id.as_str();
     //     let uid = session.get_uid();
-    //     let _r = utils::query::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
+    //     let _r = protocol::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
 
     //     Ok(())
     // }
@@ -385,7 +388,7 @@ impl Struct签到 {
     //     session: &Struct签到会话,
     // ) -> Result<(), reqwest::Error> {
     //     let r =
-    //         utils::query::chat_group_general_sign(session, self.活动id.as_str(), session.get_uid())
+    //         protocol::chat_group_general_sign(session, self.活动id.as_str(), session.get_uid())
     //             .await?;
     //     println!("{:?}", r.text().await.unwrap());
     //     Ok(())
@@ -395,7 +398,7 @@ impl Struct签到 {
     //     session: &Struct签到会话,
     //     signcode: &str,
     // ) -> Result<(), reqwest::Error> {
-    //     let r = utils::query::chat_group_signcode_sign(
+    //     let r = protocol::chat_group_signcode_sign(
     //         session,
     //         self.活动id.as_str(),
     //         session.get_uid(),
@@ -410,7 +413,7 @@ impl Struct签到 {
     //     address: &Struct位置,
     //     session: &Struct签到会话,
     // ) -> Result<(), reqwest::Error> {
-    //     let r = utils::query::chat_group_location_sign(
+    //     let r = protocol::chat_group_location_sign(
     //         session,
     //         address.get_地址(),
     //         self.活动id.as_str(),
@@ -427,7 +430,7 @@ impl Struct签到 {
     //     photo: &Struct在线图片,
     //     session: &Struct签到会话,
     // ) -> Result<(), reqwest::Error> {
-    //     let r = utils::query::chat_group_photo_sign(
+    //     let r = protocol::chat_group_photo_sign(
     //         session,
     //         self.活动id.as_str(),
     //         session.get_uid(),

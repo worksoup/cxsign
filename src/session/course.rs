@@ -11,6 +11,7 @@ pub struct Struct课程 {
     封面图url: String,
     课程名: String,
 }
+
 impl Display for Struct课程 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -20,6 +21,7 @@ impl Display for Struct课程 {
         )
     }
 }
+
 impl Struct课程 {
     pub fn new(
         course_id: i64,
@@ -55,10 +57,14 @@ impl Struct课程 {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct CourseRaw {
-    pub id: i64,
-    pub teacherfactor: String,
-    pub imageurl: String,
-    pub name: String,
+    #[serde(alias = "id")]
+    pub 课程号: i64,
+    #[serde(alias = "teacherfactor")]
+    pub 任课教师: String,
+    #[serde(alias = "imageurl")]
+    pub 封面图url: String,
+    #[serde(alias = "name")]
+    pub 课程名: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -68,23 +74,20 @@ pub struct Courses {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct CourseContent {
-    pub course: Option<Courses>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct Class {
-    pub key: i64,
-    pub content: CourseContent,
+    #[serde(alias = "course")]
+    pub 课程: Option<Courses>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ClassRaw {
-    pub key: Value,
+    #[serde(alias = "key")]
+    pub 班级号: Value,
+    #[serde(alias = "content")]
     pub content: CourseContent,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-#[allow(non_snake_case)]
 pub struct GetCoursesR {
-    pub channelList: Vec<ClassRaw>,
+    #[serde(alias = "channelList")]
+    pub channel_list: Vec<ClassRaw>,
 }

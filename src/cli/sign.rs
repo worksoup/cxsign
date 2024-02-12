@@ -10,6 +10,7 @@ use crate::{
 
 use super::single_sign;
 
+//noinspection ALL
 pub async fn 普通签到<'a>(
     签到: &Struct签到,
     签到会话列表: &'a Vec<&Struct签到会话>,
@@ -66,6 +67,7 @@ pub async fn 拍照签到<'a>(
     }
     Ok(用户真名_签到结果_哈希表)
 }
+
 pub async fn 二维码签到<'a>(
     签到: &Struct签到,
     c: &str,

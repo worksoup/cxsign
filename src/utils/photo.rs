@@ -1,8 +1,9 @@
-use crate::{session::Struct签到会话, utils};
+use crate::{protocol, session::Struct签到会话};
 use serde_derive::Deserialize;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
+
 // TODO: 删除 unwrap
 pub struct Struct在线图片 {
     object_id: String,
@@ -13,7 +14,7 @@ impl Struct在线图片 {
         session: &Struct签到会话,
         p: impl Fn(&str) -> bool,
     ) -> Result<Option<String>, reqwest::Error> {
-        let 响应 = utils::query::pan_chaoxing(session).await?;
+        let 响应 = protocol::pan_chaoxing(session).await?;
         let 响应的文本 = 响应.text().await.unwrap();
         let start_of_enc = 响应的文本.find("enc =\"").unwrap() + 6;
         let end_of_enc = 响应的文本[start_of_enc..响应的文本.len()]
@@ -27,7 +28,7 @@ impl Struct在线图片 {
             .unwrap()
             + start_of_root_dir;
         let parent_id = &响应的文本[start_of_root_dir..end_of_root_dir];
-        let r = utils::query::pan_list(session, parent_id, enc).await?;
+        let r = protocol::pan_list(session, parent_id, enc).await?;
         #[derive(Deserialize)]
         #[allow(non_snake_case)]
         struct CloudFile {

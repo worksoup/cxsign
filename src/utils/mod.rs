@@ -1,7 +1,6 @@
 pub mod account;
 pub mod address;
 pub mod photo;
-pub mod query;
 pub mod sign;
 pub mod sql;
 

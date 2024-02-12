@@ -9,6 +9,7 @@ mod activity;
 mod cli;
 mod session;
 mod utils;
+mod protocol;
 
 use cli::{
     arg::{AccCmds, Args, MainCmds},
