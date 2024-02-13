@@ -1,6 +1,11 @@
+use std::collections::HashMap;
 use std::f64::consts::PI;
 
+use crate::protocol::get_location_log;
+use crate::session::course::Struct课程;
+use crate::session::Struct签到会话;
 use rand::Rng;
+use reqwest::Response;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -9,6 +14,37 @@ pub struct Struct位置 {
     经度: String,
     纬度: String,
     海拔: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct Data {
+    #[serde(alias = "data")]
+    位置及范围及签到id列表: Vec<Struct位置及范围及签到id>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct Struct位置及范围及签到id {
+    #[serde(alias = "activeid")]
+    签到id: String,
+    #[serde(alias = "address")]
+    地址: String,
+    #[serde(alias = "longitude")]
+    经度: String,
+    #[serde(alias = "latitude")]
+    纬度: String,
+    #[serde(alias = "locationrange")]
+    范围: u32,
+}
+
+impl Struct位置及范围及签到id {
+    pub fn to_位置及范围(self) -> Struct位置及范围 {
+        Struct位置及范围 {
+            地址: self.地址,
+            经度: self.经度,
+            纬度: self.纬度,
+            范围: self.范围,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -24,6 +60,18 @@ pub struct Struct位置及范围 {
 }
 
 impl Struct位置及范围 {
+    pub async fn 从log获取位置列表(
+        签到会话: &Struct签到会话,
+        课程: &Struct课程,
+    ) -> Result<HashMap<String, Struct位置及范围>, reqwest::Error> {
+        let r = get_location_log(签到会话, 课程).await?;
+        let data: Data = r.json().await.unwrap();
+        let mut map = HashMap::new();
+        for l in data.位置及范围及签到id列表 {
+            map.insert(l.签到id.clone(), l.to_位置及范围());
+        }
+        Ok(map)
+    }
     pub fn 获取随机偏移后的位置(&self) -> Struct位置 {
         const 地球半径: f64 = 6371393.0;
         let Struct位置及范围 {

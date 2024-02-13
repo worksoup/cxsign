@@ -37,6 +37,7 @@ pub async fn 二维码签到_单个账号<'a>(
     sign: &Struct签到,
     c: &str,
     enc: &str,
+    预设地址: Option<Struct位置>,
     位置列表: &Vec<Struct位置>,
     session: &'a Struct签到会话,
 ) -> Result<(&'a str, Enum签到结果), reqwest::Error> {
@@ -52,11 +53,11 @@ pub async fn 二维码签到_单个账号<'a>(
                 let mut state = Enum签到结果::失败 {
                     失败信息: "所有位置均不可用".into(),
                 };
-                for 位置 in 位置列表 {
+                let mut 需要再次尝试 = false;
+                if let Some(位置) = &预设地址 {
                     match sign.作为二维码签到处理(enc, 位置, session).await? {
                         r @ Enum签到结果::成功 => {
                             state = r;
-                            break;
                         }
                         Enum签到结果::失败 { 失败信息 } => {
                             eprintln!(
@@ -66,8 +67,28 @@ pub async fn 二维码签到_单个账号<'a>(
                                 位置,
                                 失败信息
                             );
+                            需要再次尝试 = true;
                         }
                     };
+                }
+                if 需要再次尝试 {
+                    for 位置 in 位置列表 {
+                        match sign.作为二维码签到处理(enc, 位置, session).await? {
+                            r @ Enum签到结果::成功 => {
+                                state = r;
+                                break;
+                            }
+                            Enum签到结果::失败 { 失败信息 } => {
+                                eprintln!(
+                                    "用户[{}]在二维码签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
+                                    session.get_用户真名(),
+                                    sign.签到名,
+                                    位置,
+                                    失败信息
+                                );
+                            }
+                        };
+                    }
                 }
                 state
             }

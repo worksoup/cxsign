@@ -6,7 +6,7 @@ use crate::utils::{
 };
 
 pub struct Struct位置操作使用的信息 {
-    pub lication_id: Option<i64>,
+    pub location_id: Option<i64>,
     pub list: bool,
     pub new: Option<String>,
     pub import: Option<PathBuf>,
@@ -28,7 +28,7 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
             .unwrap()
     }
     let Struct位置操作使用的信息 {
-        lication_id,
+        location_id: lication_id,
         list,
         new,
         import,
