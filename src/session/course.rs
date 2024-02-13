@@ -57,13 +57,13 @@ impl Struct课程 {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct CourseRaw {
-    #[serde(alias = "id")]
+    #[serde(rename = "id")]
     pub 课程号: i64,
-    #[serde(alias = "teacherfactor")]
+    #[serde(rename = "teacherfactor")]
     pub 任课教师: String,
-    #[serde(alias = "imageurl")]
+    #[serde(rename = "imageurl")]
     pub 封面图url: String,
-    #[serde(alias = "name")]
+    #[serde(rename = "name")]
     pub 课程名: String,
 }
 
@@ -74,20 +74,20 @@ pub struct Courses {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct CourseContent {
-    #[serde(alias = "course")]
+    #[serde(rename = "course")]
     pub 课程: Option<Courses>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ClassRaw {
-    #[serde(alias = "key")]
+    #[serde(rename = "key")]
     pub 班级号: Value,
-    #[serde(alias = "content")]
+    #[serde(rename = "content")]
     pub content: CourseContent,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct GetCoursesR {
-    #[serde(alias = "channelList")]
+    #[serde(rename = "channelList")]
     pub channel_list: Vec<ClassRaw>,
 }

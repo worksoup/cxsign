@@ -5,7 +5,6 @@ use crate::protocol::get_location_log;
 use crate::session::course::Struct课程;
 use crate::session::Struct签到会话;
 use rand::Rng;
-use reqwest::Response;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -18,44 +17,44 @@ pub struct Struct位置 {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct Data {
-    #[serde(alias = "data")]
+    #[serde(rename= "data")]
     位置及范围及签到id列表: Vec<Struct位置及范围及签到id>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct Struct位置及范围及签到id {
-    #[serde(alias = "activeid")]
-    签到id: String,
-    #[serde(alias = "address")]
+    #[serde(rename= "activeid")]
+    签到id: i64,
+    #[serde(rename= "address")]
     地址: String,
-    #[serde(alias = "longitude")]
-    经度: String,
-    #[serde(alias = "latitude")]
-    纬度: String,
-    #[serde(alias = "locationrange")]
-    范围: u32,
+    #[serde(rename= "longitude")]
+    经度: f64,
+    #[serde(rename= "latitude")]
+    纬度: f64,
+    #[serde(rename= "locationrange")]
+    范围: String,
 }
 
 impl Struct位置及范围及签到id {
-    pub fn to_位置及范围(self) -> Struct位置及范围 {
+    pub fn to_位置及范围(&self) -> Struct位置及范围 {
         Struct位置及范围 {
-            地址: self.地址,
-            经度: self.经度,
-            纬度: self.纬度,
-            范围: self.范围,
+            地址: self.地址.clone(),
+            经度: self.经度.to_string(),
+            纬度: self.纬度.to_string(),
+            范围: self.范围.trim().parse().unwrap_or(100),
         }
     }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Struct位置及范围 {
-    #[serde(alias = "address")]
+    #[serde(rename= "address")]
     地址: String,
-    #[serde(alias = "longitude")]
+    #[serde(rename= "longitude")]
     经度: String,
-    #[serde(alias = "latitude")]
+    #[serde(rename= "latitude")]
     纬度: String,
-    #[serde(alias = "locationrange")]
+    #[serde(rename= "locationrange")]
     范围: u32,
 }
 
@@ -68,7 +67,7 @@ impl Struct位置及范围 {
         let data: Data = r.json().await.unwrap();
         let mut map = HashMap::new();
         for l in data.位置及范围及签到id列表 {
-            map.insert(l.签到id.clone(), l.to_位置及范围());
+            map.insert(l.签到id.to_string(), l.to_位置及范围());
         }
         Ok(map)
     }
