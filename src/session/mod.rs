@@ -157,6 +157,8 @@ impl Struct签到会话 {
     }
 
     pub async fn 获取课程列表(&self) -> Result<Vec<Struct课程>, reqwest::Error> {
+        // let r = protocol::back_clazz_data(self.deref()).await?;
+        // std::fs::write("C:\\Users\\15102\\Desktop\\1.json", format!("{}",r.text().await.unwrap())).unwrap();
         let r = protocol::back_clazz_data(self.deref()).await?;
         let r: GetCoursesR = r.json().await.unwrap();
         let mut arr = Vec::new();
@@ -168,7 +170,7 @@ impl Struct签到会话 {
                             course.课程号,
                             c.班级号.as_i64().unwrap(),
                             course.任课教师.as_str(),
-                            course.封面图url.as_str(),
+                            course.封面图url.unwrap_or("".into()).as_str(),
                             course.课程名.as_str(),
                         ))
                     }

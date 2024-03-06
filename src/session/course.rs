@@ -62,7 +62,7 @@ pub struct CourseRaw {
     #[serde(rename = "teacherfactor")]
     pub 任课教师: String,
     #[serde(rename = "imageurl")]
-    pub 封面图url: String,
+    pub 封面图url: Option<String>,
     #[serde(rename = "name")]
     pub 课程名: String,
 }
