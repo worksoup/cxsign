@@ -14,7 +14,7 @@ impl Enum活动 {
         签到会话: &Struct签到会话,
         c: Struct课程,
     ) -> Result<Vec<Enum活动>, reqwest::Error> {
-        let r = crate::utils::query::active_list(签到会话, c.clone()).await?;
+        let r = crate::protocol::active_list(签到会话, c.clone()).await?;
         let r: GetActivityR = r.json().await.unwrap();
         let mut 活动列表 = Vec::new();
         if let Some(data) = r.data {

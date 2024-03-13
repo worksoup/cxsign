@@ -1,7 +1,6 @@
 use std::collections::{hash_map::OccupiedError, HashMap};
 
-use rxing::{Point, PointI, PointU};
-use screenshots::display_info::DisplayInfo;
+use rxing::{Point, PointU};
 
 use crate::{activity::sign::Struct签到, session::Struct签到会话, utils::请求确认};
 
@@ -58,10 +57,9 @@ pub fn 扫描路径中二维码并获取签到所需参数(pic_path: &str) -> St
     从二维码扫描结果中获取签到所需参数(扫描结果[0].getText())
 }
 
-fn 获取包含所有顶点的矩形(
-    vertex: &Vec<Point>,
-    display_info: &DisplayInfo,
-) -> (PointI, PointU) {
+fn 获取包含所有顶点的矩形(vertex: &Vec<Point>) -> (PointU, PointU) {
+    // let scale_factor = display.scale_factor();
+    // println!("屏幕缩放：{scale_factor}");
     let mut x_max = vertex[0].x;
     let mut x_min = x_max;
     let mut y_max = vertex[0].y;
@@ -83,19 +81,19 @@ fn 获取包含所有顶点的矩形(
     let lt = {
         let x = x_min - 10.0;
         let y = y_min - 10.0;
-        Point { x, y } / display_info.scale_factor
+        Point { x, y }
     };
     let rb = {
         let x = x_max + 10.0;
         let y = y_max + 10.0;
-        Point { x, y } / display_info.scale_factor
+        Point { x, y }
     };
     let wh = rb - lt;
-    (PointI::from(lt), PointU::from(wh))
+    (PointU::from(lt), PointU::from(wh))
 }
 
 fn 扫描图片中所有的二维码(
-    image: image::RgbaImage,
+    image: image::DynamicImage,
     hints: &mut rxing::DecodingHintDictionary,
 ) -> rxing::common::Result<Vec<rxing::RXingResult>> {
     hints
@@ -106,14 +104,19 @@ fn 扫描图片中所有的二维码(
     rxing::multi::MultipleBarcodeReader::decode_multiple_with_hints(
         &mut scanner,
         &mut rxing::BinaryBitmap::new(rxing::common::HybridBinarizer::new(
-            rxing::BufferedImageLuminanceSource::new(image::DynamicImage::ImageRgba8(image)),
+            rxing::BufferedImageLuminanceSource::new(image),
         )),
         hints,
     )
 }
+pub fn 裁剪图片(
+    原图: image::RgbaImage, 左上顶点: PointU, 宽高: PointU
+) -> image::DynamicImage {
+    image::DynamicImage::from(原图).crop(左上顶点.x, 左上顶点.y, 宽高.x, 宽高.y)
+}
 
 pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) -> Option<String> {
-    let 所有屏幕 = screenshots::Screen::all().unwrap_or_else(|e| panic!("{e:?}"));
+    let 所有屏幕 = xcap::Monitor::all().unwrap_or_else(|e| panic!("{e:?}"));
     // 在所有屏幕中寻找。
     if !precise && is_refresh {
         if !请求确认(
@@ -124,31 +127,35 @@ pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) 
         }
     }
     for 屏幕 in 所有屏幕 {
-        let 屏幕显示信息 = 屏幕.display_info;
         // 先截取整个屏幕。
-        let 所截图片 = 屏幕.capture().unwrap_or_else(|e| panic!("{e:?}"));
+        let 所截图片 = 屏幕.capture_image().unwrap_or_else(|e| panic!("{e:?}"));
         println!("已截屏。");
         // 如果成功识别到二维码。
-        let 扫描结果列表 = 扫描图片中所有的二维码(所截图片, &mut HashMap::new());
-        if 扫描结果列表.is_err() {
+        let 扫描结果列表 = 扫描图片中所有的二维码(
+            image::DynamicImage::from(所截图片),
+            &mut HashMap::new(),
+        );
+        let 扫描结果列表 = if let Ok(扫描结果列表) = 扫描结果列表 {
+            扫描结果列表
+        } else {
             continue;
-        }
-        let 扫描结果列表 = unsafe { 扫描结果列表.unwrap_unchecked() };
+        };
         // 在结果中寻找。
         for 扫描结果 in &扫描结果列表 {
             let url = 扫描结果.getText();
             // 如果符合要求的二维码。
-            if !url.contains(crate::utils::query::QRCODE_PAT) && url.contains("&enc=") {
+            if !url.contains(crate::protocol::QRCODE_PAT) && url.contains("&enc=") {
                 continue;
             }
             println!("存在签到二维码。");
             if precise && is_refresh && 请求确认("二维码图片是否就绪？", "本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
                 // 如果是定时刷新的二维码，等待二维码刷新。
-                let 二维码在屏幕上的位置 = 获取包含所有顶点的矩形(扫描结果.getPoints(), &屏幕显示信息);
-                println!("二维码位置：{二维码在屏幕上的位置:?}");
+                let 二维码在屏幕上的位置 = 获取包含所有顶点的矩形(扫描结果.getPoints());
+                println!("二维码位置：{:?}", 二维码在屏幕上的位置);
                 let 所截图片 = 屏幕
-                    .capture_area(二维码在屏幕上的位置.0.x, 二维码在屏幕上的位置.0.y, 二维码在屏幕上的位置.1.x, 二维码在屏幕上的位置.1.y)
+                    .capture_image()
                     .unwrap_or_else(|e| panic!("{e:?}"));
+                let 所截图片 = 裁剪图片(所截图片,二维码在屏幕上的位置.0, 二维码在屏幕上的位置.1);
                 let 扫描结果 = 扫描图片中所有的二维码(所截图片, &mut HashMap::new()).unwrap_or_else(|e| panic!("{e:?}"));
                 return Some(从二维码扫描结果中获取签到所需参数(扫描结果[0].getText()));
             } else {

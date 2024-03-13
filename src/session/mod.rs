@@ -5,8 +5,10 @@ use crate::activity::{
     sign::Struct签到,
     {Enum活动, Struct非签到活动},
 };
+use crate::protocol;
+use crate::protocol::UA;
 use crate::session::course::{GetCoursesR, Struct课程};
-use crate::utils::{self, query::UA, 配置文件夹};
+use crate::utils::配置文件夹;
 use cookies::UserCookies;
 use futures::{stream::FuturesUnordered, StreamExt};
 use reqwest::{Client, ClientBuilder};
@@ -29,6 +31,7 @@ impl PartialEq for Struct签到会话 {
         self.get_uid() == other.get_uid()
     }
 }
+
 impl Eq for Struct签到会话 {}
 
 impl Hash for Struct签到会话 {
@@ -66,7 +69,7 @@ impl Struct签到会话 {
             .build()
             .unwrap();
         let 用户真名 = Self::获取用户真名(&client).await?;
-        println!("用户[{用户真名}]加载 Cookies 成功！");
+        println!("用户[{}]加载 Cookies 成功！", 用户真名);
         Ok(Struct签到会话 {
             client,
             用户真名,
@@ -95,7 +98,7 @@ impl Struct签到会话 {
             .user_agent(UA)
             .cookie_provider(std::sync::Arc::clone(&cookie_store))
             .build()?;
-        let response = utils::query::login_enc(&client, 账号, 加密过的密码).await?;
+        let response = protocol::login_enc(&client, 账号, 加密过的密码).await?;
         /// TODO: 存疑
         #[derive(Deserialize)]
         struct LoginR {
@@ -154,19 +157,21 @@ impl Struct签到会话 {
     }
 
     pub async fn 获取课程列表(&self) -> Result<Vec<Struct课程>, reqwest::Error> {
-        let r = utils::query::back_clazz_data(self.deref()).await?;
+        // let r = protocol::back_clazz_data(self.deref()).await?;
+        // std::fs::write("C:\\Users\\15102\\Desktop\\1.json", format!("{}",r.text().await.unwrap())).unwrap();
+        let r = protocol::back_clazz_data(self.deref()).await?;
         let r: GetCoursesR = r.json().await.unwrap();
         let mut arr = Vec::new();
-        for c in r.channelList {
-            if let Some(data) = c.content.course {
+        for c in r.channel_list {
+            if let Some(data) = c.content.课程 {
                 for course in data.data {
-                    if c.key.is_i64() {
+                    if c.班级号.is_i64() {
                         arr.push(Struct课程::new(
-                            course.id,
-                            c.key.as_i64().unwrap(),
-                            course.teacherfactor.as_str(),
-                            course.imageurl.as_str(),
-                            course.name.as_str(),
+                            course.课程号,
+                            c.班级号.as_i64().unwrap(),
+                            course.任课教师.as_str(),
+                            course.封面图url.unwrap_or("".into()).as_str(),
+                            course.课程名.as_str(),
                         ))
                     }
                 }
@@ -176,7 +181,7 @@ impl Struct签到会话 {
         Ok(arr)
     }
     async fn 获取用户真名(client: &Client) -> Result<String, reqwest::Error> {
-        let r = utils::query::account_manage(client).await?;
+        let r = protocol::account_manage(client).await?;
         let html_content = r.text().await?;
         #[cfg(debug_assertions)]
         println!("{html_content}");
@@ -190,7 +195,7 @@ impl Struct签到会话 {
         Ok(name.to_owned())
     }
     pub async fn 获取网盘token(&self) -> Result<String, reqwest::Error> {
-        let r = utils::query::pan_token(self).await?;
+        let r = protocol::pan_token(self).await?;
         #[derive(Deserialize)]
         struct Tmp {
             _token: String,
@@ -205,7 +210,7 @@ impl Struct签到会话 {
         file_name: &str,
     ) -> Result<String, reqwest::Error> {
         let token = self.获取网盘token().await?;
-        let r = utils::query::pan_upload(self, buffer, self.get_uid(), &token, file_name).await?;
+        let r = protocol::pan_upload(self, buffer, self.get_uid(), &token, file_name).await?;
         #[derive(Deserialize)]
         #[allow(non_snake_case)]
         struct Tmp {

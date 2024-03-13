@@ -2,6 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use futures::{stream::FuturesUnordered, StreamExt};
 
+use crate::utils::address::Struct位置及范围;
 use crate::{
     activity::sign::{Enum签到结果, Struct签到},
     session::Struct签到会话,
@@ -10,6 +11,7 @@ use crate::{
 
 use super::single_sign;
 
+//noinspection ALL
 pub async fn 普通签到<'a>(
     签到: &Struct签到,
     签到会话列表: &'a Vec<&Struct签到会话>,
@@ -66,20 +68,31 @@ pub async fn 拍照签到<'a>(
     }
     Ok(用户真名_签到结果_哈希表)
 }
+
 pub async fn 二维码签到<'a>(
     签到: &Struct签到,
     c: &str,
     enc: &str,
     位置列表: &Vec<Struct位置>,
     签到会话列表: &'a Vec<&Struct签到会话>,
+    是否禁用随机偏移: bool,
 ) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
     let mut 用户真名_签到结果_哈希表 = HashMap::new();
     let mut tasks = FuturesUnordered::new();
+    let 预设位置列表 = Struct位置及范围::从log获取位置列表(签到会话列表[0], &签到.课程).await?;
+    let 预设位置 = 预设位置列表.get(&签到.活动id).map(|l| {
+        if 是否禁用随机偏移 {
+            l.获取位置()
+        } else {
+            l.获取随机偏移后的位置()
+        }
+    });
     for 签到会话 in 签到会话列表 {
         tasks.push(single_sign::二维码签到_单个账号(
             签到,
             c,
             enc,
+            预设位置.clone(),
             位置列表,
             签到会话,
         ));

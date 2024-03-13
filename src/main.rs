@@ -9,6 +9,7 @@ mod activity;
 mod cli;
 mod session;
 mod utils;
+mod protocol;
 
 use cli::{
     arg::{AccCmds, Args, MainCmds},
@@ -105,7 +106,7 @@ async fn main() {
                 yes,
             } => {
                 let args = Struct位置操作使用的信息 {
-                    lication_id,
+                    location_id: lication_id,
                     list,
                     new,
                     import,

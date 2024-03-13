@@ -17,7 +17,7 @@ use self::arg::CliArgs;
 
 pub fn 通过目录决定图片路径(图片所在目录: &PathBuf) -> Option<PathBuf> {
     loop {
-        let 答案 = utils::请求确认("二维码图片是否就绪？","本程序会读取 `--pic` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。",);
+        let 答案 = utils::请求确认("二维码图片是否就绪？", "本程序会读取 `--pic` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。");
         if 答案 {
             break;
         }
@@ -60,6 +60,7 @@ pub fn 通过目录决定图片路径(图片所在目录: &PathBuf) -> Option<Pa
     };
     图片路径
 }
+
 async fn 通过位置字符串决定位置(
     db: &DataBase,
     位置字符串: &Option<String>,
@@ -98,6 +99,7 @@ async fn qrcode_sign_by_pic_arg<'a>(
     db: &DataBase,
     位置: &Option<String>,
     sessions: &'a Vec<&Struct签到会话>,
+    是否禁用随机偏移: bool,
 ) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
     let 位置列表 = if let Some(位置) = 通过位置字符串决定位置(db, 位置).await {
         vec![位置]
@@ -119,6 +121,7 @@ async fn qrcode_sign_by_pic_arg<'a>(
                 &enc,
                 &位置列表,
                 sessions,
+                是否禁用随机偏移,
             )
             .await?;
         } else {
@@ -133,6 +136,7 @@ async fn qrcode_sign_by_pic_arg<'a>(
             &enc,
             &位置列表,
             sessions,
+            是否禁用随机偏移,
         )
         .await?;
     }
@@ -148,9 +152,9 @@ async fn 区分签到类型并进行签到<'a>(
     let CliArgs {
         位置字符串,
         图片或图片路径: pic,
-        签到码: signcode,
-        是否精确识别二维码: precise,
-        是否禁用随机偏移: no_random_shift,
+        签到码,
+        是否精确识别二维码,
+        是否禁用随机偏移,
     } = 签到可能使用的信息;
     let 签到类型 = 签到.get_sign_type();
     let mut 签到结果列表 = HashMap::new();
@@ -174,21 +178,30 @@ async fn 区分签到类型并进行签到<'a>(
             签到结果列表 = sign::普通签到(签到, 签到会话列表).await?;
         }
         Enum签到类型::二维码签到 => {
-            let 位置列表 = if let Some(位置) = 通过位置字符串决定位置(db, 位置字符串).await {
+            let 位置列表 = if let Some(位置) = 通过位置字符串决定位置(db, 位置字符串).await
+            {
                 vec![位置]
             } else {
-                let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
                 let mut 全局位置列表 = db.获取特定课程的位置(-1);
+                let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
                 位置列表.append(&mut 全局位置列表);
                 位置列表
             };
             //  如果有 pic 参数，那么使用它。
             if let Some(pic) = pic {
-                签到结果列表 = qrcode_sign_by_pic_arg(签到, pic, db, 位置字符串, 签到会话列表).await?;
+                签到结果列表 = qrcode_sign_by_pic_arg(
+                    签到,
+                    pic,
+                    db,
+                    位置字符串,
+                    签到会话列表,
+                    *是否禁用随机偏移,
+                )
+                .await?;
             }
             // 如果没有则试图截屏。
             else if let Some(enc) =
-                截屏获取二维码签到所需参数(签到.二维码是否刷新(), *precise)
+                截屏获取二维码签到所需参数(签到.二维码是否刷新(), *是否精确识别二维码)
             {
                 签到结果列表 = sign::二维码签到(
                     签到,
@@ -196,6 +209,7 @@ async fn 区分签到类型并进行签到<'a>(
                     &enc,
                     &位置列表,
                     签到会话列表,
+                    *是否禁用随机偏移,
                 )
                 .await?;
             }
@@ -208,20 +222,21 @@ async fn 区分签到类型并进行签到<'a>(
             if let Some(位置) = 通过位置字符串决定位置(db, 位置字符串).await {
                 println!("解析位置成功，将使用位置 `{}` 签到。", 位置);
                 签到结果列表 =
-                    sign::位置签到(签到, &vec![位置], false, 签到会话列表, *no_random_shift).await?;
+                    sign::位置签到(签到, &vec![位置], false, 签到会话列表, *是否禁用随机偏移)
+                        .await?;
             } else {
                 let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
                 let mut 全局位置列表 = db.获取特定课程的位置(-1);
                 位置列表.append(&mut 全局位置列表);
                 签到结果列表 =
-                    sign::位置签到(签到, &位置列表, true, 签到会话列表, *no_random_shift).await?;
+                    sign::位置签到(签到, &位置列表, true, 签到会话列表, *是否禁用随机偏移).await?;
             };
         }
         Enum签到类型::非已知签到 => {
             eprintln!("签到活动[{}]为无效签到类型！", 签到.签到名);
         }
         signcode_sign_type => {
-            if let Some(signcode) = signcode {
+            if let Some(signcode) = 签到码 {
                 签到结果列表 = sign::签到码签到(签到, signcode, 签到会话列表).await?;
             } else {
                 let sign_type_str = match signcode_sign_type {
