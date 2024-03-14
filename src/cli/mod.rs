@@ -82,7 +82,7 @@ async fn 通过位置字符串决定位置(
             位置字符串.clone()?
         }
     } else {
-        ""?
+        "".to_string()?
     }
 }
 
