@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::f64::consts::PI;
+use std::str::FromStr;
 
 use crate::protocol::get_location_log;
 use crate::session::course::Struct课程;
@@ -110,7 +111,13 @@ impl Struct位置及范围 {
         self.范围
     }
 }
+impl<'a> FromStr for Struct位置{
+    type Err = &'a str;
 
+    fn from_str(s: &'a str) -> Result<Self, Self::Err> {
+        Struct位置::从字符串解析(s)
+    }
+}
 impl Struct位置 {
     pub fn 从字符串解析(位置字符串: &str) -> Result<Self, &str> {
         let 位置字符串: Vec<&str> = 位置字符串.split(',').map(|item| item.trim()).collect();
