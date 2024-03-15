@@ -76,13 +76,13 @@ async fn 通过位置字符串决定位置(
                 let (_, 位置) = db.获取为某id的位置(位置id);
                 Ok(位置)
             } else {
-                位置字符串.clone()?
+                Err(位置字符串.to_owned())
             }
         } else {
-            位置字符串.clone()?
+            Err(位置字符串.to_owned())
         }
     } else {
-        "".to_string()?
+        Err("".to_string())
     }
 }
 
