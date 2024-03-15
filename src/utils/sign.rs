@@ -93,7 +93,7 @@ fn 获取包含所有顶点的矩形(vertex: &Vec<Point>) -> (PointU, PointU) {
 }
 
 fn 扫描图片中所有的二维码(
-    image: image::DynamicImage,
+    image: xcap::image::DynamicImage,
     hints: &mut rxing::DecodingHintDictionary,
 ) -> rxing::common::Result<Vec<rxing::RXingResult>> {
     hints
@@ -110,9 +110,11 @@ fn 扫描图片中所有的二维码(
     )
 }
 pub fn 裁剪图片(
-    原图: image::RgbaImage, 左上顶点: PointU, 宽高: PointU
-) -> image::DynamicImage {
-    image::DynamicImage::from(原图).crop(左上顶点.x, 左上顶点.y, 宽高.x, 宽高.y)
+    原图: xcap::image::RgbaImage,
+    左上顶点: PointU,
+    宽高: PointU,
+) -> xcap::image::DynamicImage {
+    xcap::image::DynamicImage::from(原图).crop(左上顶点.x, 左上顶点.y, 宽高.x, 宽高.y)
 }
 
 pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) -> Option<String> {
@@ -132,7 +134,7 @@ pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) 
         println!("已截屏。");
         // 如果成功识别到二维码。
         let 扫描结果列表 = 扫描图片中所有的二维码(
-            image::DynamicImage::from(所截图片),
+            xcap::image::DynamicImage::from(所截图片),
             &mut HashMap::new(),
         );
         let 扫描结果列表 = if let Ok(扫描结果列表) = 扫描结果列表 {
