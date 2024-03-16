@@ -4,11 +4,11 @@ use crate::activity::sign::{
 };
 use crate::course::Course;
 use crate::location::Location;
-use crate::photo::Photo;
 use crate::protocol;
-use crate::user::session::Session;
 use crate::utils::get_width_str_should_be;
+use photo::Photo;
 use serde::Deserialize;
+use user::session::Session;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct BaseSign {

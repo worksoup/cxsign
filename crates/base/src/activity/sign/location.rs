@@ -1,6 +1,6 @@
 use crate::activity::sign::base::BaseSign;
 use crate::activity::sign::{SignResult, SignState, SignTrait};
-use crate::user::session::Session;
+use user::session::Session;
 use ureq::Error;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LocationSign {

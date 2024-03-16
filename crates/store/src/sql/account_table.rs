@@ -1,4 +1,4 @@
-use base::user::session::Session;
+use user::session::Session;
 
 use crate::sql::{DataBase, DataBaseTableTrait};
 use std::collections::HashMap;
@@ -59,7 +59,7 @@ impl<'a> AccountTable<'a> {
             query.bind((1, uname)).unwrap();
             query.next().unwrap();
         }
-        std::fs::remove_file(base::get_json_file_path(uname)).unwrap();
+        std::fs::remove_file(dir::get_json_file_path(uname)).unwrap();
     }
 
     pub fn add_account_or<O: Fn(&Self, &str, &str, &str)>(

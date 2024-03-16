@@ -58,7 +58,7 @@ impl Deref for DataBase {
 // self
 impl DataBase {
     pub fn new() -> Self {
-        let db_dir = base::get_database_dir();
+        let db_dir = dir::get_database_dir();
         if db_dir.metadata().is_err() {
             File::create(db_dir.clone()).unwrap();
         }

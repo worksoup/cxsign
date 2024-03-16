@@ -1,7 +1,7 @@
 use crate::activity::sign::base::BaseSign;
-use crate::activity::sign::{SignState, SignResult, SignTrait};
-use crate::user::session::Session;
+use crate::activity::sign::{SignResult, SignState, SignTrait};
 use ureq::Error;
+use user::session::Session;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NormalSign {

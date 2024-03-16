@@ -16,7 +16,7 @@ pub use signcode::*;
 
 use crate::course::Course;
 use crate::protocol;
-use crate::user::session::Session;
+use user::session::Session;
 use serde::Deserialize;
 
 pub trait SignTrait: Ord {

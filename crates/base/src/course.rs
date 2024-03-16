@@ -1,7 +1,9 @@
 use crate::activity::Activity;
-use crate::user::session::Session;
+use crate::protocol;
+use user::session::Session;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Course {
@@ -23,7 +25,14 @@ impl Display for Course {
 }
 
 impl Course {
-    pub fn get_list_from_response(r: ureq::Response) -> Result<Vec<Course>, ureq::Error> {
+    pub fn get_courses(session: &Session) -> Result<Vec<Course>, ureq::Error> {
+        let r = protocol::back_clazz_data(session.deref())?;
+        let courses = Course::get_list_from_response(r)?;
+        println!("用户[{}]已获取课程列表。", session.get_stu_name());
+        Ok(courses)
+    }
+
+    fn get_list_from_response(r: ureq::Response) -> Result<Vec<Course>, ureq::Error> {
         let r: GetCoursesR = r.into_json().unwrap();
         let mut arr = Vec::new();
         for c in r.channel_list {
@@ -78,10 +87,7 @@ impl Course {
         &self.name
     }
 
-    pub fn get_all_activities(
-        &self,
-        session: &Session,
-    ) -> Result<Vec<Activity>, ureq::Error> {
+    pub fn get_all_activities(&self, session: &Session) -> Result<Vec<Activity>, ureq::Error> {
         Activity::get_list_from_course(session, self)
     }
 }

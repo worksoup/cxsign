@@ -1,5 +1,29 @@
 use std::path::Path;
 use ureq::{Agent, Response};
+// 超星网盘页
+static PAN_CHAOXING: &str = "https://pan-yz.chaoxing.com";
+
+pub fn pan_chaoxing(client: &Agent) -> Result<Response, ureq::Error> {
+    client.get(PAN_CHAOXING).call()
+}
+
+// 网盘列表
+static PAN_LIST: &str = "https://pan-yz.chaoxing.com/opt/listres";
+
+pub fn pan_list(client: &Agent, parent_id: &str, enc: &str) -> Result<Response, ureq::Error> {
+    client
+        .post(&format!(
+            "{PAN_LIST}?puid=0&shareid=0&parentId={parent_id}&page=1&size=50&enc={enc}"
+        ))
+        .call()
+}
+
+// 获取超星云盘的 token
+static PAN_TOKEN: &str = "https://pan-yz.chaoxing.com/api/token/uservalid";
+
+pub fn pan_token(client: &Agent) -> Result<Response, ureq::Error> {
+    client.get(PAN_TOKEN).call()
+}
 
 // 网盘上传接口
 static PAN_UPLOAD: &str = "https://pan-yz.chaoxing.com/upload";
