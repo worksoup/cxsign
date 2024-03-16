@@ -8,8 +8,10 @@ edition = "2021"
 
 [dependencies]
 dir = { path = "../dir" }
-user = { path = "../user" }
-serde = { workspace = true, features = ["derive"] }
-rand = "0.8"
-ureq = { workspace = true, features = ["cookies", "json"] }
 pan = { path = "../pan" }
+rand = "0.8"
+serde = { workspace = true, features = ["derive"] }
+sqlite = "0.34"
+store = { path = "../store" }
+ureq = { workspace = true, features = ["cookies", "json"] }
+user = { path = "../user" }

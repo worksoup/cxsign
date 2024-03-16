@@ -1,8 +1,8 @@
-use types::location::Location;
 use crate::protocol;
+use crate::sign::{RawSign, SignResult, SignState, SignTrait};
+use types::Location;
 use ureq::Error;
 use user::session::Session;
-use crate::sign::{RawSign, SignResult, SignState, SignTrait};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LocationSign {

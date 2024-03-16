@@ -1,6 +1,13 @@
 #![feature(let_chains)]
 
-pub mod course;
-pub mod location;
-pub mod photo;
-pub mod protocol;
+mod course;
+mod location;
+mod photo;
+mod protocol;
+mod store;
+
+pub use course::*;
+pub use location::*;
+pub use photo::*;
+pub use protocol::*;
+pub use store::*;

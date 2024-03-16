@@ -9,5 +9,4 @@ authors.workspace = true
 [dependencies]
 dir = { path = "../dir" }
 sqlite = "0.34"
-types = { path = "../types" }
 user = { path = "../user" }

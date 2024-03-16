@@ -3,8 +3,8 @@ use crate::sign::{
     GestureSign, LocationSign, NormalQrCodeSign, NormalSign, PhotoSign, QrCodeSign,
     RefreshQrCodeSign, Sign, SignDetail, SignResult, SignState, SignTrait, SigncodeSign,
 };
-use types::course::Course;
 use serde::Deserialize;
+use types::Course;
 use user::session::Session;
 use utils::get_width_str_should_be;
 

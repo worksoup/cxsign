@@ -1,12 +1,8 @@
 mod account_table;
 mod alias_table;
-mod course_table;
-mod location_table;
 
 pub use account_table::*;
 pub use alias_table::*;
-pub use course_table::*;
-pub use location_table::*;
 
 use sqlite::Connection;
 use std::fs::File;

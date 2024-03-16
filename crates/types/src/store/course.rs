@@ -1,6 +1,6 @@
-use crate::sql::{DataBase, DataBaseTableTrait};
-use types::course::Course;
+use crate::course::Course;
 use std::collections::HashMap;
+use store::sql::{DataBase, DataBaseTableTrait};
 
 pub struct CourseTable<'a> {
     db: &'a DataBase,
