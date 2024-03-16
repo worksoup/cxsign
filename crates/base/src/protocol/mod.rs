@@ -1,0 +1,33 @@
+mod account_manage;
+mod active_list;
+mod analysis;
+mod back_clazz_data;
+mod check_signcode;
+mod get_attend_info;
+mod get_location_log;
+mod other;
+mod pan_chaoxing;
+mod pan_list;
+mod pan_token;
+mod pan_upload;
+mod ppt_sign;
+mod pre_sign;
+mod sign_detail;
+
+pub use account_manage::*;
+pub use active_list::*;
+pub use analysis::*;
+pub use back_clazz_data::*;
+pub use check_signcode::*;
+pub use get_attend_info::*;
+pub use get_location_log::*;
+pub use other::*;
+pub use pan_chaoxing::*;
+pub use pan_list::*;
+pub use pan_token::*;
+pub use pan_upload::*;
+pub use ppt_sign::*;
+pub use pre_sign::*;
+pub use sign_detail::*;
+
+pub static QRCODE_PAT: &str = "https://mobilelearn.chaoxing.com/widget/sign/e";

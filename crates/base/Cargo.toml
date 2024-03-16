@@ -1,0 +1,26 @@
+[package]
+name = "base"
+version.workspace = true
+authors.workspace = true
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+login = { path = "../login" }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+cookie_store.workspace = true
+rand = "0.8.5"
+percent-encoding = "2.3"
+multipart = "0.18"
+mime_guess = "2.0"
+lazy_static = "1.4.0"
+unicode-width = "0.1.11"
+chrono = "0.4"
+hex = "0.4"
+des = "0.8"
+directories = "5.0"
+inquire = "0.7"
+num_enum = "0.7"
+ureq = { workspace = true, features = ["cookies", "json"] }
