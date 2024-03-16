@@ -1,0 +1,10 @@
+[package]
+name = "pan"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+mime_guess = "2.0"
+multipart = "0.18"
+ureq = { workspace = true, features = ["cookies", "json"] }
