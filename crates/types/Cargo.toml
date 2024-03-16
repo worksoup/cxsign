@@ -11,7 +11,7 @@ dir = { path = "../dir" }
 pan = { path = "../pan" }
 rand = "0.8"
 serde = { workspace = true, features = ["derive"] }
-sqlite = "0.34"
+sqlite.workspace = true
 store = { path = "../store" }
 ureq = { workspace = true, features = ["cookies", "json"] }
 user = { path = "../user" }
