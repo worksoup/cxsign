@@ -1,23 +1,23 @@
-mod base;
 mod gesture;
 mod location;
 mod normal;
 mod photo;
 mod qrcode;
+mod raw;
 mod signcode;
 
-pub use base::*;
 pub use gesture::*;
 pub use location::*;
 pub use normal::*;
 pub use photo::*;
 pub use qrcode::*;
+pub use raw::*;
 pub use signcode::*;
 
-use crate::course::Course;
 use crate::protocol;
-use user::session::Session;
+use base::course::Course;
 use serde::Deserialize;
+use user::session::Session;
 
 pub trait SignTrait: Ord {
     fn is_ready_for_sign(&self) -> bool {
@@ -38,10 +38,10 @@ pub trait SignTrait: Ord {
             },
         }
     }
-    unsafe fn sign_internal(&self, session: &Session) -> Result<SignResult, ureq::Error>;
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error>;
     fn sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
         if self.is_ready_for_sign() {
-            unsafe { self.sign_internal(session) }
+            unsafe { self.sign_unchecked(session) }
         } else {
             Ok(SignResult::Fail {
                 msg: "签到未准备好！".to_string(),
@@ -91,7 +91,7 @@ pub enum Sign {
     // 签到码签到
     Signcode(SigncodeSign),
     // 未知
-    Unknown(BaseSign),
+    Unknown(RawSign),
 }
 impl SignTrait for Sign {
     fn is_ready_for_sign(&self) -> bool {
@@ -129,16 +129,16 @@ impl SignTrait for Sign {
         }
     }
 
-    unsafe fn sign_internal(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
         unsafe {
             match self {
-                Sign::Photo(a) => a.sign_internal(session),
-                Sign::Normal(a) => a.sign_internal(session),
-                Sign::QrCode(a) => a.sign_internal(session),
-                Sign::Gesture(a) => a.sign_internal(session),
-                Sign::Location(a) => a.sign_internal(session),
-                Sign::Signcode(a) => a.sign_internal(session),
-                Sign::Unknown(a) => a.sign_internal(session),
+                Sign::Photo(a) => a.sign_unchecked(session),
+                Sign::Normal(a) => a.sign_unchecked(session),
+                Sign::QrCode(a) => a.sign_unchecked(session),
+                Sign::Gesture(a) => a.sign_unchecked(session),
+                Sign::Location(a) => a.sign_unchecked(session),
+                Sign::Signcode(a) => a.sign_unchecked(session),
+                Sign::Unknown(a) => a.sign_unchecked(session),
             }
         }
     }

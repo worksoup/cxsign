@@ -1,17 +1,15 @@
-use crate::activity::sign::{
+use crate::protocol;
+use crate::sign::{
     GestureSign, LocationSign, NormalQrCodeSign, NormalSign, PhotoSign, QrCodeSign,
     RefreshQrCodeSign, Sign, SignDetail, SignResult, SignState, SignTrait, SigncodeSign,
 };
-use crate::course::Course;
-use crate::location::Location;
-use crate::protocol;
-use crate::utils::get_width_str_should_be;
-use photo::Photo;
+use base::course::Course;
 use serde::Deserialize;
 use user::session::Session;
+use utils::get_width_str_should_be;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
-pub struct BaseSign {
+pub struct RawSign {
     pub start_timestamp: i64,
     pub active_id: String,
     pub name: String,
@@ -20,7 +18,7 @@ pub struct BaseSign {
     pub status_code: i32,
     pub sign_detail: SignDetail,
 }
-impl SignTrait for BaseSign {
+impl SignTrait for RawSign {
     fn is_valid(&self) -> bool {
         let time = std::time::SystemTime::from(
             chrono::DateTime::from_timestamp(self.start_timestamp, 0).unwrap(),
@@ -44,7 +42,7 @@ impl SignTrait for BaseSign {
         } = r.into_json().unwrap();
         Ok(status.into())
     }
-    unsafe fn sign_internal(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
         let r = self.presign(session);
         if let Ok(a) = r.as_ref()
             && !a.is_susses()
@@ -63,7 +61,7 @@ impl SignTrait for BaseSign {
     }
 }
 
-impl BaseSign {
+impl RawSign {
     // pub fn speculate_type_by_text(text: &str) -> Sign {
     //     if text.contains("拍照") {
     //         Sign::Photo
@@ -82,7 +80,7 @@ impl BaseSign {
     //     }
     // }
 
-    fn check_signcode(
+    pub(crate) fn check_signcode(
         session: &Session,
         active_id: &str,
         signcode: &str,
@@ -99,7 +97,7 @@ impl BaseSign {
     }
 }
 
-impl BaseSign {
+impl RawSign {
     pub fn to_sign(self) -> Sign {
         match self.other_id.parse::<u8>().unwrap_or_else(|e| {
             eprintln!("{}", self.other_id);
@@ -109,11 +107,11 @@ impl BaseSign {
             0 => {
                 if self.sign_detail.is_photo {
                     Sign::Photo(PhotoSign {
-                        base_sign: self,
+                        raw_sign: self,
                         photo: None,
                     })
                 } else {
-                    Sign::Normal(NormalSign { base_sign: self })
+                    Sign::Normal(NormalSign { raw_sign: self })
                 }
             }
             1 => Sign::Unknown(self),
@@ -121,23 +119,27 @@ impl BaseSign {
                 if self.sign_detail.is_refresh_qrcode {
                     Sign::QrCode(QrCodeSign::RefreshQrCodeSign(RefreshQrCodeSign {
                         enc: None,
-                        base_sign: self,
+                        raw_sign: self,
                         location: None,
                     }))
                 } else {
                     Sign::QrCode(QrCodeSign::NormalQrCodeSign(NormalQrCodeSign {
-                        base_sign: self,
+                        raw_sign: self,
                     }))
                 }
             }
             3 => Sign::Gesture(GestureSign {
-                base_sign: self,
+                raw_sign: self,
                 gesture: None,
             }),
-            4 => Sign::Location(LocationSign { base_sign: self }),
+            4 => Sign::Location(LocationSign {
+                raw_sign: self,
+                location: None,
+                is_auto_location: false,
+            }),
             5 => Sign::Signcode(SigncodeSign {
                 signcode: None,
-                base_sign: self,
+                raw_sign: self,
             }),
             _ => Sign::Unknown(self),
         }
@@ -237,7 +239,7 @@ impl BaseSign {
     }
 }
 
-impl BaseSign {
+impl RawSign {
     pub fn sign_with_signcode(
         &self,
         session: &Session,
@@ -259,41 +261,9 @@ impl BaseSign {
             })
         }
     }
-    pub fn 作为位置签到处理(
-        &self,
-        address: &Location,
-        session: &Session,
-        是否限定位置: bool,
-    ) -> Result<SignResult, ureq::Error> {
-        let r = protocol::location_sign(
-            session,
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
-            address,
-            self.active_id.as_str(),
-            是否限定位置,
-        )?;
-        Ok(self.guess_sign_result(&r.into_string().unwrap()))
-    }
-    pub fn 作为拍照签到处理(
-        &self,
-        photo: &Photo,
-        session: &Session,
-    ) -> Result<SignResult, ureq::Error> {
-        let r = protocol::photo_sign(
-            session,
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
-            self.active_id.as_str(),
-            photo.get_object_id(),
-        )?;
-        Ok(self.guess_sign_result(&r.into_string().unwrap()))
-    }
 }
 
-impl BaseSign {
+impl RawSign {
     // pub async fn chat_group_pre_sign(
     //     &self,
     //     chat_id: &str,

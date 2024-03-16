@@ -1,13 +1,12 @@
-use crate::activity::sign::base::BaseSign;
-use crate::activity::sign::{SignResult, SignState, SignTrait};
-use photo::Photo;
 use crate::protocol;
-use user::session::Session;
+use crate::sign::{RawSign, SignResult, SignState, SignTrait};
+use base::photo::Photo;
 use ureq::Error;
+use user::session::Session;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PhotoSign {
-    pub(crate) base_sign: BaseSign,
+    pub(crate) raw_sign: RawSign,
     pub(crate) photo: Option<Photo>,
 }
 
@@ -16,15 +15,14 @@ impl SignTrait for PhotoSign {
         self.photo.is_some()
     }
     fn is_valid(&self) -> bool {
-        self.base_sign.is_valid()
+        self.raw_sign.is_valid()
     }
 
     fn get_attend_info(&self, session: &Session) -> Result<SignState, Error> {
-        self.base_sign.get_attend_info(session)
+        self.raw_sign.get_attend_info(session)
     }
-
-    unsafe fn sign_internal(&self, session: &Session) -> Result<SignResult, Error> {
-        let r = self.base_sign.presign(session);
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+        let r = self.raw_sign.presign(session);
         if let Ok(a) = r.as_ref()
             && !a.is_susses()
         {
@@ -34,7 +32,7 @@ impl SignTrait for PhotoSign {
                 session.get_uid(),
                 session.get_fid(),
                 session.get_stu_name(),
-                self.base_sign.active_id.as_str(),
+                self.raw_sign.active_id.as_str(),
                 photo.get_object_id(),
             )?;
             Ok(self.guess_sign_result(&r.into_string().unwrap()))

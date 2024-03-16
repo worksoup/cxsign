@@ -1,9 +1,11 @@
+#![feature(let_chains)]
+
+pub mod protocol;
 pub mod sign;
 
-use crate::activity::sign::Sign;
-use crate::course::Course;
+use crate::sign::{RawSign, Sign, SignTrait};
+use base::course::Course;
 use serde::{Deserialize, Serialize};
-use sign::SignTrait;
 use user::session::Session;
 
 #[derive(Debug)]
@@ -50,8 +52,8 @@ impl Activity {
                     }
                 {
                     let active_id = ar.id.to_string();
-                    let detail = sign::BaseSign::get_sign_detail(active_id.as_str(), session)?;
-                    let base_sign = sign::BaseSign {
+                    let detail = RawSign::get_sign_detail(active_id.as_str(), session)?;
+                    let base_sign = RawSign {
                         active_id,
                         name: ar.name_one,
                         course: c.clone(),

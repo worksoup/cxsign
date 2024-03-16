@@ -1,4 +1,4 @@
-use crate::location::Location;
+use base::location::Location;
 use ureq::{Agent, Response};
 
 // 签到

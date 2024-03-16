@@ -1,11 +1,9 @@
 [package]
-name = "photo"
+name = "unused"
 edition = "2021"
 version.workspace = true
 authors.workspace = true
 
 [dependencies]
-pan = { path = "../pan" }
-user = { path = "../user" }
+percent-encoding.workspace = true
 ureq = { workspace = true, features = ["cookies", "json"] }
-serde = { workspace = true, features = ["derive"] }

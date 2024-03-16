@@ -1,4 +1,4 @@
-use crate::course::Course;
+use base::course::Course;
 use ureq::{Agent, Response};
 
 // 预签到

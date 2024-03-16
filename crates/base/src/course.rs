@@ -1,9 +1,9 @@
-use crate::activity::Activity;
 use crate::protocol;
-use user::session::Session;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::ops::Deref;
+use ureq::serde_json;
+use user::session::Session;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Course {
@@ -85,10 +85,6 @@ impl Course {
     }
     pub fn get_name(&self) -> &str {
         &self.name
-    }
-
-    pub fn get_all_activities(&self, session: &Session) -> Result<Vec<Activity>, ureq::Error> {
-        Activity::get_list_from_course(session, self)
     }
 }
 

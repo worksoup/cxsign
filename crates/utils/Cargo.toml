@@ -1,0 +1,10 @@
+[package]
+name = "utils"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+unicode-width = "0.1"
+chrono = "0.4"
+inquire = "0.7"

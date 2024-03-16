@@ -1,13 +1,12 @@
-use crate::activity::sign::base::BaseSign;
-use crate::activity::sign::{SignResult, SignState, SignTrait};
-use crate::location::Location;
 use crate::protocol;
-use user::session::Session;
+use crate::sign::{RawSign, SignResult, SignState, SignTrait};
+use base::location::Location;
 use ureq::Error;
+use user::session::Session;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RefreshQrCodeSign {
-    pub(crate) base_sign: BaseSign,
+    pub(crate) raw_sign: RawSign,
     pub(crate) enc: Option<String>,
     pub(crate) location: Option<Location>,
 }
@@ -16,17 +15,17 @@ impl SignTrait for RefreshQrCodeSign {
         self.enc.is_some()
     }
     fn is_valid(&self) -> bool {
-        self.base_sign.is_valid()
+        self.raw_sign.is_valid()
     }
 
     fn get_attend_info(&self, session: &Session) -> Result<SignState, Error> {
-        self.base_sign.get_attend_info(session)
+        self.raw_sign.get_attend_info(session)
     }
 
-    unsafe fn sign_internal(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
         let enc = unsafe { self.enc.as_ref().unwrap_unchecked() };
-        let r = self.base_sign.presign_for_refresh_qrcode_sign(
-            &self.base_sign.sign_detail.c,
+        let r = self.raw_sign.presign_for_refresh_qrcode_sign(
+            &self.raw_sign.sign_detail.c,
             enc,
             session,
         );
@@ -39,7 +38,7 @@ impl SignTrait for RefreshQrCodeSign {
                 session.get_uid(),
                 session.get_fid(),
                 session.get_stu_name(),
-                self.base_sign.active_id.as_str(),
+                self.raw_sign.active_id.as_str(),
                 &self.location,
             )?;
             Ok(self.guess_sign_result(&r.into_string().unwrap()))
@@ -51,23 +50,23 @@ impl SignTrait for RefreshQrCodeSign {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NormalQrCodeSign {
-    pub(crate) base_sign: BaseSign,
+    pub(crate) raw_sign: RawSign,
 }
 impl SignTrait for NormalQrCodeSign {
     fn is_valid(&self) -> bool {
-        self.base_sign.is_valid()
+        self.raw_sign.is_valid()
     }
 
     fn get_attend_info(&self, session: &Session) -> Result<SignState, Error> {
-        self.base_sign.get_attend_info(session)
+        self.raw_sign.get_attend_info(session)
     }
 
-    unsafe fn sign_internal(&self, session: &Session) -> Result<SignResult, Error> {
-        unsafe { self.base_sign.sign_internal(session) }
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+        unsafe { self.raw_sign.sign_unchecked(session) }
     }
 
     fn sign(&self, session: &Session) -> Result<SignResult, Error> {
-        self.base_sign.sign(session)
+        self.raw_sign.sign(session)
     }
 }
 
@@ -79,8 +78,8 @@ pub enum QrCodeSign {
 impl QrCodeSign {
     pub fn get_qrcode_arg_c(&self) -> &str {
         match self {
-            QrCodeSign::RefreshQrCodeSign(a) => &a.base_sign.sign_detail.c,
-            QrCodeSign::NormalQrCodeSign(a) => &a.base_sign.sign_detail.c,
+            QrCodeSign::RefreshQrCodeSign(a) => &a.raw_sign.sign_detail.c,
+            QrCodeSign::NormalQrCodeSign(a) => &a.raw_sign.sign_detail.c,
         }
     }
 }
@@ -99,11 +98,11 @@ impl SignTrait for QrCodeSign {
         }
     }
 
-    unsafe fn sign_internal(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
         unsafe {
             match self {
-                QrCodeSign::RefreshQrCodeSign(a) => a.sign_internal(session),
-                QrCodeSign::NormalQrCodeSign(a) => a.sign_internal(session),
+                QrCodeSign::RefreshQrCodeSign(a) => a.sign_unchecked(session),
+                QrCodeSign::NormalQrCodeSign(a) => a.sign_unchecked(session),
             }
         }
     }
