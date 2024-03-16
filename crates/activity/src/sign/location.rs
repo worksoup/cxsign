@@ -1,4 +1,4 @@
-use base::location::Location;
+use types::location::Location;
 use crate::protocol;
 use ureq::Error;
 use user::session::Session;

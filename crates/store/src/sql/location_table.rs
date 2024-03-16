@@ -1,6 +1,6 @@
 use crate::sql::alias_table::AliasTable;
 use crate::sql::{DataBase, DataBaseTableTrait};
-use base::location::Location;
+use types::location::Location;
 use std::collections::HashMap;
 
 pub struct LocationTable<'a> {

@@ -1,4 +1,4 @@
-use base::course::Course;
+use types::course::Course;
 use ureq::{Agent, Response};
 
 // 查询活动

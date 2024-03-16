@@ -7,7 +7,7 @@ authors.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-base = { path = "../base" }
 dir = { path = "../dir" }
-user = { path = "../user" }
 sqlite = "0.34"
+types = { path = "../types" }
+user = { path = "../user" }

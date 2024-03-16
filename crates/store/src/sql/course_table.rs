@@ -1,5 +1,5 @@
 use crate::sql::{DataBase, DataBaseTableTrait};
-use base::course::Course;
+use types::course::Course;
 use std::collections::HashMap;
 
 pub struct CourseTable<'a> {

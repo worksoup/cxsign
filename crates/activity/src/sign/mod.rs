@@ -15,7 +15,7 @@ pub use raw::*;
 pub use signcode::*;
 
 use crate::protocol;
-use base::course::Course;
+use types::course::Course;
 use serde::Deserialize;
 use user::session::Session;
 

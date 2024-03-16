@@ -1,6 +1,6 @@
 use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignState, SignTrait};
-use base::location::Location;
+use types::location::Location;
 use ureq::Error;
 use user::session::Session;
 

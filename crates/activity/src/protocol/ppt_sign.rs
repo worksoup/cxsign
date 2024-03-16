@@ -1,4 +1,4 @@
-use base::location::Location;
+use types::location::Location;
 use ureq::{Agent, Response};
 
 // 签到

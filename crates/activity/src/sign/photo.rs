@@ -1,6 +1,6 @@
 use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignState, SignTrait};
-use base::photo::Photo;
+use types::photo::Photo;
 use ureq::Error;
 use user::session::Session;
 

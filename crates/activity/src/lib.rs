@@ -4,7 +4,7 @@ pub mod protocol;
 pub mod sign;
 
 use crate::sign::{RawSign, Sign, SignTrait};
-use base::course::Course;
+use types::course::Course;
 use serde::{Deserialize, Serialize};
 use user::session::Session;
 
