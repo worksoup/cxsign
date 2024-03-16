@@ -11,5 +11,5 @@ serde = { workspace = true, features = ["derive"] }
 ureq = { workspace = true, features = ["cookies", "json"] }
 user = { path = "../user" }
 utils = { path = "../utils" }
-chrono = "0.4.35"
-num_enum = "0.7.2"
+chrono.workspace = true
+num_enum = "0.7"

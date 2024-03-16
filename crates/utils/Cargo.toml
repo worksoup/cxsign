@@ -6,5 +6,5 @@ authors.workspace = true
 
 [dependencies]
 unicode-width = "0.1"
-chrono = "0.4"
+chrono.workspace = true
 inquire = "0.7"

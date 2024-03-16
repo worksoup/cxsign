@@ -11,8 +11,5 @@ dir = { path = "../dir" }
 user = { path = "../user" }
 serde = { workspace = true, features = ["derive"] }
 rand = "0.8"
-chrono = "0.4"
-num_enum = "0.7"
 ureq = { workspace = true, features = ["cookies", "json"] }
-utils = { path = "../utils" }
 pan = { path = "../pan" }
