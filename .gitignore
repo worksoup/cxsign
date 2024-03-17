@@ -4,3 +4,5 @@
 /.vscode
 /.cargo
 /res
+node_modules
+src-tauri/
