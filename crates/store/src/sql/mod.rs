@@ -4,7 +4,7 @@ mod alias_table;
 pub use account_table::*;
 pub use alias_table::*;
 
-use dir::Dir;
+use dir::{Dir, DIR};
 use sqlite::Connection;
 use std::fs::File;
 use std::ops::Deref;
@@ -67,5 +67,10 @@ impl DataBase {
     pub fn add_table<'a, T: DataBaseTableTrait<'a>>(&'a self) -> T {
         T::create(self);
         T::from_ref(self)
+    }
+}
+impl Default for DataBase {
+    fn default() -> Self {
+        Self::new(DIR.clone())
     }
 }

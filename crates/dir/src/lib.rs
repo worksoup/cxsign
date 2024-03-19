@@ -16,6 +16,7 @@ lazy_static! {
     pub static ref DIR: Dir = Dir::new(CONFIG_DIR.as_path());
 }
 
+#[derive(Clone)]
 pub struct Dir {
     base_dir: PathBuf,
     database_dir: PathBuf,
