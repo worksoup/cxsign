@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 // 重构完成之前使用 `cxsign` 的配置文件夹。
 lazy_static! {
     static ref CONFIG_DIR: PathBuf = {
@@ -13,14 +13,29 @@ lazy_static! {
         let _ = std::fs::create_dir_all(dir.clone());
         dir
     };
-    static ref DATABASE_DIR: PathBuf = CONFIG_DIR.join("cx.db");
+    pub static ref DIR: Dir = Dir::new(CONFIG_DIR.as_path());
 }
-pub fn get_config_dir() -> PathBuf {
-    CONFIG_DIR.to_path_buf()
+
+pub struct Dir {
+    base_dir: PathBuf,
+    database_dir: PathBuf,
 }
-pub fn get_database_dir() -> PathBuf {
-    DATABASE_DIR.to_path_buf()
-}
-pub fn get_json_file_path(account: &str) -> PathBuf {
-    CONFIG_DIR.join(account.to_string() + ".json")
+impl Dir {
+    pub fn new(base_dir: &Path) -> Self {
+        let base_dir = base_dir.to_path_buf();
+        let database_dir = base_dir.join("cx.db");
+        Self {
+            base_dir,
+            database_dir,
+        }
+    }
+    pub fn get_config_dir(&self) -> PathBuf {
+        self.base_dir.to_path_buf()
+    }
+    pub fn get_database_dir(&self) -> PathBuf {
+        self.database_dir.to_path_buf()
+    }
+    pub fn get_json_file_path(&self, account: &str) -> PathBuf {
+        self.base_dir.join(account.to_string() + ".json")
+    }
 }

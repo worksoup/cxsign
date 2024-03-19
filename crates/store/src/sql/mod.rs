@@ -4,6 +4,7 @@ mod alias_table;
 pub use account_table::*;
 pub use alias_table::*;
 
+use dir::Dir;
 use sqlite::Connection;
 use std::fs::File;
 use std::ops::Deref;
@@ -43,6 +44,7 @@ pub trait DataBaseTableTrait<'a> {
 
 pub struct DataBase {
     connection: Connection,
+    dir: Dir,
 }
 impl Deref for DataBase {
     type Target = Connection;
@@ -53,13 +55,13 @@ impl Deref for DataBase {
 }
 // self
 impl DataBase {
-    pub fn new() -> Self {
-        let db_dir = dir::get_database_dir();
+    pub fn new(dir: Dir) -> Self {
+        let db_dir = dir.get_database_dir();
         if db_dir.metadata().is_err() {
             File::create(db_dir.clone()).unwrap();
         }
         let connection = Connection::open(db_dir.to_str().unwrap()).unwrap();
-        let db = Self { connection };
+        let db = Self { connection, dir };
         db
     }
     pub fn add_table<'a, T: DataBaseTableTrait<'a>>(&'a self) -> T {

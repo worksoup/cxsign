@@ -20,7 +20,7 @@ impl<'a> AccountTable<'a> {
     }
     pub fn get_session(&self, account: &str) -> Option<Session> {
         if self.has_account(account) {
-            Some(Session::load_json(account).unwrap())
+            Some(Session::load_json(&self.db.dir, account).unwrap())
         } else {
             None
         }
@@ -31,7 +31,7 @@ impl<'a> AccountTable<'a> {
         let mut s = HashMap::new();
         for account in str_list {
             if self.has_account(account) {
-                let session = Session::load_json(account).unwrap();
+                let session = Session::load_json(&self.db.dir, account).unwrap();
                 s.insert(account.to_string(), session);
             }
         }
@@ -59,7 +59,7 @@ impl<'a> AccountTable<'a> {
             query.bind((1, uname)).unwrap();
             query.next().unwrap();
         }
-        std::fs::remove_file(dir::get_json_file_path(uname)).unwrap();
+        std::fs::remove_file(self.db.dir.get_json_file_path(uname)).unwrap();
     }
 
     pub fn add_account_or<O: Fn(&Self, &str, &str, &str)>(
