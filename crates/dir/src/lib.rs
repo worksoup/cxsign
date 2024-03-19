@@ -40,3 +40,12 @@ impl Dir {
         self.base_dir.join(account.to_string() + ".json")
     }
 }
+impl From<PathBuf> for Dir {
+    fn from(base_dir: PathBuf) -> Self {
+        let database_dir = base_dir.join("cx.db");
+        Self {
+            base_dir,
+            database_dir,
+        }
+    }
+}
