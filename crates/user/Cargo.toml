@@ -5,9 +5,9 @@ version.workspace = true
 authors.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 cookie_store.workspace = true
 dir = { path = "../dir" }
+error = { path = "../error" }
 login = { path = "../login" }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true

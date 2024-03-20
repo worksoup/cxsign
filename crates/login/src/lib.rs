@@ -1,4 +1,4 @@
-use anyhow::Result;
+use error::Error;
 use std::path::Path;
 use ureq::{Agent, AgentBuilder};
 
@@ -10,7 +10,7 @@ pub fn login_enc<P: AsRef<Path>>(
     account: &str,
     enc_passwd: &str,
     store_path: Option<P>,
-) -> Result<Agent> {
+) -> Result<Agent, Error> {
     let cookie_store = cookie_store::CookieStore::new(None);
     let client = AgentBuilder::new()
         .user_agent(UA)
@@ -57,7 +57,7 @@ pub fn login_enc<P: AsRef<Path>>(
     Ok(client)
 }
 
-pub fn load_json<P: AsRef<std::path::Path>>(cookies_file: P) -> Agent {
+pub fn load_json<P: AsRef<Path>>(cookies_file: P) -> Agent {
     let cookie_store = {
         let file = std::fs::File::open(cookies_file)
             .map(std::io::BufReader::new)
