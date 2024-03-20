@@ -1,4 +1,5 @@
 use crate::{cookies::UserCookies, protocol};
+use anyhow::Result;
 use dir::Dir;
 use std::{
     hash::Hash,
@@ -30,7 +31,7 @@ impl Hash for Session {
 }
 
 impl Session {
-    pub fn load_json(dir: &Dir, account: &str) -> Result<Self, ureq::Error> {
+    pub fn load_json(dir: &Dir, account: &str) -> Result<Self> {
         let client = login::load_json(dir.get_json_file_path(account));
         let cookies = UserCookies::new(&client);
         let stu_name = Self::find_stu_name_in_html(&client)?;
@@ -42,8 +43,8 @@ impl Session {
         })
     }
 
-    pub fn login(dir: &Dir, account: &str, enc_passwd: &str) -> Result<Session, ureq::Error> {
-        let client = login::login_enc(account, enc_passwd, Some(dir.get_json_file_path(account)));
+    pub fn login(dir: &Dir, account: &str, enc_passwd: &str) -> Result<Session> {
+        let client = login::login_enc(account, enc_passwd, Some(dir.get_json_file_path(account)))?;
         let cookies = UserCookies::new(&client);
         let stu_name = Self::find_stu_name_in_html(&client)?;
         println!("用户[{}]登录成功！", stu_name);
@@ -63,7 +64,7 @@ impl Session {
     pub fn get_stu_name(&self) -> &str {
         &self.stu_name
     }
-    fn find_stu_name_in_html(client: &Agent) -> Result<String, ureq::Error> {
+    fn find_stu_name_in_html(client: &Agent) -> Result<String> {
         let r = protocol::account_manage(client)?;
         let html_content = r.into_string().unwrap();
         #[cfg(debug_assertions)]
