@@ -42,7 +42,7 @@ pub fn login_enc<P: AsRef<Path>>(
         mes.push(msg2);
     }
     if !status {
-        for mes in mes {
+        for mes in &mes {
             eprintln!("{mes:?}");
         }
         return Err(error::Error::LoginError(format!("{mes:?}")).into());
