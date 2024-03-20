@@ -16,7 +16,7 @@ pub fn login_enc<P: AsRef<Path>>(
         .user_agent(UA)
         .cookie_store(cookie_store)
         .build();
-    let response = crate::protocol::login_enc(&client, account, enc_passwd).unwrap();
+    let response = protocol::login_enc(&client, account, enc_passwd)?;
     /// TODO: 存疑
     #[derive(serde::Deserialize)]
     struct LoginR {
@@ -45,7 +45,7 @@ pub fn login_enc<P: AsRef<Path>>(
         for mes in mes {
             eprintln!("{mes:?}");
         }
-        panic!("登录失败！");
+        return Err(error::Error::LoginError(format!("{mes:?}")).into());
     }
     if let Some(store_path) = store_path {
         // Write store back to disk
