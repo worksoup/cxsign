@@ -47,7 +47,7 @@ fn 从二维码扫描结果中获取签到所需参数(url: &str) -> Option<Stri
     // let beg = r.find("&c=").unwrap();
     // let c = &r[beg + 3..beg + 9];
     // (c.to_owned(), enc.to_owned())
-    // 有时二维码里没有参数，原因不明，故需要二次扫描。
+    // 有时二维码里没有参数，原因不明。
     let r = url
         .find("&enc=")
         .map(|beg| url[beg + 5..beg + 37].to_owned());
