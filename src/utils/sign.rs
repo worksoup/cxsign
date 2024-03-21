@@ -41,18 +41,23 @@ pub async fn 获取所有签到(
     (有效签到, 其他签到)
 }
 
-fn 从二维码扫描结果中获取签到所需参数(url: &str) -> String {
-    let beg = url.find("&enc=").unwrap();
-    let enc = &url[beg + 5..beg + 37];
+fn 从二维码扫描结果中获取签到所需参数(url: &str) -> Option<String> {
     // 在二维码图片中会有一个参数 `c`, 二维码预签到时需要。
     // 但是该参数似乎暂时可以从 `signDetail` 接口获取到。所以此处先注释掉。
     // let beg = r.find("&c=").unwrap();
     // let c = &r[beg + 3..beg + 9];
     // (c.to_owned(), enc.to_owned())
-    enc.to_owned()
+    // 有时二维码里没有参数，原因不明，故需要二次扫描。
+    let r = url
+        .find("&enc=")
+        .map(|beg| url[beg + 5..beg + 37].to_owned());
+    if r.is_none() {
+        eprintln!("{url:?}中没有找到二维码！")
+    }
+    r
 }
 
-pub fn 扫描路径中二维码并获取签到所需参数(pic_path: &str) -> String {
+pub fn 扫描路径中二维码并获取签到所需参数(pic_path: &str) -> Option<String> {
     let 扫描结果 = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
     从二维码扫描结果中获取签到所需参数(扫描结果[0].getText())
 }
@@ -150,20 +155,20 @@ pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) 
                 continue;
             }
             println!("存在签到二维码。");
-            if precise && is_refresh && 请求确认("二维码图片是否就绪？", "本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
+            return if precise && is_refresh && 请求确认("二维码图片是否就绪？", "本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
                 // 如果是定时刷新的二维码，等待二维码刷新。
                 let 二维码在屏幕上的位置 = 获取包含所有顶点的矩形(扫描结果.getPoints());
                 println!("二维码位置：{:?}", 二维码在屏幕上的位置);
                 let 所截图片 = 屏幕
                     .capture_image()
                     .unwrap_or_else(|e| panic!("{e:?}"));
-                let 所截图片 = 裁剪图片(所截图片,二维码在屏幕上的位置.0, 二维码在屏幕上的位置.1);
+                let 所截图片 = 裁剪图片(所截图片, 二维码在屏幕上的位置.0, 二维码在屏幕上的位置.1);
                 let 扫描结果 = 扫描图片中所有的二维码(所截图片, &mut HashMap::new()).unwrap_or_else(|e| panic!("{e:?}"));
-                return Some(从二维码扫描结果中获取签到所需参数(扫描结果[0].getText()));
+                从二维码扫描结果中获取签到所需参数(扫描结果[0].getText())
             } else {
-                // 如果不是定时刷新的二维码，则不需要提示。
-                return Some(从二维码扫描结果中获取签到所需参数(url));
-            }
+                // 如果不是精确截取的二维码，则不需要提示。
+                从二维码扫描结果中获取签到所需参数(url)
+            };
         }
     }
     None

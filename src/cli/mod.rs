@@ -125,10 +125,11 @@ async fn qrcode_sign_by_pic_arg<'a>(
     };
     let mut states = HashMap::new();
     if std::fs::metadata(pic).unwrap().is_dir() {
-        if let Some(pic) = 通过目录决定图片路径(pic) {
-            let enc = utils::sign::扫描路径中二维码并获取签到所需参数(
+        if let Some(pic) = 通过目录决定图片路径(pic)
+            && let Some(enc) = utils::sign::扫描路径中二维码并获取签到所需参数(
                 pic.to_str().unwrap(),
-            );
+            )
+        {
             states = sign::二维码签到(
                 签到,
                 签到.get_二维码签到时的c参数(),
@@ -142,9 +143,9 @@ async fn qrcode_sign_by_pic_arg<'a>(
         } else {
             打印对于sign无法获取二维码时的错误信息(签到);
         }
-    } else {
-        let enc =
-            utils::sign::扫描路径中二维码并获取签到所需参数(pic.to_str().unwrap());
+    } else if let Some(enc) =
+        utils::sign::扫描路径中二维码并获取签到所需参数(pic.to_str().unwrap())
+    {
         states = sign::二维码签到(
             签到,
             签到.get_二维码签到时的c参数(),
