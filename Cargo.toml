@@ -19,14 +19,14 @@ inquire = "0.7"
 lazy_static = "1.4"
 percent-encoding = "2.3"
 rand = "0.8"
-reqwest = { version = "0.11", features = [
+reqwest = { version = "0.12", features = [
     "json",
     "cookies",
     "gzip",
     "deflate",
     "multipart",
 ] }
-reqwest_cookie_store = "0.6"
+reqwest_cookie_store = "0.7"
 rxing = "0.5"
 # screenshots = "0.8"
 # display-info = "0.5"
