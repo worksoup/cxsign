@@ -13,6 +13,9 @@ impl SigncodeSign {
             RawSign::check_signcode(session, &self.raw_sign.active_id, signcode).unwrap_or(false)
         })
     }
+    pub fn set_signcode(&mut self, signcode: String) {
+        self.signcode = Some(signcode)
+    }
 }
 impl SignTrait for SigncodeSign {
     fn get_raw(&self) -> &RawSign {

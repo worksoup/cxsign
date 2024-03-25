@@ -9,7 +9,11 @@ pub struct PhotoSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) photo: Option<Photo>,
 }
-
+impl PhotoSign {
+    pub fn set_photo(&mut self, photo: Photo) {
+        self.photo = Some(photo)
+    }
+}
 impl SignTrait for PhotoSign {
     fn get_raw(&self) -> &RawSign {
         &self.raw_sign

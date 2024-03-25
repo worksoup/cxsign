@@ -12,6 +12,9 @@ impl GestureSign {
             RawSign::check_signcode(session, &self.raw_sign.active_id, signcode).unwrap_or(false)
         })
     }
+    pub fn set_gesture(&mut self, gesture: String) {
+        self.gesture = Some(gesture)
+    }
 }
 impl SignTrait for GestureSign {
     fn get_raw(&self) -> &RawSign {

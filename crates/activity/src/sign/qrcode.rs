@@ -4,12 +4,6 @@ use types::Location;
 use ureq::Error;
 use user::session::Session;
 
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
-pub struct RefreshQrCodeSign {
-    pub(crate) raw_sign: RawSign,
-    pub(crate) enc: Option<String>,
-    pub(crate) location: Option<Location>,
-}
 unsafe fn qrcode_sign_unchecked(
     raw_sign: &RawSign,
     enc: &str,
@@ -32,6 +26,20 @@ unsafe fn qrcode_sign_unchecked(
         Ok(raw_sign.guess_sign_result(&r.into_string().unwrap()))
     } else {
         r
+    }
+}
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
+pub struct RefreshQrCodeSign {
+    pub(crate) raw_sign: RawSign,
+    pub(crate) enc: Option<String>,
+    pub(crate) location: Option<Location>,
+}
+impl RefreshQrCodeSign {
+    pub fn set_enc(&mut self, enc: String) {
+        self.enc = Some(enc)
+    }
+    pub fn set_location(&mut self, location: Location) {
+        self.location = Some(location)
     }
 }
 impl SignTrait for RefreshQrCodeSign {
@@ -60,6 +68,14 @@ pub struct NormalQrCodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) enc: Option<String>,
     pub(crate) location: Option<Location>,
+}
+impl NormalQrCodeSign {
+    pub fn set_enc(&mut self, enc: String) {
+        self.enc = Some(enc)
+    }
+    pub fn set_location(&mut self, location: Location) {
+        self.location = Some(location)
+    }
 }
 impl SignTrait for NormalQrCodeSign {
     fn get_raw(&self) -> &RawSign {
@@ -91,6 +107,18 @@ impl QrCodeSign {
         match self {
             QrCodeSign::RefreshQrCodeSign(a) => &a.raw_sign.sign_detail.c,
             QrCodeSign::NormalQrCodeSign(a) => &a.raw_sign.sign_detail.c,
+        }
+    }
+    pub fn set_enc(&mut self, enc: String) {
+        match self {
+            QrCodeSign::RefreshQrCodeSign(a) => a.set_enc(enc),
+            QrCodeSign::NormalQrCodeSign(a) => a.set_enc(enc),
+        }
+    }
+    pub fn set_location(&mut self, location: Location) {
+        match self {
+            QrCodeSign::RefreshQrCodeSign(a) => a.set_location(location),
+            QrCodeSign::NormalQrCodeSign(a) => a.set_location(location),
         }
     }
 }

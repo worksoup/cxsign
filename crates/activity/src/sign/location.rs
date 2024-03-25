@@ -10,6 +10,14 @@ pub struct LocationSign {
     pub(crate) location: Option<Location>,
     pub(crate) is_auto_location: bool,
 }
+impl LocationSign {
+    pub fn set_location(&mut self, location: Location) {
+        self.location = Some(location)
+    }
+    pub fn set_is_auto_location(&mut self, is_auto_location: bool) {
+        self.is_auto_location = is_auto_location
+    }
+}
 impl SignTrait for LocationSign {
     fn get_raw(&self) -> &RawSign {
         &self.raw_sign
