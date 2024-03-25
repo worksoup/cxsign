@@ -1,6 +1,6 @@
 use error::Error;
-use std::path::Path;
 use log::warn;
+use std::path::Path;
 use ureq::{Agent, AgentBuilder};
 
 pub mod protocol;
@@ -46,7 +46,7 @@ pub fn login_enc<P: AsRef<Path>>(
         for mes in &mes {
             warn!("{mes:?}");
         }
-        return Err(error::Error::LoginError(format!("{mes:?}")).into());
+        return Err(Error::LoginError(format!("{mes:?}")).into());
     }
     if let Some(store_path) = store_path {
         // Write store back to disk

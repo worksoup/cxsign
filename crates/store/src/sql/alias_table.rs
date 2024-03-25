@@ -1,5 +1,5 @@
 use crate::sql::{DataBase, DataBaseTableTrait};
-use log::{error, warn};
+use log::warn;
 
 pub struct AliasTable<'a> {
     db: &'a DataBase,

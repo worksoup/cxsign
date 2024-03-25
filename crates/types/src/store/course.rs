@@ -1,5 +1,5 @@
 use crate::course::Course;
-use log::{error, warn};
+use log::warn;
 use std::collections::HashMap;
 use store::sql::{DataBase, DataBaseTableTrait};
 

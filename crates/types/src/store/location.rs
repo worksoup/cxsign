@@ -1,6 +1,6 @@
 use crate::location::Location;
+use log::warn;
 use std::collections::HashMap;
-use log::{error, info, warn};
 use store::sql::{AliasTable, DataBase, DataBaseTableTrait};
 
 pub struct LocationTable<'a> {
