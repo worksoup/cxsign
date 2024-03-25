@@ -1,10 +1,11 @@
 use unicode_width::UnicodeWidthStr;
+use log::info;
 
 pub fn print_now() {
     let str = chrono::DateTime::<chrono::Local>::from(std::time::SystemTime::now())
         .format("%+")
         .to_string();
-    println!("{str}");
+    info!("{str}");
 }
 
 pub fn inquire_confirm(inquire: &str, tips: &str) -> bool {

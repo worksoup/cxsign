@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 dir = { path = "../dir" }
+log.workspace = true
 pan = { path = "../pan" }
 rand = "0.8"
 serde = { workspace = true, features = ["derive"] }

@@ -1,3 +1,4 @@
+use log::warn;
 use ureq::{Agent, Response};
 static PPT_SIGN: &str = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax";
 // // web 聊天页
@@ -67,7 +68,7 @@ pub fn chat_group_signcode_sign(
     uid: &str,
     signcode: &str,
 ) -> Result<Response, ureq::Error> {
-    eprintln!("`chat_group_signcode_sign` 该函数需要测试！");
+    warn!("`chat_group_signcode_sign` 该函数需要测试！");
     let url =
         format!("{CHAT_GROUP_SIGN}?activeId={active_id}&uid={uid}&clientip=&signCode={signcode}");
     client.get(&url).call()

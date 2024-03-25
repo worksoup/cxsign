@@ -1,4 +1,5 @@
 use crate::sql::{DataBase, DataBaseTableTrait};
+use log::{error, warn};
 
 pub struct AliasTable<'a> {
     db: &'a DataBase,
@@ -72,7 +73,7 @@ impl<'a> AliasTable<'a> {
                 let name: &str = row.read("name");
                 aliases.push(name.to_owned());
             } else {
-                eprintln!("位置解析行出错：{c:?}.");
+                warn!("位置解析行出错：{c:?}.");
             }
         }
         aliases

@@ -1,3 +1,4 @@
+use log::debug;
 use types::Course;
 use ureq::{Agent, Response};
 
@@ -15,6 +16,6 @@ pub fn active_list(client: &Agent, course: Course) -> Result<Response, ureq::Err
         course.get_id(),
         course.get_class_id(),
     );
-    // println!("{url}");
+    debug!("{url}");
     client.get(&url).call()
 }

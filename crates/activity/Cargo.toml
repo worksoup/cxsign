@@ -6,6 +6,7 @@ authors.workspace = true
 
 [dependencies]
 chrono.workspace = true
+log.workspace = true
 num_enum = "0.7"
 percent-encoding.workspace = true
 serde = { workspace = true, features = ["derive"] }

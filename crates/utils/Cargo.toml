@@ -5,6 +5,7 @@ version.workspace = true
 authors.workspace = true
 
 [dependencies]
-unicode-width = "0.1"
 chrono.workspace = true
 inquire = "0.7"
+log.workspace = true
+unicode-width = "0.1"

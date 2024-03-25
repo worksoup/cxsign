@@ -1,5 +1,6 @@
 use crate::location::Location;
 use std::collections::HashMap;
+use log::{error, info, warn};
 use store::sql::{AliasTable, DataBase, DataBaseTableTrait};
 
 pub struct LocationTable<'a> {
@@ -77,7 +78,7 @@ impl<'a> LocationTable<'a> {
                 let course_id = row.read("courseid");
                 location_map.insert(os_id, (course_id, Location::new(addr, lon, lat, alt)));
             } else {
-                eprintln!("位置解析行出错：{c:?}.");
+                warn!("位置解析行出错：{c:?}.");
             }
         }
         location_map
@@ -124,7 +125,7 @@ impl<'a> LocationTable<'a> {
                 let alt = row.read("alt");
                 location_map.insert(location_id, Location::new(addr, lon, lat, alt));
             } else {
-                eprintln!("位置解析行出错：{c:?}.");
+                warn!("位置解析行出错：{c:?}.");
             }
         }
         location_map
@@ -147,7 +148,7 @@ impl<'a> LocationTable<'a> {
                 let alt = row.read("alt");
                 location_list.push(Location::new(addr, lon, lat, alt));
             } else {
-                eprintln!("位置解析行出错：{c:?}.");
+                warn!("位置解析行出错：{c:?}.");
             }
         }
         location_list

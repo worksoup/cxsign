@@ -8,5 +8,6 @@ authors.workspace = true
 
 [dependencies]
 dir = { path = "../dir" }
+log.workspace = true
 sqlite.workspace = true
 user = { path = "../user" }

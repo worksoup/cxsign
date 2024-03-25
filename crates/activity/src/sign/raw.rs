@@ -1,3 +1,4 @@
+use log::{debug, error, info};
 use crate::protocol;
 use crate::sign::{
     GestureSign, LocationSign, NormalQrCodeSign, NormalSign, PhotoSign, QrCodeSign,
@@ -100,8 +101,8 @@ impl RawSign {
 impl RawSign {
     pub fn to_sign(self) -> Sign {
         match self.other_id.parse::<u8>().unwrap_or_else(|e| {
-            eprintln!("{}", self.other_id);
-            eprintln!("{}", self.course.get_name());
+            error!("{}", self.other_id);
+            error!("{}", self.course.get_name());
             panic!("{e}")
         }) {
             0 => {
@@ -147,7 +148,7 @@ impl RawSign {
     pub fn display(&self, already_course: bool) {
         let name_width = get_width_str_should_be(self.name.as_str(), 12);
         if already_course {
-            println!(
+            info!(
                 "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}",
                 self.active_id,
                 self.name,
@@ -157,7 +158,7 @@ impl RawSign {
                 width = name_width,
             );
         } else {
-            println!(
+            info!(
                 "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}, course: {}/{}",
                 self.active_id,
                 self.name,
@@ -185,18 +186,15 @@ impl RawSign {
             let end_of_code = data.find('\'').unwrap();
             &data[0..end_of_code]
         };
-        #[cfg(debug_assertions)]
-        println!("code: {code:?}");
+        debug!("code: {code:?}");
         let _response_of_analysis2 = protocol::analysis2(session, code)?;
-        #[cfg(debug_assertions)]
-        println!(
+        debug!(
             "analysis 结果：{}",
             _response_of_analysis2.into_string().unwrap()
         );
         let pre_sign_status = {
             let html = response_of_presign.into_string().unwrap();
-            #[cfg(debug_assertions)]
-            println!("预签到请求结果：{html}");
+            debug!("预签到请求结果：{html}");
             if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
                 let html = &html[start_of_statuscontent_h1 + 19..html.len()];
                 let end_of_statuscontent_h1 = html.find('<').unwrap();
@@ -221,7 +219,7 @@ impl RawSign {
         let uid = session.get_uid();
         let response_of_pre_sign =
             protocol::pre_sign(session, self.course.clone(), active_id, uid, false, "", "")?;
-        println!("用户[{}]预签到已请求。", session.get_stu_name());
+        info!("用户[{}]预签到已请求。", session.get_stu_name());
         self.analysis_before_presign(active_id, session, response_of_pre_sign)
     }
     pub fn presign_for_refresh_qrcode_sign(
@@ -234,7 +232,7 @@ impl RawSign {
         let uid = session.get_uid();
         let response_of_presign =
             protocol::pre_sign(session, self.course.clone(), active_id, uid, true, c, enc)?;
-        println!("用户[{}]预签到已请求。", session.get_stu_name());
+        info!("用户[{}]预签到已请求。", session.get_stu_name());
         self.analysis_before_presign(active_id, session, response_of_presign)
     }
 }

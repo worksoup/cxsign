@@ -1,4 +1,5 @@
 use crate::course::Course;
+use log::{error, warn};
 use std::collections::HashMap;
 use store::sql::{DataBase, DataBaseTableTrait};
 
@@ -46,7 +47,7 @@ impl<'a> CourseTable<'a> {
                 let name = row.read::<&str, _>("name");
                 courses.insert(id, Course::new(id, clazzid, teacher, image, name));
             } else {
-                eprintln!("课程解析行出错：{c:?}.");
+                warn!("课程解析行出错：{c:?}.");
             }
         }
         courses

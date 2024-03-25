@@ -8,6 +8,7 @@ use dir::{Dir, DIR};
 use sqlite::Connection;
 use std::fs::File;
 use std::ops::Deref;
+use log::info;
 
 pub trait DataBaseTableTrait<'a> {
     const TABLE_ARGS: &'static str;
@@ -38,7 +39,7 @@ pub trait DataBaseTableTrait<'a> {
             .prepare(format!("DELETE FROM {};", Self::TABLE_NAME))
             .unwrap();
         query.next().unwrap();
-        println!("已删除数据表 {}。", Self::TABLE_NAME);
+        info!("已删除数据表 {}。", Self::TABLE_NAME);
     }
 }
 

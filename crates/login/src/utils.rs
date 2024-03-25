@@ -23,7 +23,7 @@ pub fn des_enc(text: &str) -> String {
         }
         r.push(b);
         // #[cfg(debug_assertions)]
-        // println!("{r:?}");
+        // debug!("{r:?}");
         r
     }
     let key = b"u2oh6Vu^".to_owned();

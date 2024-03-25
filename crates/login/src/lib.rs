@@ -1,5 +1,6 @@
 use error::Error;
 use std::path::Path;
+use log::warn;
 use ureq::{Agent, AgentBuilder};
 
 pub mod protocol;
@@ -43,7 +44,7 @@ pub fn login_enc<P: AsRef<Path>>(
     }
     if !status {
         for mes in &mes {
-            eprintln!("{mes:?}");
+            warn!("{mes:?}");
         }
         return Err(error::Error::LoginError(format!("{mes:?}")).into());
     }

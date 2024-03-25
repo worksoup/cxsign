@@ -2,6 +2,7 @@ use user::session::Session;
 
 use crate::sql::{DataBase, DataBaseTableTrait};
 use std::collections::HashMap;
+use log::warn;
 
 pub struct AccountTable<'a> {
     db: &'a DataBase,
@@ -124,7 +125,7 @@ impl<'a> AccountTable<'a> {
                 let name: &str = row.read("name");
                 accounts.insert(uname.into(), (pwd.into(), name.into()));
             } else {
-                eprintln!("账号解析行出错：{c:?}.");
+                warn!("账号解析行出错：{c:?}.");
             }
         }
         accounts
@@ -142,7 +143,7 @@ impl<'a> AccountTable<'a> {
                 let name: &str = row.read("name");
                 return Some((uname.into(), (pwd.into(), name.into())));
             } else {
-                eprintln!("账号解析行出错：{c:?}.");
+                warn!("账号解析行出错：{c:?}.");
             }
         }
         None
