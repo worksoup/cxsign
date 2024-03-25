@@ -8,6 +8,9 @@ pub struct NormalSign {
 }
 
 impl SignTrait for NormalSign {
+    fn get_raw(&self) -> &RawSign {
+        &self.raw_sign
+    }
     fn is_valid(&self) -> bool {
         self.raw_sign.is_valid()
     }

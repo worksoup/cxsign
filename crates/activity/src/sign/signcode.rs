@@ -1,6 +1,6 @@
+use crate::sign::{RawSign, SignResult, SignState, SignTrait};
 use ureq::Error;
 use user::session::Session;
-use crate::sign::{RawSign, SignResult, SignState, SignTrait};
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct SigncodeSign {
@@ -15,6 +15,9 @@ impl SigncodeSign {
     }
 }
 impl SignTrait for SigncodeSign {
+    fn get_raw(&self) -> &RawSign {
+        &self.raw_sign
+    }
     fn is_ready_for_sign(&self) -> bool {
         self.signcode.is_some()
     }

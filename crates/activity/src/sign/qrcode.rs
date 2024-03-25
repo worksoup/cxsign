@@ -35,6 +35,9 @@ unsafe fn qrcode_sign_unchecked(
     }
 }
 impl SignTrait for RefreshQrCodeSign {
+    fn get_raw(&self) -> &RawSign {
+        &self.raw_sign
+    }
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
     }
@@ -59,6 +62,9 @@ pub struct NormalQrCodeSign {
     pub(crate) location: Option<Location>,
 }
 impl SignTrait for NormalQrCodeSign {
+    fn get_raw(&self) -> &RawSign {
+        &self.raw_sign
+    }
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
     }
@@ -89,6 +95,12 @@ impl QrCodeSign {
     }
 }
 impl SignTrait for QrCodeSign {
+    fn get_raw(&self) -> &RawSign {
+        match self {
+            QrCodeSign::RefreshQrCodeSign(a) => a.get_raw(),
+            QrCodeSign::NormalQrCodeSign(a) => a.get_raw(),
+        }
+    }
     fn is_valid(&self) -> bool {
         match self {
             QrCodeSign::RefreshQrCodeSign(a) => a.is_valid(),

@@ -14,6 +14,9 @@ impl GestureSign {
     }
 }
 impl SignTrait for GestureSign {
+    fn get_raw(&self) -> &RawSign {
+        &self.raw_sign
+    }
     fn is_ready_for_sign(&self) -> bool {
         self.gesture.is_some()
     }

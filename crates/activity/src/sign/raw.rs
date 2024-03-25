@@ -20,6 +20,9 @@ pub struct RawSign {
     pub sign_detail: SignDetail,
 }
 impl SignTrait for RawSign {
+    fn get_raw(&self) -> &RawSign {
+        &self
+    }
     fn is_valid(&self) -> bool {
         let time = std::time::SystemTime::from(
             chrono::DateTime::from_timestamp(self.start_timestamp, 0).unwrap(),

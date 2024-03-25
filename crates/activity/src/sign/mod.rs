@@ -20,6 +20,7 @@ use types::Course;
 use user::session::Session;
 
 pub trait SignTrait: Ord {
+    fn get_raw(&self) -> &RawSign;
     fn is_ready_for_sign(&self) -> bool {
         true
     }
@@ -94,6 +95,17 @@ pub enum Sign {
     Unknown(RawSign),
 }
 impl SignTrait for Sign {
+    fn get_raw(&self) -> &RawSign {
+        match self {
+            Sign::Photo(a) => a.get_raw(),
+            Sign::Normal(a) => a.get_raw(),
+            Sign::QrCode(a) => a.get_raw(),
+            Sign::Gesture(a) => a.get_raw(),
+            Sign::Location(a) => a.get_raw(),
+            Sign::Signcode(a) => a.get_raw(),
+            Sign::Unknown(a) => a.get_raw(),
+        }
+    }
     fn is_ready_for_sign(&self) -> bool {
         match self {
             Sign::Photo(a) => a.is_ready_for_sign(),

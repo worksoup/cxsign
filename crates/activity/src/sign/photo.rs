@@ -11,6 +11,9 @@ pub struct PhotoSign {
 }
 
 impl SignTrait for PhotoSign {
+    fn get_raw(&self) -> &RawSign {
+        &self.raw_sign
+    }
     fn is_ready_for_sign(&self) -> bool {
         self.photo.is_some()
     }
