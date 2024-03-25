@@ -5,18 +5,16 @@
 #![feature(map_try_insert)]
 #![feature(let_chains)]
 
-mod activity;
 mod cli;
-mod session;
-mod utils;
 mod protocol;
+mod session;
 
 use cli::{
     arg::{AccCmds, Args, MainCmds},
     location::Struct位置操作使用的信息,
 };
-use utils::{sql::DataBase, 配置文件夹};
-
+use dir::DIR;
+use store::sql::DataBase;
 #[tokio::main]
 async fn main() {
     let args = <Args as clap::Parser>::parse();

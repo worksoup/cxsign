@@ -441,13 +441,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "cookie"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3cd91cf61412820176e137621345ee43b3f4423e589e7ae4e50d601d93e35ef8"
+dependencies = [
+ "percent-encoding",
+ "time",
+ "version_check",
+]
+
+[[package]]
 name = "cookie_store"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "387461abbc748185c3a6e1673d826918b450b87ff22639429c694619a83b6cf6"
 dependencies = [
- "cookie",
+ "cookie 0.17.0",
  "idna 0.3.0",
+ "log",
+ "publicsuffix",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "time",
+ "url",
+]
+
+[[package]]
+name = "cookie_store"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4934e6b7e8419148b6ef56950d277af8561060b56afd59e2aadf98b59fce6baa"
+dependencies = [
+ "cookie 0.18.0",
+ "idna 0.5.0",
+ "indexmap",
  "log",
  "publicsuffix",
  "serde",
@@ -605,8 +634,9 @@ version = "0.1.2"
 dependencies = [
  "chrono",
  "clap",
- "cookie_store",
+ "cookie_store 0.20.0",
  "des",
+ "dir",
  "directories",
  "futures",
  "hex",
@@ -623,9 +653,14 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "sqlite",
+ "store",
  "tokio",
  "tokio-stream",
+ "toml",
  "unicode-width",
+ "ureq",
+ "user",
+ "utils",
  "xcap",
 ]
 
@@ -656,6 +691,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffdd80ce8ce993de27e9f063a444a4d53ce8e8db4c1f00cc03af5ad5a9867a1e"
 dependencies = [
  "cipher",
+]
+
+[[package]]
+name = "dir"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#7e90c2fbc439f4c1a708433f1f50fe3168ec2aa3"
+dependencies = [
+ "directories",
+ "lazy_static",
 ]
 
 [[package]]
@@ -778,6 +822,15 @@ checksum = "a258e46cdc063eb8519c00b9fc845fc47bcfca4130e2f08e88665ceda8474245"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "error"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#7e90c2fbc439f4c1a708433f1f50fe3168ec2aa3"
+dependencies = [
+ "thiserror",
+ "ureq",
 ]
 
 [[package]]
@@ -1469,6 +1522,22 @@ name = "log"
 version = "0.4.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
+
+[[package]]
+name = "login"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#7e90c2fbc439f4c1a708433f1f50fe3168ec2aa3"
+dependencies = [
+ "cookie_store 0.21.0",
+ "des",
+ "dir",
+ "error",
+ "hex",
+ "log",
+ "serde",
+ "serde_json",
+ "ureq",
+]
 
 [[package]]
 name = "loop9"
@@ -2234,8 +2303,8 @@ dependencies = [
  "async-compression",
  "base64",
  "bytes",
- "cookie",
- "cookie_store",
+ "cookie 0.17.0",
+ "cookie_store 0.20.0",
  "encoding_rs",
  "futures-core",
  "futures-util",
@@ -2279,7 +2348,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93ea5c6f30c19d766efe8d823c88f9abd1c56516648a0d4264ab2dc04cc19472"
 dependencies = [
  "bytes",
- "cookie_store",
+ "cookie_store 0.20.0",
  "reqwest",
  "url",
 ]
@@ -2291,6 +2360,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05aaa8004b64fd573fc9d002f4e632d51ad4f026c2b5ba95fcb6c2f32c2c47d8"
 dependencies = [
  "bytemuck",
+]
+
+[[package]]
+name = "ring"
+version = "0.17.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c17fa4cb658e3583423e915b9f3acc01cceaee1860e33d59ebae66adc3a2dc0d"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "getrandom",
+ "libc",
+ "spin",
+ "untrusted",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2313,12 +2397,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustls"
+version = "0.22.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e87c9956bd9807afa1f77e0f7594af32566e830e088a5576d27c5b6f30f49d41"
+dependencies = [
+ "log",
+ "ring",
+ "rustls-pki-types",
+ "rustls-webpki",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
 name = "rustls-pemfile"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c74cae0a4cf6ccbbf5f359f08efdf8ee7e1dc532573bf0db71968cb56b1448c"
 dependencies = [
  "base64",
+]
+
+[[package]]
+name = "rustls-pki-types"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "868e20fada228fefaf6b652e00cc73623d54f8171e7352c18bb281571f2d92da"
+
+[[package]]
+name = "rustls-webpki"
+version = "0.102.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "faaa0a62740bedb9b2ef5afa303da42764c012f743917351dc9a237ea1663610"
+dependencies = [
+ "ring",
+ "rustls-pki-types",
+ "untrusted",
 ]
 
 [[package]]
@@ -2590,10 +2705,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "store"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#7e90c2fbc439f4c1a708433f1f50fe3168ec2aa3"
+dependencies = [
+ "dir",
+ "log",
+ "sqlite",
+ "user",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ee073c9e4cd00e28217186dbe12796d692868f432bf2e97ee73bed0c56dfa01"
+
+[[package]]
+name = "subtle"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81cdd64d312baedb58e21336b31bc043b77e01cc99033ce76ef539f78e965ebc"
 
 [[package]]
 name = "syn"
@@ -2985,6 +3117,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51733f11c9c4f72aa0c160008246859e340b00807569a0da0e7a1079b27ba85"
 
 [[package]]
+name = "untrusted"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
+
+[[package]]
+name = "ureq"
+version = "2.9.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11f214ce18d8b2cbe84ed3aa6486ed3f5b285cf8d8fbdbce9f3f767a724adc35"
+dependencies = [
+ "base64",
+ "cookie 0.18.0",
+ "cookie_store 0.21.0",
+ "flate2",
+ "log",
+ "once_cell",
+ "rustls",
+ "rustls-pki-types",
+ "rustls-webpki",
+ "serde",
+ "serde_json",
+ "url",
+ "webpki-roots",
+]
+
+[[package]]
 name = "uriparse"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3012,10 +3171,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
+name = "user"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#7e90c2fbc439f4c1a708433f1f50fe3168ec2aa3"
+dependencies = [
+ "cookie_store 0.21.0",
+ "dir",
+ "error",
+ "log",
+ "login",
+ "serde",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
+
+[[package]]
+name = "utils"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#7e90c2fbc439f4c1a708433f1f50fe3168ec2aa3"
+dependencies = [
+ "chrono",
+ "inquire",
+ "log",
+ "unicode-width",
+]
 
 [[package]]
 name = "v_frame"
@@ -3135,6 +3320,15 @@ checksum = "77afa9a11836342370f4817622a2f0f418b134426d91a82dfb48f532d2ec13ef"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webpki-roots"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3de34ae270483955a94f4b21bdaaeb83d508bb84a01435f393818edb0012009"
+dependencies = [
+ "rustls-pki-types",
 ]
 
 [[package]]
@@ -3411,6 +3605,12 @@ dependencies = [
  "libc",
  "quick-xml",
 ]
+
+[[package]]
+name = "zeroize"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
 
 [[package]]
 name = "zune-core"
