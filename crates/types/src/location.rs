@@ -1,4 +1,5 @@
 use std::f64::consts::PI;
+use std::str::FromStr;
 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -60,9 +61,15 @@ impl LocationWithRange {
         self.range
     }
 }
+impl FromStr for Location {
+    type Err = String;
 
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Location::parse(s)
+    }
+}
 impl Location {
-    pub fn parse(location_str: &str) -> Result<Self, &str> {
+    pub fn parse(location_str: &str) -> Result<Self, String> {
         let location_str: Vec<&str> = location_str.split(',').map(|item| item.trim()).collect();
         if location_str.len() == 4 {
             Ok(Self::new(
@@ -72,7 +79,7 @@ impl Location {
                 location_str[3],
             ))
         } else {
-            Err("位置信息格式错误！格式为：`地址,经度,纬度,海拔`.")
+            Err("位置信息格式错误！格式为：`地址,经度,纬度,海拔`.".to_string())
         }
     }
     pub fn new(addr: &str, lon: &str, lat: &str, alt: &str) -> Location {
