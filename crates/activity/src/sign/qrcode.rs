@@ -10,6 +10,30 @@ pub struct RefreshQrCodeSign {
     pub(crate) enc: Option<String>,
     pub(crate) location: Option<Location>,
 }
+unsafe fn qrcode_sign_unchecked(
+    raw_sign: &RawSign,
+    enc: &str,
+    location: &Option<Location>,
+    session: &Session,
+) -> Result<SignResult, Error> {
+    let r = raw_sign.presign_for_refresh_qrcode_sign(&raw_sign.sign_detail.c, enc, session);
+    if let Ok(a) = r.as_ref()
+        && !a.is_susses()
+    {
+        let r = protocol::qrcode_sign(
+            session,
+            enc,
+            session.get_uid(),
+            session.get_fid(),
+            session.get_stu_name(),
+            raw_sign.active_id.as_str(),
+            location,
+        )?;
+        Ok(raw_sign.guess_sign_result(&r.into_string().unwrap()))
+    } else {
+        r
+    }
+}
 impl SignTrait for RefreshQrCodeSign {
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
@@ -24,53 +48,34 @@ impl SignTrait for RefreshQrCodeSign {
 
     unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
         let enc = unsafe { self.enc.as_ref().unwrap_unchecked() };
-        let r = self.raw_sign.presign_for_refresh_qrcode_sign(
-            &self.raw_sign.sign_detail.c,
-            enc,
-            session,
-        );
-        if let Ok(a) = r.as_ref()
-            && !a.is_susses()
-        {
-            let r = protocol::qrcode_sign(
-                session,
-                enc,
-                session.get_uid(),
-                session.get_fid(),
-                session.get_stu_name(),
-                self.raw_sign.active_id.as_str(),
-                &self.location,
-            )?;
-            Ok(self.guess_sign_result(&r.into_string().unwrap()))
-        } else {
-            r
-        }
+        unsafe { qrcode_sign_unchecked(&self.raw_sign, enc, &self.location, session) }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NormalQrCodeSign {
     pub(crate) raw_sign: RawSign,
+    pub(crate) enc: Option<String>,
+    pub(crate) location: Option<Location>,
 }
 impl SignTrait for NormalQrCodeSign {
+    fn is_ready_for_sign(&self) -> bool {
+        self.enc.is_some()
+    }
     fn is_valid(&self) -> bool {
         self.raw_sign.is_valid()
     }
-
     fn get_attend_info(&self, session: &Session) -> Result<SignState, Error> {
         self.raw_sign.get_attend_info(session)
     }
 
     unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
-        unsafe { self.raw_sign.sign_unchecked(session) }
-    }
-
-    fn sign(&self, session: &Session) -> Result<SignResult, Error> {
-        self.raw_sign.sign(session)
+        let enc = unsafe { self.enc.as_ref().unwrap_unchecked() };
+        unsafe { qrcode_sign_unchecked(&self.raw_sign, enc, &self.location, session) }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QrCodeSign {
     RefreshQrCodeSign(RefreshQrCodeSign),
     NormalQrCodeSign(NormalQrCodeSign),

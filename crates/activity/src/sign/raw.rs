@@ -1,9 +1,9 @@
-use log::{debug, error, info};
 use crate::protocol;
 use crate::sign::{
     GestureSign, LocationSign, NormalQrCodeSign, NormalSign, PhotoSign, QrCodeSign,
     RefreshQrCodeSign, Sign, SignDetail, SignResult, SignState, SignTrait, SigncodeSign,
 };
+use log::{debug, error, info};
 use serde::Deserialize;
 use types::Course;
 use user::session::Session;
@@ -125,7 +125,9 @@ impl RawSign {
                     }))
                 } else {
                     Sign::QrCode(QrCodeSign::NormalQrCodeSign(NormalQrCodeSign {
+                        enc: None,
                         raw_sign: self,
+                        location: None,
                     }))
                 }
             }
