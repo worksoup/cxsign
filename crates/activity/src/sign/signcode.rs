@@ -2,7 +2,7 @@ use ureq::Error;
 use user::session::Session;
 use crate::sign::{RawSign, SignResult, SignState, SignTrait};
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct SigncodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) signcode: Option<String>,

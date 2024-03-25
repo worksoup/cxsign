@@ -4,7 +4,7 @@ use types::Location;
 use ureq::Error;
 use user::session::Session;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct LocationSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) location: Option<Location>,

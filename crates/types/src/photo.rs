@@ -4,7 +4,7 @@ use std::path::Path;
 use user::session::Session;
 
 // TODO: 删除 unwrap
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Photo {
     object_id: String,
 }

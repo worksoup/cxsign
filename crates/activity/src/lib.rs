@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use types::Course;
 use user::session::Session;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub enum Activity {
     Sign(Sign),
     Other(OtherActivity),
@@ -78,7 +78,7 @@ impl Activity {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct OtherActivity {
     pub id: String,
     pub name: String,

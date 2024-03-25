@@ -1,7 +1,7 @@
 use crate::sign::{RawSign, SignResult, SignState, SignTrait};
 use user::session::Session;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct GestureSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) gesture: Option<String>,

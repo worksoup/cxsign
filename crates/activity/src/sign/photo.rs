@@ -4,7 +4,7 @@ use types::Photo;
 use ureq::Error;
 use user::session::Session;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PhotoSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) photo: Option<Photo>,

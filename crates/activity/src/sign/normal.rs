@@ -2,7 +2,7 @@ use crate::sign::{RawSign, SignResult, SignState, SignTrait};
 use ureq::Error;
 use user::session::Session;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct NormalSign {
     pub(crate) raw_sign: RawSign,
 }
