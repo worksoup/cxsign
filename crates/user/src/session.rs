@@ -6,7 +6,7 @@ use std::{
 };
 use ureq::Agent;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Session {
     agent: Agent,
     stu_name: String,

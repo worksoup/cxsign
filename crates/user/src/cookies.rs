@@ -1,7 +1,7 @@
 use cookie_store::Cookie;
 use ureq::Agent;
 #[allow(non_snake_case)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UserCookies {
     // JSESSIONID: String,
     // lv: String,
