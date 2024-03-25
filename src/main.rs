@@ -8,13 +8,15 @@
 mod cli;
 mod protocol;
 mod session;
+mod tools;
 
 use cli::{
     arg::{AccCmds, Args, MainCmds},
     location::Struct位置操作使用的信息,
 };
-use dir::DIR;
-use store::sql::DataBase;
+use store::sql::{AccountTable, DataBase, DataBaseTableTrait};
+use types::{Course, CourseTable};
+
 #[tokio::main]
 async fn main() {
     let args = <Args as clap::Parser>::parse();
@@ -28,7 +30,7 @@ async fn main() {
         precisely,
         no_random_shift,
     } = args;
-    let db = DataBase::new();
+    let db = DataBase::default();
     if let Some(sub_cmd) = command {
         match sub_cmd {
             MainCmds::Account { command, fresh } => {
@@ -36,7 +38,7 @@ async fn main() {
                     match acc_sub_cmd {
                         AccCmds::Add { uname } => {
                             // 添加账号。
-                            utils::account::添加账号(&db, uname, None).await;
+                            tools::account::添加账号(&db, uname, None).await;
                         }
                         AccCmds::Remove { uname, yes } => {
                             if !yes {
@@ -49,42 +51,48 @@ async fn main() {
                                 }
                             }
                             // 删除指定账号。
-                            db.delete_account(&uname);
+                            AccountTable::from_ref(&db).delete_account(&uname);
                         }
                     }
                 } else {
-                    let accounts = db.get_accounts();
+                    let table = AccountTable::from_ref(&db);
+                    let accounts = table.get_accounts();
                     if fresh {
                         for (uname, (ref enc_pwd, _)) in accounts {
-                            db.delete_account(&uname);
-                            utils::account::添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(&db, uname, enc_pwd).await;
+                            table.delete_account(&uname);
+                            tools::account::添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(&db, uname, enc_pwd).await;
                         }
                     }
                     // 列出所有账号。
-                    let accounts = db.get_accounts();
+                    let accounts = table.get_accounts();
                     for a in accounts {
                         println!("{}, {}", a.0, a.1 .1);
                     }
                 }
             }
             MainCmds::Course { fresh } => {
+                let table = CourseTable::from_ref(&db);
                 if fresh {
                     // 重新获取课程信息并缓存。
-                    let sessions = utils::account::通过账号获取签到会话(
+                    let sessions = tools::account::通过账号获取签到会话(
                         &db,
-                        &db.get_accounts().keys().map(|s| s.as_str()).collect(),
+                        &AccountTable::from_ref(&db)
+                            .get_accounts()
+                            .keys()
+                            .map(|s| s.as_str())
+                            .collect(),
                     )
                     .await;
-                    db.delete_all_course();
+                    CourseTable::delete(&db);
                     for (_, session) in sessions {
-                        let courses = session.获取课程列表().await.unwrap();
+                        let courses = Course::get_courses(&session).unwrap();
                         for c in courses {
-                            db.add_course_or(&c, |_, _| {});
+                            table.add_course_or(&c, |_, _| {});
                         }
                     }
                 }
                 // 列出所有课程。
-                let courses = db.get_courses();
+                let courses = table.get_courses();
                 for c in courses {
                     println!("{}", c.1);
                 }
@@ -120,9 +128,13 @@ async fn main() {
                 cli::location::location(&db, args)
             }
             MainCmds::List { course, all } => {
-                let sessions = utils::account::通过账号获取签到会话(
+                let sessions = tools::account::通过账号获取签到会话(
                     &db,
-                    &db.get_accounts().keys().map(|s| s.as_str()).collect(),
+                    &AccountTable::from_ref(&db)
+                        .get_accounts()
+                        .keys()
+                        .map(|s| s.as_str())
+                        .collect(),
                 )
                 .await;
                 let (available_sign_activities, other_sign_activities) =

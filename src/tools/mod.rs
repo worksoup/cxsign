@@ -110,6 +110,6 @@ pub fn 获取unicode字符串定宽显示时应当设置的宽度(
 // mod test {
 //     #[test]
 //     fn test_des() {
-//         println!("{}", crate::utils::pwd_des("0123456789."));
+//         println!("{}", crate::tools::pwd_des("0123456789."));
 //     }
 // }

@@ -1,20 +1,22 @@
+use activity::sign::Sign;
 use std::collections::{hash_map::OccupiedError, HashMap};
 
 use rxing::{Point, PointU};
+use user::session::Session;
 
-use crate::{activity::sign::Struct签到, session::Struct签到会话, utils::请求确认};
+use utils::inquire_confirm;
 
 pub async fn 获取所有签到(
-    sessions: &HashMap<String, Struct签到会话>,
+    sessions: &HashMap<String, Session>,
 ) -> (
-    HashMap<Struct签到, HashMap<&String, &Struct签到会话>>,
-    HashMap<Struct签到, HashMap<&String, &Struct签到会话>>,
+    HashMap<Sign, HashMap<&String, &Session>>,
+    HashMap<Sign, HashMap<&String, &Session>>,
 ) {
     let mut 有效签到 = HashMap::new();
     let mut 其他签到 = HashMap::new();
     for session in sessions {
         let (available_sign_activities, other_sign_activities, _) =
-            session.1.遍历课程以获取所有活动().await.unwrap();
+            activity::Activity::get_all_activities(session.1).unwrap();
         for sa in available_sign_activities {
             let mut map = HashMap::new();
             map.insert(session.0, session.1);
