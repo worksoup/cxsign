@@ -1,8 +1,12 @@
+use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::str::FromStr;
 
+use crate::Course;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use user::session::Session;
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 pub struct Location {
     addr: String,
@@ -24,6 +28,46 @@ pub struct LocationWithRange {
 }
 
 impl LocationWithRange {
+    pub fn from_log(
+        session: &Session,
+        course: &Course,
+    ) -> Result<HashMap<String, Self>, ureq::Error> {
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        struct LocationWithRangeAndActiveId {
+            #[serde(rename = "activeid")]
+            active_id: i64,
+            #[serde(rename = "address")]
+            addr: String,
+            #[serde(rename = "longitude")]
+            lon: f64,
+            #[serde(rename = "latitude")]
+            lat: f64,
+            #[serde(rename = "locationrange")]
+            range: String,
+        }
+        impl LocationWithRangeAndActiveId {
+            pub fn to_location_with_range(&self) -> LocationWithRange {
+                LocationWithRange {
+                    addr: self.addr.clone(),
+                    lon: self.lon.to_string(),
+                    lat: self.lat.to_string(),
+                    range: self.range.trim().parse().unwrap_or(100),
+                }
+            }
+        }
+        #[derive(Debug, Clone, Deserialize, Serialize)]
+        struct Data {
+            #[serde(rename = "data")]
+            data: Vec<LocationWithRangeAndActiveId>,
+        }
+        let r = crate::get_location_log(session, course)?;
+        let data: Data = r.into_json().unwrap();
+        let mut map = HashMap::new();
+        for l in data.data {
+            map.insert(l.active_id.to_string(), l.to_location_with_range());
+        }
+        Ok(map)
+    }
     pub fn get_shifted_location(&self) -> Location {
         const R: f64 = 6371393.0;
         let LocationWithRange {
