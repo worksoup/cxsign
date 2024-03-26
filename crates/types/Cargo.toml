@@ -10,7 +10,7 @@ edition = "2021"
 dir = { path = "../dir" }
 log.workspace = true
 pan = { path = "../pan" }
-rand = "0.8"
+rand.workspace = true
 serde = { workspace = true, features = ["derive"] }
 sqlite.workspace = true
 store = { path = "../store" }

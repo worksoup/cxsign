@@ -6,5 +6,6 @@ authors.workspace = true
 
 [dependencies]
 mime_guess = "2.0"
-multipart = "0.18"
+log.workspace = true
+rand.workspace = true
 ureq = { workspace = true, features = ["cookies", "json"] }
