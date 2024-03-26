@@ -2,7 +2,7 @@
 name = "activity"
 edition = "2021"
 version.workspace = true
-authors.workspace = true
+author.workspace = true
 
 [dependencies]
 chrono.workspace = true
