@@ -2,7 +2,7 @@
 name = "unused"
 edition = "2021"
 version.workspace = true
-author.workspace = true
+authors.workspace = true
 
 [dependencies]
 log.workspace = true

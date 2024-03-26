@@ -2,7 +2,7 @@
 name = "pan"
 edition = "2021"
 version.workspace = true
-author.workspace = true
+authors.workspace = true
 
 [dependencies]
 mime_guess = "2.0"

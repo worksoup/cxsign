@@ -9,7 +9,7 @@ edition = "2021"
 resolver = "2"
 edition = "2021"
 package.version = "0.1.1"
-package.author = "worksoup"
+package.authors = ["worksoup"]
 members = ["crates/*"]
 [workspace.dependencies]
 #anyhow = "1.0"
