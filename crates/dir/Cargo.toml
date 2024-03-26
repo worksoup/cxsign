@@ -2,7 +2,7 @@
 name = "dir"
 edition = "2021"
 version.workspace = true
-authors.workspace = true
+author.workspace = true
 
 [dependencies]
 lazy_static = "1.4"

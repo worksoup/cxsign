@@ -2,7 +2,7 @@
 name = "user"
 edition = "2021"
 version.workspace = true
-authors.workspace = true
+author.workspace = true
 
 [dependencies]
 cookie_store.workspace = true
