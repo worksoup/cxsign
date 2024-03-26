@@ -1,5 +1,6 @@
 [package]
 name = "login"
+edition = "2021"
 version.workspace = true
 author.workspace = true
 
@@ -14,5 +15,5 @@ error = { path = "../error" }
 hex = "0.4"
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
-ureq.workspace = true
+ureq = { workspace = true, features = ["cookies", "json"] }
 #hex-literal = "0.4"

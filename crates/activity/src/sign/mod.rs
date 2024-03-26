@@ -12,9 +12,9 @@ pub use normal::*;
 pub use photo::*;
 pub use qrcode::*;
 pub use raw::*;
-use serde::Deserialize;
 pub use signcode::*;
 
+use serde::Deserialize;
 use types::Course;
 use user::session::Session;
 
