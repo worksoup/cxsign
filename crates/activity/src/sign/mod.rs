@@ -14,7 +14,6 @@ pub use qrcode::*;
 pub use raw::*;
 use serde::Deserialize;
 pub use signcode::*;
-use std::fmt::Display;
 
 use types::Course;
 use user::session::Session;

@@ -1,7 +1,7 @@
 use crate::protocol;
 use crate::sign::{
     GestureSign, LocationSign, NormalQrCodeSign, NormalSign, PhotoSign, QrCodeSign,
-    RefreshQrCodeSign, Sign, SignDetail, SignResult, SignState, SignTrait, SigncodeSign,
+    RefreshQrCodeSign, Sign, SignDetail, SignResult, SignTrait, SigncodeSign,
 };
 use log::{debug, error, info};
 use serde::Deserialize;
