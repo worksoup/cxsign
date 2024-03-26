@@ -66,7 +66,7 @@ impl RawSign {
         session: &Session,
         active_id: &str,
         signcode: &str,
-    ) -> Result<bool, ureq::Error> {
+    ) -> Result<bool, Error> {
         #[derive(Deserialize)]
         struct CheckR {
             #[allow(unused)]
@@ -172,7 +172,7 @@ impl RawSign {
         active_id: &str,
         session: &Session,
         response_of_presign: ureq::Response,
-    ) -> Result<SignResult, ureq::Error> {
+    ) -> Result<SignResult, Error> {
         let response_of_analysis = protocol::analysis(session, active_id)?;
         let data = response_of_analysis.into_string().unwrap();
         let code = {

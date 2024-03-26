@@ -18,26 +18,26 @@ impl Activity {
     pub fn get_all_activities(
         session: &Session,
     ) -> Result<(Vec<Sign>, Vec<Sign>, Vec<OtherActivity>), ureq::Error> {
-        let mut 有效签到列表 = Vec::new();
-        let mut 其他签到列表 = Vec::new();
-        let mut 非签到活动列表 = Vec::new();
-        let 课程列表 = Course::get_courses(session)?;
-        for c in 课程列表 {
-            let item = Self::get_list_from_course(session, &c)?;
-            for a in item {
-                if let Self::Sign(签到) = a {
-                    if 签到.is_valid() {
-                        有效签到列表.push(签到);
+        let mut valid_signs = Vec::new();
+        let mut other_signs = Vec::new();
+        let mut other_activities = Vec::new();
+        let courses = Course::get_courses(session)?;
+        for course in courses {
+            let activities = Self::get_list_from_course(session, &course)?;
+            for activity in activities {
+                if let Self::Sign(sign) = activity {
+                    if sign.is_valid() {
+                        valid_signs.push(sign);
                     } else {
-                        其他签到列表.push(签到);
+                        other_signs.push(sign);
                     }
-                } else if let Self::Other(非签到活动) = a {
-                    非签到活动列表.push(非签到活动);
+                } else if let Self::Other(other_activity) = activity {
+                    other_activities.push(other_activity);
                 }
             }
         }
-        有效签到列表.sort();
-        Ok((有效签到列表, 其他签到列表, 非签到活动列表))
+        valid_signs.sort();
+        Ok((valid_signs, other_signs, other_activities))
     }
     pub fn get_list_from_course(session: &Session, c: &Course) -> Result<Vec<Self>, ureq::Error> {
         let r = crate::protocol::active_list(session, c.clone())?;
