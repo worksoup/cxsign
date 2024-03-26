@@ -1,0 +1,10 @@
+[package]
+name = "cxsign_unused"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+log.workspace = true
+percent-encoding.workspace = true
+ureq = { workspace = true, features = ["cookies", "json"] }

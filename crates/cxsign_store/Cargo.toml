@@ -1,0 +1,13 @@
+[package]
+name = "cxsign_store"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cxsign_dir = { path = "../cxsign_dir" }
+log.workspace = true
+sqlite.workspace = true
+cxsign_user = { path = "../cxsign_user" }

@@ -1,0 +1,16 @@
+[package]
+name = "cxsign_activity"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+chrono.workspace = true
+log.workspace = true
+num_enum = "0.7"
+percent-encoding.workspace = true
+serde = { workspace = true, features = ["derive"] }
+cxsign_types = { path = "../cxsign_types" }
+ureq = { workspace = true, features = ["cookies", "json"] }
+cxsign_user = { path = "../cxsign_user" }
+cxsign_utils = { path = "../cxsign_utils" }

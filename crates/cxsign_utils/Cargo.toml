@@ -1,0 +1,11 @@
+[package]
+name = "cxsign_utils"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+chrono.workspace = true
+inquire = "0.7"
+log.workspace = true
+unicode-width = "0.1"

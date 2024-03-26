@@ -1,0 +1,11 @@
+[package]
+name = "cxsign_pan"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+mime_guess = "2.0"
+log.workspace = true
+rand.workspace = true
+ureq = { workspace = true, features = ["cookies", "json"] }

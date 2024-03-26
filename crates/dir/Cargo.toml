@@ -1,9 +1,0 @@
-[package]
-name = "dir"
-edition = "2021"
-version.workspace = true
-authors.workspace = true
-
-[dependencies]
-lazy_static = "1.4"
-directories = "5.0"

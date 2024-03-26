@@ -1,0 +1,18 @@
+[package]
+name = "cxsign_types"
+version.workspace = true
+authors.workspace = true
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cxsign_dir = { path = "../cxsign_dir" }
+log.workspace = true
+cxsign_pan = { path = "../cxsign_pan" }
+rand.workspace = true
+serde = { workspace = true, features = ["derive"] }
+sqlite.workspace = true
+cxsign_store = { path = "../cxsign_store" }
+ureq = { workspace = true, features = ["cookies", "json"] }
+cxsign_user = { path = "../cxsign_user" }

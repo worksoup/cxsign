@@ -1,9 +1,0 @@
-[package]
-name = "error"
-edition = "2021"
-version.workspace = true
-authors.workspace = true
-
-[dependencies]
-thiserror.workspace = true
-ureq.workspace = true
