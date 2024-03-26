@@ -12,21 +12,45 @@ pub use normal::*;
 pub use photo::*;
 pub use qrcode::*;
 pub use raw::*;
-pub use signcode::*;
-
-use crate::protocol;
 use serde::Deserialize;
+pub use signcode::*;
+use std::fmt::Display;
+
 use types::Course;
 use user::session::Session;
 
 pub trait SignTrait: Ord {
-    fn get_raw(&self) -> &RawSign;
+    fn as_inner(&self) -> &RawSign;
     fn is_ready_for_sign(&self) -> bool {
         true
     }
-    fn is_valid(&self) -> bool;
-    fn get_attend_info(&self, session: &Session) -> Result<SignState, ureq::Error>;
-    fn guess_sign_result(&self, text: &str) -> SignResult {
+    fn is_valid(&self) -> bool {
+        let time = std::time::SystemTime::from(
+            chrono::DateTime::from_timestamp(self.as_inner().start_timestamp, 0).unwrap(),
+        );
+        let one_hour = std::time::Duration::from_secs(7200);
+        self.as_inner().status_code == 1
+            && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
+    }
+    fn get_sign_state(&self, session: &Session) -> Result<SignState, ureq::Error> {
+        let r = crate::protocol::get_attend_info(&session, &self.as_inner().active_id)?;
+        #[derive(Deserialize)]
+        struct Status {
+            status: i64,
+        }
+        #[derive(Deserialize)]
+        struct Data {
+            data: Status,
+        }
+        let Data {
+            data: Status { status },
+        } = r.into_json().unwrap();
+        Ok(status.into())
+    }
+    fn get_sign_detail(&self, session: &Session) -> Result<SignDetail, ureq::Error> {
+        RawSign::get_sign_detail(&self.as_inner().active_id, session)
+    }
+    fn guess_sign_result_by_text(&self, text: &str) -> SignResult {
         match text {
             "success" => SignResult::Susses,
             msg => SignResult::Fail {
@@ -39,7 +63,12 @@ pub trait SignTrait: Ord {
             },
         }
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error>;
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+        self.as_inner().pre_sign(session)
+    }
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+        unsafe { self.as_inner().sign_unchecked(session) }
+    }
     fn sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
         if self.is_ready_for_sign() {
             unsafe { self.sign_unchecked(session) }
@@ -49,34 +78,17 @@ pub trait SignTrait: Ord {
             })
         }
     }
-    fn get_sign_detail(active_id: &str, session: &Session) -> Result<SignDetail, ureq::Error> {
-        #[derive(Deserialize)]
-        struct GetSignDetailR {
-            #[serde(alias = "ifPhoto")]
-            is_photo_sign: i64,
-            #[serde(alias = "ifRefreshEwm")]
-            is_refresh_qrcode: i64,
-            #[serde(alias = "signCode")]
-            sign_code: Option<String>,
+    fn pre_sign_and_sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+        let r = self.pre_sign(session);
+        if let Ok(a) = r.as_ref()
+            && !a.is_susses()
+        {
+            self.sign(session)
+        } else {
+            r
         }
-        let r = protocol::sign_detail(session, active_id)?;
-        let GetSignDetailR {
-            is_photo_sign,
-            is_refresh_qrcode,
-            sign_code,
-        } = r.into_json().unwrap();
-        Ok(SignDetail {
-            is_photo: is_photo_sign > 0,
-            is_refresh_qrcode: is_refresh_qrcode > 0,
-            c: if let Some(c) = sign_code {
-                c
-            } else {
-                "".into()
-            },
-        })
     }
 }
-
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub enum Sign {
     // 拍照签到
@@ -95,15 +107,15 @@ pub enum Sign {
     Unknown(RawSign),
 }
 impl SignTrait for Sign {
-    fn get_raw(&self) -> &RawSign {
+    fn as_inner(&self) -> &RawSign {
         match self {
-            Sign::Photo(a) => a.get_raw(),
-            Sign::Normal(a) => a.get_raw(),
-            Sign::QrCode(a) => a.get_raw(),
-            Sign::Gesture(a) => a.get_raw(),
-            Sign::Location(a) => a.get_raw(),
-            Sign::Signcode(a) => a.get_raw(),
-            Sign::Unknown(a) => a.get_raw(),
+            Sign::Photo(a) => a.as_inner(),
+            Sign::Normal(a) => a.as_inner(),
+            Sign::QrCode(a) => a.as_inner(),
+            Sign::Gesture(a) => a.as_inner(),
+            Sign::Location(a) => a.as_inner(),
+            Sign::Signcode(a) => a.as_inner(),
+            Sign::Unknown(a) => a.as_inner(),
         }
     }
     fn is_ready_for_sign(&self) -> bool {
@@ -129,15 +141,15 @@ impl SignTrait for Sign {
         }
     }
 
-    fn get_attend_info(&self, session: &Session) -> Result<SignState, ureq::Error> {
+    fn get_sign_state(&self, session: &Session) -> Result<SignState, ureq::Error> {
         match self {
-            Sign::Photo(a) => a.get_attend_info(session),
-            Sign::Normal(a) => a.get_attend_info(session),
-            Sign::QrCode(a) => a.get_attend_info(session),
-            Sign::Gesture(a) => a.get_attend_info(session),
-            Sign::Location(a) => a.get_attend_info(session),
-            Sign::Signcode(a) => a.get_attend_info(session),
-            Sign::Unknown(a) => a.get_attend_info(session),
+            Sign::Photo(a) => a.get_sign_state(session),
+            Sign::Normal(a) => a.get_sign_state(session),
+            Sign::QrCode(a) => a.get_sign_state(session),
+            Sign::Gesture(a) => a.get_sign_state(session),
+            Sign::Location(a) => a.get_sign_state(session),
+            Sign::Signcode(a) => a.get_sign_state(session),
+            Sign::Unknown(a) => a.get_sign_state(session),
         }
     }
 

@@ -5,7 +5,9 @@ use crate::sign::{
 };
 use log::{debug, error, info};
 use serde::Deserialize;
+use std::fmt::{Display, Formatter};
 use types::Course;
+use ureq::Error;
 use user::session::Session;
 use utils::get_width_str_should_be;
 
@@ -20,70 +22,46 @@ pub struct RawSign {
     pub sign_detail: SignDetail,
 }
 impl SignTrait for RawSign {
-    fn get_raw(&self) -> &RawSign {
+    fn as_inner(&self) -> &RawSign {
         &self
     }
-    fn is_valid(&self) -> bool {
-        let time = std::time::SystemTime::from(
-            chrono::DateTime::from_timestamp(self.start_timestamp, 0).unwrap(),
-        );
-        let one_hour = std::time::Duration::from_secs(7200);
-        self.status_code == 1
-            && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, Error> {
+        let active_id = self.active_id.as_str();
+        let uid = session.get_uid();
+        let response_of_pre_sign =
+            protocol::pre_sign(session, self.course.clone(), active_id, uid)?;
+        info!("用户[{}]预签到已请求。", session.get_stu_name());
+        self.analysis_after_presign(active_id, session, response_of_pre_sign)
     }
-    fn get_attend_info(&self, session: &Session) -> Result<SignState, ureq::Error> {
-        let r = crate::protocol::get_attend_info(&session, &self.active_id)?;
-        #[derive(Deserialize)]
-        struct Status {
-            status: i64,
-        }
-        #[derive(Deserialize)]
-        struct Data {
-            data: Status,
-        }
-        let Data {
-            data: Status { status },
-        } = r.into_json().unwrap();
-        Ok(status.into())
-    }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
-        let r = self.presign(session);
-        if let Ok(a) = r.as_ref()
-            && !a.is_susses()
-        {
-            let r = protocol::general_sign(
-                session,
-                session.get_uid(),
-                session.get_fid(),
-                session.get_stu_name(),
-                self.active_id.as_str(),
-            )?;
-            Ok(self.guess_sign_result(&r.into_string().unwrap()))
-        } else {
-            r
-        }
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+        let r = protocol::general_sign(
+            session,
+            session.get_uid(),
+            session.get_fid(),
+            session.get_stu_name(),
+            self.active_id.as_str(),
+        )?;
+        Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
     }
 }
-
+impl Display for RawSign {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let name_width = get_width_str_should_be(self.name.as_str(), 12);
+        write!(
+            f,
+            "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}, course: {}/{}",
+            self.active_id,
+            self.name,
+            self.status_code,
+            chrono::DateTime::from_timestamp(self.start_timestamp, 0).unwrap(),
+            self.is_valid(),
+            self.course.get_id(),
+            self.course.get_name(),
+            width = name_width,
+        )
+    }
+}
 impl RawSign {
-    // pub fn speculate_type_by_text(text: &str) -> Sign {
-    //     if text.contains("拍照") {
-    //         Sign::Photo
-    //     } else if text.contains("位置") {
-    //         Sign::Location
-    //     } else if text.contains("二维码") {
-    //         Sign::QrCode
-    //     } else if text.contains("手势") {
-    //         // ?
-    //         Sign::Gesture
-    //     } else if text.contains("签到码") {
-    //         // ?
-    //         Sign::SignCode
-    //     } else {
-    //         Sign::Normal
-    //     }
-    // }
-
     pub(crate) fn check_signcode(
         session: &Session,
         active_id: &str,
@@ -98,6 +76,32 @@ impl RawSign {
             .into_json()
             .unwrap();
         Ok(result == 1)
+    }
+    pub(crate) fn get_sign_detail(active_id: &str, session: &Session) -> Result<SignDetail, Error> {
+        #[derive(Deserialize)]
+        struct GetSignDetailR {
+            #[serde(alias = "ifPhoto")]
+            is_photo_sign: i64,
+            #[serde(alias = "ifRefreshEwm")]
+            is_refresh_qrcode: i64,
+            #[serde(alias = "signCode")]
+            sign_code: Option<String>,
+        }
+        let r = protocol::sign_detail(session, active_id)?;
+        let GetSignDetailR {
+            is_photo_sign,
+            is_refresh_qrcode,
+            sign_code,
+        } = r.into_json().unwrap();
+        Ok(SignDetail {
+            is_photo: is_photo_sign > 0,
+            is_refresh_qrcode: is_refresh_qrcode > 0,
+            c: if let Some(c) = sign_code {
+                c
+            } else {
+                "".into()
+            },
+        })
     }
 }
 
@@ -141,7 +145,7 @@ impl RawSign {
             4 => Sign::Location(LocationSign {
                 raw_sign: self,
                 location: None,
-                is_auto_location: false,
+                need_location: false,
             }),
             5 => Sign::Signcode(SigncodeSign {
                 signcode: None,
@@ -150,34 +154,20 @@ impl RawSign {
             _ => Sign::Unknown(self),
         }
     }
-    pub fn display(&self, already_course: bool) {
+    pub fn fmt_without_course_info(&self) -> String {
         let name_width = get_width_str_should_be(self.name.as_str(), 12);
-        if already_course {
-            info!(
-                "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}",
-                self.active_id,
-                self.name,
-                self.status_code,
-                chrono::DateTime::from_timestamp(self.start_timestamp, 0).unwrap(),
-                self.is_valid(),
-                width = name_width,
-            );
-        } else {
-            info!(
-                "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}, course: {}/{}",
-                self.active_id,
-                self.name,
-                self.status_code,
-                chrono::DateTime::from_timestamp(self.start_timestamp, 0).unwrap(),
-                self.is_valid(),
-                self.course.get_id(),
-                self.course.get_name(),
-                width = name_width,
-            );
-        }
+        format!(
+            "id: {}, name: {:>width$}, status: {}, time: {}, ok: {}",
+            self.active_id,
+            self.name,
+            self.status_code,
+            chrono::DateTime::from_timestamp(self.start_timestamp, 0).unwrap(),
+            self.is_valid(),
+            width = name_width,
+        )
     }
 
-    fn analysis_before_presign(
+    pub(crate) fn analysis_after_presign(
         &self,
         active_id: &str,
         session: &Session,
@@ -203,12 +193,12 @@ impl RawSign {
             if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
                 let html = &html[start_of_statuscontent_h1 + 19..html.len()];
                 let end_of_statuscontent_h1 = html.find('<').unwrap();
-                let id为statuscontent的h1的内容 = html[0..end_of_statuscontent_h1].trim();
-                if id为statuscontent的h1的内容 == "签到成功" {
+                let content_of_statuscontent_h1 = html[0..end_of_statuscontent_h1].trim();
+                if content_of_statuscontent_h1 == "签到成功" {
                     SignResult::Susses
                 } else {
                     SignResult::Fail {
-                        msg: id为statuscontent的h1的内容.into(),
+                        msg: content_of_statuscontent_h1.into(),
                     }
                 }
             } else {
@@ -218,28 +208,6 @@ impl RawSign {
         std::thread::sleep(std::time::Duration::from_millis(500));
         Ok(pre_sign_status)
     }
-
-    pub fn presign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
-        let active_id = self.active_id.as_str();
-        let uid = session.get_uid();
-        let response_of_pre_sign =
-            protocol::pre_sign(session, self.course.clone(), active_id, uid, false, "", "")?;
-        info!("用户[{}]预签到已请求。", session.get_stu_name());
-        self.analysis_before_presign(active_id, session, response_of_pre_sign)
-    }
-    pub fn presign_for_refresh_qrcode_sign(
-        &self,
-        c: &str,
-        enc: &str,
-        session: &Session,
-    ) -> Result<SignResult, ureq::Error> {
-        let active_id = self.active_id.as_str();
-        let uid = session.get_uid();
-        let response_of_presign =
-            protocol::pre_sign(session, self.course.clone(), active_id, uid, true, c, enc)?;
-        info!("用户[{}]预签到已请求。", session.get_stu_name());
-        self.analysis_before_presign(active_id, session, response_of_presign)
-    }
 }
 
 impl RawSign {
@@ -247,7 +215,7 @@ impl RawSign {
         &self,
         session: &Session,
         signcode: &str,
-    ) -> Result<SignResult, ureq::Error> {
+    ) -> Result<SignResult, Error> {
         if Self::check_signcode(session, &self.active_id, signcode)? {
             let r = protocol::signcode_sign(
                 session,
@@ -257,7 +225,7 @@ impl RawSign {
                 self.active_id.as_str(),
                 signcode,
             )?;
-            Ok(self.guess_sign_result(&r.into_string().unwrap()))
+            Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
         } else {
             Ok(SignResult::Fail {
                 msg: "签到码或手势不正确".into(),
@@ -267,6 +235,24 @@ impl RawSign {
 }
 
 impl RawSign {
+    // pub fn speculate_type_by_text(text: &str) -> Sign {
+    //     if text.contains("拍照") {
+    //         Sign::Photo
+    //     } else if text.contains("位置") {
+    //         Sign::Location
+    //     } else if text.contains("二维码") {
+    //         Sign::QrCode
+    //     } else if text.contains("手势") {
+    //         // ?
+    //         Sign::Gesture
+    //     } else if text.contains("签到码") {
+    //         // ?
+    //         Sign::SignCode
+    //     } else {
+    //         Sign::Normal
+    //     }
+    // }
+
     // pub async fn chat_group_pre_sign(
     //     &self,
     //     chat_id: &str,
@@ -276,9 +262,9 @@ impl RawSign {
     //     let id = self.活动id.as_str();
     //     let uid = session.get_uid();
     //     let _r = protocol::chat_group_pre_sign(session, id, uid, chat_id, tuid).await?;
-
     //     Ok(())
     // }
+
     // pub async fn chat_group_general_sign(
     //     &self,
     //     session: &Struct签到会话,
@@ -289,6 +275,7 @@ impl RawSign {
     //     println!("{:?}", r.text().await.unwrap());
     //     Ok(())
     // }
+
     // pub async fn chat_group_signcode_sign(
     //     &self,
     //     session: &Struct签到会话,
@@ -304,6 +291,7 @@ impl RawSign {
     //     println!("{:?}", r.text().await.unwrap());
     //     Ok(())
     // }
+
     // pub async fn chat_group_location_sign(
     //     &self,
     //     address: &Struct位置,
@@ -321,6 +309,7 @@ impl RawSign {
     //     println!("{:?}", r.text().await.unwrap());
     //     Ok(())
     // }
+
     // pub async fn chat_group_photo_sign(
     //     &self,
     //     photo: &Struct在线图片,
@@ -334,7 +323,6 @@ impl RawSign {
     //     )
     //     .await?;
     //     println!("{:?}", r.text().await.unwrap());
-
     //     Ok(())
     // }
 }
