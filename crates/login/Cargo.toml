@@ -9,7 +9,6 @@ edition = "2021"
 [dependencies]
 cookie_store.workspace = true
 des = "0.8"
-dir = { path = "../dir" }
 log.workspace = true
 error = { path = "../error" }
 hex = "0.4"
