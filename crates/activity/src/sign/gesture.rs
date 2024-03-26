@@ -1,5 +1,5 @@
 use crate::sign::{RawSign, SignResult, SignTrait};
-use user::session::Session;
+use user::Session;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct GestureSign {

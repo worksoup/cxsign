@@ -1,4 +1,4 @@
-use user::session::Session;
+use user::Session;
 
 use crate::sql::{DataBase, DataBaseTableTrait};
 use std::collections::HashMap;

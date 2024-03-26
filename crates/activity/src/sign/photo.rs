@@ -2,7 +2,7 @@ use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use types::Photo;
 use ureq::Error;
-use user::session::Session;
+use user::Session;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PhotoSign {

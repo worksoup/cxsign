@@ -5,7 +5,7 @@ use std::str::FromStr;
 use crate::Course;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use user::session::Session;
+use user::Session;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 pub struct Location {
@@ -60,7 +60,7 @@ impl LocationWithRange {
             #[serde(rename = "data")]
             data: Vec<LocationWithRangeAndActiveId>,
         }
-        let r = crate::get_location_log(session, course)?;
+        let r = crate::protocol::get_location_log(session, course)?;
         let data: Data = r.into_json().unwrap();
         let mut map = HashMap::new();
         for l in data.data {

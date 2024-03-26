@@ -16,7 +16,7 @@ pub use signcode::*;
 
 use serde::Deserialize;
 use types::Course;
-use user::session::Session;
+use user::Session;
 
 pub trait SignTrait: Ord {
     fn as_inner(&self) -> &RawSign;

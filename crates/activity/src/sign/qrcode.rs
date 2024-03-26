@@ -3,7 +3,7 @@ use crate::sign::{RawSign, SignResult, SignTrait};
 use log::info;
 use types::Location;
 use ureq::Error;
-use user::session::Session;
+use user::Session;
 fn sign_unchecked<T: SignTrait>(
     sign: &T,
     enc: &str,

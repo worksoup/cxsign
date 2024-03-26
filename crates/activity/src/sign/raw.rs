@@ -8,7 +8,7 @@ use serde::Deserialize;
 use std::fmt::{Display, Formatter};
 use types::Course;
 use ureq::Error;
-use user::session::Session;
+use user::Session;
 use utils::get_width_str_should_be;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]

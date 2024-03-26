@@ -6,7 +6,7 @@ pub mod sign;
 use crate::sign::{RawSign, Sign, SignTrait};
 use serde::{Deserialize, Serialize};
 use types::Course;
-use user::session::Session;
+use user::Session;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub enum Activity {

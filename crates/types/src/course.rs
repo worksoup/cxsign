@@ -1,10 +1,10 @@
 use crate::protocol;
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::ops::Deref;
-use log::info;
 use ureq::serde_json;
-use user::session::Session;
+use user::Session;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Course {

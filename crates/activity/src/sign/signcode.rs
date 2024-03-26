@@ -1,6 +1,6 @@
 use crate::sign::{RawSign, SignResult, SignTrait};
 use ureq::Error;
-use user::session::Session;
+use user::Session;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct SigncodeSign {

@@ -1,3 +1,6 @@
-pub mod cookies;
+mod cookies;
 pub mod protocol;
-pub mod session;
+mod session;
+
+pub use cookies::*;
+pub use session::*;
