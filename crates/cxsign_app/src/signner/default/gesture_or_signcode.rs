@@ -13,6 +13,8 @@ impl DefaultGestureOrSigncodeSignner {
 }
 
 impl SignnerTrait<GestureSign> for DefaultGestureOrSigncodeSignner {
+    type ExtData = ();
+
     fn sign<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
         &self,
         sign: &mut GestureSign,
@@ -20,34 +22,46 @@ impl SignnerTrait<GestureSign> for DefaultGestureOrSigncodeSignner {
     ) -> Result<HashMap<&'a Session, SignResult>, Error> {
         let mut map = HashMap::new();
         for session in sessions {
-            let a = self.sign_single(sign, session)?;
+            let a = self.sign_single(sign, session, ())?;
             map.insert(session, a);
         }
         Ok(map)
     }
 
-    fn sign_single(&self, sign: &mut GestureSign, session: &Session) -> Result<SignResult, Error> {
+    fn sign_single(
+        &self,
+        sign: &mut GestureSign,
+        session: &Session,
+        _: (),
+    ) -> Result<SignResult, Error> {
         sign.set_gesture(self.0.clone());
         sign.pre_sign_and_sign(session).map_err(|e| e.into())
     }
 }
 
 impl SignnerTrait<SigncodeSign> for DefaultGestureOrSigncodeSignner {
+    type ExtData = ();
+
     fn sign<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
         &self,
         sign: &mut SigncodeSign,
         sessions: Sessions,
     ) -> Result<HashMap<&'a Session, SignResult>, Error> {
+        sign.set_signcode(self.0.clone());
         let mut map = HashMap::new();
         for session in sessions {
-            let a = self.sign_single(sign, session)?;
+            let a = self.sign_single(sign, session, ())?;
             map.insert(session, a);
         }
         Ok(map)
     }
 
-    fn sign_single(&self, sign: &mut SigncodeSign, session: &Session) -> Result<SignResult, Error> {
-        sign.set_signcode(self.0.clone());
+    fn sign_single(
+        &self,
+        sign: &mut SigncodeSign,
+        session: &Session,
+        _: (),
+    ) -> Result<SignResult, Error> {
         sign.pre_sign_and_sign(session).map_err(|e| e.into())
     }
 }

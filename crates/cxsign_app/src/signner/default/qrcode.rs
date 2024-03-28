@@ -5,7 +5,7 @@ use cxsign_error::Error;
 use cxsign_store::{DataBase, DataBaseTableTrait};
 use cxsign_types::{Location, LocationTable, LocationWithRange};
 use cxsign_user::Session;
-use log::warn;
+use log::{info, warn};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -37,14 +37,16 @@ impl<'a> DefaultQrCodeSignner<'a> {
         }
     }
 }
-impl SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'_> {
+impl<'l> SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'l> {
+    type ExtData = &'l Vec<Location>;
+
     fn sign<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
         &self,
         sign: &mut QrCodeSign,
         sessions: Sessions,
     ) -> Result<HashMap<&'a Session, SignResult>, Error> {
         let locations =
-            match crate::utils::通过位置字符串决定位置(self.db, self.location_str) {
+            match crate::utils::location_str_to_location(self.db, self.location_str) {
                 Ok(位置) => {
                     vec![位置]
                 }
@@ -91,7 +93,7 @@ impl SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'_> {
             if std::fs::metadata(pic).unwrap().is_dir() {
                 if let Some(pic) = pic_dir_or_path_to_pic_path(pic)?
                     && let Some(enc) =
-                        crate::utils::扫描路径中二维码并获取签到所需参数(
+                        crate::utils::pic_path_to_qrcode_result(
                             pic.to_str().unwrap(),
                         )
                 {
@@ -102,7 +104,7 @@ impl SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'_> {
                     ));
                 }
             } else if let Some(enc) =
-                crate::utils::扫描路径中二维码并获取签到所需参数(
+                crate::utils::pic_path_to_qrcode_result(
                     pic.to_str().unwrap(),
                 )
             {
@@ -110,7 +112,7 @@ impl SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'_> {
             } else {
                 return Err(Error::EncError("二维码中没有 `enc` 参数！".to_owned()));
             }
-        } else if let Some(enc) = crate::utils::截屏获取二维码签到所需参数(
+        } else if let Some(enc) = crate::utils::capture_screen_for_enc(
             match sign {
                 QrCodeSign::RefreshQrCodeSign(_) => true,
                 QrCodeSign::NormalQrCodeSign(_) => false,
@@ -124,43 +126,54 @@ impl SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'_> {
         sign.set_enc(enc);
         let mut map = HashMap::new();
         for session in sessions {
-            let state = match sign.pre_sign(session)? {
-                SignResult::Susses => SignResult::Susses,
-                SignResult::Fail { .. } => {
-                    let mut state = SignResult::Fail {
-                        msg: "所有位置均不可用".into(),
-                    };
-                    for location in &locations {
-                        sign.set_location(location.clone());
-                        match self.sign_single(sign, session)? {
-                            r @ SignResult::Susses => {
-                                state = r;
-                                break;
-                            }
-                            SignResult::Fail { msg } => {
-                                if msg == "您已签到过了".to_owned() {
-                                    state = SignResult::Susses;
-                                    break;
-                                } else {
-                                    warn!(
-                                        "用户[{}]在二维码签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
-                                        session.get_stu_name(),
-                                        sign.as_inner().name,
-                                        location,msg
-                                    );
-                                }
-                            }
-                        };
-                    }
-                    state
-                }
-            };
+            let state = self.sign_single(sign, session, &locations)?;
             map.insert(session, state);
         }
         Ok(map)
     }
 
-    fn sign_single(&self, sign: &mut QrCodeSign, session: &Session) -> Result<SignResult, Error> {
-        unsafe { sign.sign_unchecked(session).map_err(|e| e.into()) }
+    fn sign_single(
+        &self,
+        sign: &mut QrCodeSign,
+        session: &Session,
+        locations: &Vec<Location>,
+    ) -> Result<SignResult, Error> {
+        let state = match sign.pre_sign(session)? {
+            SignResult::Susses => SignResult::Susses,
+            SignResult::Fail { .. } => {
+                let mut state = SignResult::Fail {
+                    msg: "所有位置均不可用".into(),
+                };
+                for location in locations {
+                    sign.set_location(location.clone());
+                    match unsafe { sign.sign_unchecked(session) }? {
+                        SignResult::Susses => {
+                            state = SignResult::Susses;
+                            break;
+                        }
+                        SignResult::Fail { msg } => {
+                            if msg == "您已签到过了".to_owned() {
+                                state = SignResult::Susses;
+                                info!(
+                                    "用户[{}]: 您已经签过[{}]了！",
+                                    session.get_stu_name(),
+                                    sign.as_inner().name,
+                                );
+                                break;
+                            } else {
+                                warn!(
+                                    "用户[{}]在二维码签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
+                                    session.get_stu_name(),
+                                    sign.as_inner().name,
+                                    location,msg
+                                );
+                            }
+                        }
+                    };
+                }
+                state
+            }
+        };
+        Ok(state)
     }
 }

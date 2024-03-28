@@ -7,16 +7,29 @@ use log::warn;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-pub struct DefaultPhotoSignner<'a> {
-    path: &'a Option<PathBuf>,
+pub struct DefaultPhotoSignner {
+    path: Option<PathBuf>,
 }
 
-impl<'a> DefaultPhotoSignner<'a> {
-    pub fn new(path: &'a Option<PathBuf>) -> Self {
+impl DefaultPhotoSignner {
+    pub fn new(path: &Option<PathBuf>) -> Self {
+        let path = if let Some(pic) = path
+            && let Ok(metadata) = std::fs::metadata(pic)
+        {
+            if metadata.is_dir() {
+                crate::utils::pic_dir_or_path_to_pic_path(pic).unwrap_or(None)
+            } else {
+                Some(pic.to_owned())
+            }
+        } else {
+            None
+        };
         Self { path }
     }
 }
-impl SignnerTrait<PhotoSign> for DefaultPhotoSignner<'_> {
+impl SignnerTrait<PhotoSign> for DefaultPhotoSignner {
+    type ExtData = ();
+
     fn sign<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
         &self,
         sign: &mut PhotoSign,
@@ -24,7 +37,7 @@ impl SignnerTrait<PhotoSign> for DefaultPhotoSignner<'_> {
     ) -> Result<HashMap<&'a Session, SignResult>, Error> {
         let mut pic_map = HashMap::new();
         let mut session_to_index = HashMap::new();
-        if let Some(pic) = self.path {
+        if let Some(pic) = self.path.as_ref() {
             for session in sessions.clone() {
                 let photo = Photo::get_from_file(session, pic);
                 pic_map.insert(0, photo);
@@ -53,7 +66,7 @@ impl SignnerTrait<PhotoSign> for DefaultPhotoSignner<'_> {
             let index = session_to_index[session];
             if let Some(photo) = pic_map.get(&index).cloned() {
                 sign.set_photo(photo);
-                let a = self.sign_single(sign, session)?;
+                let a = self.sign_single(sign, session, ())?;
                 map.insert(session, a);
             } else {
                 map.insert(
@@ -67,7 +80,12 @@ impl SignnerTrait<PhotoSign> for DefaultPhotoSignner<'_> {
         Ok(map)
     }
 
-    fn sign_single(&self, sign: &mut PhotoSign, session: &Session) -> Result<SignResult, Error> {
+    fn sign_single(
+        &self,
+        sign: &mut PhotoSign,
+        session: &Session,
+        _: (),
+    ) -> Result<SignResult, Error> {
         sign.pre_sign_and_sign(session).map_err(|e| e.into())
     }
 }

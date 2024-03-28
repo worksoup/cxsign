@@ -1,4 +1,4 @@
-use log::warn;
+use log::{error, info, warn};
 use rxing::{Point, PointU};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -46,7 +46,7 @@ pub fn pic_dir_or_path_to_pic_path(pic_dir: &PathBuf) -> Result<Option<PathBuf>,
     Ok(pic_path)
 }
 
-fn 从二维码扫描结果中获取签到所需参数(url: &str) -> Option<String> {
+fn scan_result_to_enc(url: &str) -> Option<String> {
     // 在二维码图片中会有一个参数 `c`, 二维码预签到时需要。
     // 但是该参数似乎暂时可以从 `signDetail` 接口获取到。所以此处先注释掉。
     // let beg = r.find("&c=").unwrap();
@@ -62,12 +62,12 @@ fn 从二维码扫描结果中获取签到所需参数(url: &str) -> Option<Stri
     r
 }
 
-pub fn 扫描路径中二维码并获取签到所需参数(pic_path: &str) -> Option<String> {
-    let 扫描结果 = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
-    从二维码扫描结果中获取签到所需参数(扫描结果.get(0)?.getText())
+pub fn pic_path_to_qrcode_result(pic_path: &str) -> Option<String> {
+    let r = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
+    scan_result_to_enc(r.get(0)?.getText())
 }
 
-fn 获取包含所有顶点的矩形(vertex: &Vec<Point>) -> (PointU, PointU) {
+fn get_rect_contains_vertex(vertex: &Vec<Point>) -> (PointU, PointU) {
     // let scale_factor = display.scale_factor();
     // println!("屏幕缩放：{scale_factor}");
     let mut x_max = vertex[0].x;
@@ -102,7 +102,7 @@ fn 获取包含所有顶点的矩形(vertex: &Vec<Point>) -> (PointU, PointU) {
     (PointU::from(lt), PointU::from(wh))
 }
 
-fn 扫描图片中所有的二维码(
+fn scan_qrcode(
     image: xcap::image::DynamicImage,
     hints: &mut rxing::DecodingHintDictionary,
 ) -> rxing::common::Result<Vec<rxing::RXingResult>> {
@@ -119,16 +119,16 @@ fn 扫描图片中所有的二维码(
         hints,
     )
 }
-pub fn 裁剪图片(
-    原图: xcap::image::RgbaImage,
-    左上顶点: PointU,
-    宽高: PointU,
+pub fn cut_picture(
+    picture: xcap::image::RgbaImage,
+    top_left: PointU,
+    wh: PointU,
 ) -> xcap::image::DynamicImage {
-    xcap::image::DynamicImage::from(原图).crop(左上顶点.x, 左上顶点.y, 宽高.x, 宽高.y)
+    xcap::image::DynamicImage::from(picture).crop(top_left.x, top_left.y, wh.x, wh.y)
 }
 
-pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) -> Option<String> {
-    let 所有屏幕 = xcap::Monitor::all().unwrap_or_else(|e| panic!("{e:?}"));
+pub fn capture_screen_for_enc(is_refresh: bool, precise: bool) -> Option<String> {
+    let screens = xcap::Monitor::all().unwrap_or_else(|e| panic!("{e:?}"));
     // 在所有屏幕中寻找。
     if !precise && is_refresh {
         if !inquire_confirm(
@@ -138,69 +138,70 @@ pub fn 截屏获取二维码签到所需参数(is_refresh: bool, precise: bool) 
             return None;
         }
     }
-    for 屏幕 in 所有屏幕 {
+    for screen in screens {
         // 先截取整个屏幕。
-        let 所截图片 = 屏幕.capture_image().unwrap_or_else(|e| panic!("{e:?}"));
-        println!("已截屏。");
+        let pic = screen.capture_image().unwrap_or_else(|e| {
+            error!("{e:?}");
+            panic!("{e:?}")
+        });
+        info!("已截屏。");
         // 如果成功识别到二维码。
-        let 扫描结果列表 = 扫描图片中所有的二维码(
-            xcap::image::DynamicImage::from(所截图片),
-            &mut HashMap::new(),
-        );
-        let 扫描结果列表 = if let Ok(扫描结果列表) = 扫描结果列表 {
-            扫描结果列表
+        let results = scan_qrcode(xcap::image::DynamicImage::from(pic), &mut HashMap::new());
+        let results = if let Ok(results) = results {
+            results
         } else {
             continue;
         };
         // 在结果中寻找。
-        for 扫描结果 in &扫描结果列表 {
-            let url = 扫描结果.getText();
+        for r in &results {
+            let url = r.getText();
             // 如果符合要求的二维码。
             if !(url.contains(crate::protocol::QRCODE_PAT) && url.contains("&enc=")) {
-                eprintln!("{url:?}不是有效的签到二维码！");
+                warn!("{url:?}不是有效的签到二维码！");
                 continue;
             }
-            println!("存在签到二维码。");
+            info!("存在签到二维码。");
             return if precise && is_refresh && inquire_confirm("二维码图片是否就绪？", "本程序已在屏幕上找到签到二维码。请不要改变该二维码的位置，待二维码刷新后按下回车进行签到。") {
                 // 如果是定时刷新的二维码，等待二维码刷新。
-                let 二维码在屏幕上的位置 = 获取包含所有顶点的矩形(扫描结果.getPoints());
-                println!("二维码位置：{:?}", 二维码在屏幕上的位置);
-                let 所截图片 = 屏幕
+                let 二维码在屏幕上的位置 = get_rect_contains_vertex(r.getPoints());
+                info!("二维码位置：{:?}", 二维码在屏幕上的位置);
+                let pic = screen
                     .capture_image()
                     .unwrap_or_else(|e| panic!("{e:?}"));
-                let 所截图片 = 裁剪图片(所截图片, 二维码在屏幕上的位置.0, 二维码在屏幕上的位置.1);
-                let 扫描结果 = 扫描图片中所有的二维码(所截图片, &mut HashMap::new()).unwrap_or_else(|e| panic!("{e:?}"));
-                从二维码扫描结果中获取签到所需参数(扫描结果[0].getText())
+                let cut_pic = cut_picture(pic, 二维码在屏幕上的位置.0, 二维码在屏幕上的位置.1);
+                let r = scan_qrcode(cut_pic, &mut HashMap::new()).unwrap_or_else(|e| panic!("{e:?}"));
+                scan_result_to_enc(r[0].getText())
             } else {
                 // 如果不是精确截取的二维码，则不需要提示。
-                从二维码扫描结果中获取签到所需参数(url)
+                scan_result_to_enc(url)
             };
         }
     }
     None
 }
-pub fn 通过位置字符串决定位置(
+pub fn location_str_to_location(
     db: &DataBase,
-    位置字符串: &Option<String>,
+    location_str: &Option<String>,
 ) -> Result<Location, String> {
     let table = LocationTable::from_ref(db);
-    if let Some(ref 位置字符串) = 位置字符串 {
-        let 位置字符串 = 位置字符串.trim();
-        if let Ok(位置) = 位置字符串.parse() {
-            Ok(位置)
-        } else if let Some(位置) = table.get_location_by_alias(位置字符串) {
-            Ok(位置)
-        } else if let Ok(位置id) = 位置字符串.parse() {
-            if table.has_location(位置id) {
-                let (_, 位置) = table.get_location(位置id);
-                Ok(位置)
+    if let Some(ref location_str) = location_str {
+        let location_str = location_str.trim();
+        if let Ok(location) = location_str.parse() {
+            Ok(location)
+        } else if let Some(location) = table.get_location_by_alias(location_str) {
+            Ok(location)
+        } else if let Ok(location_id) = location_str.parse() {
+            if table.has_location(location_id) {
+                let (_, location) = table.get_location(location_id);
+                Ok(location)
             } else {
-                Err(位置字符串.to_owned())
+                Err(location_str.to_owned())
             }
         } else {
-            Err(位置字符串.to_owned())
+            Err(location_str.to_owned())
         }
     } else {
-        Err("".to_string())
+        warn!("位置字符串不存在！");
+        Err("位置字符串不存在！".to_string())
     }
 }
