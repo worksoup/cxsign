@@ -39,10 +39,10 @@ impl Course {
         for c in r.channel_list {
             if let Some(data) = c.content.course {
                 for course in data.data {
-                    if c.id.is_i64() {
+                    if c.key.is_i64() {
                         arr.push(Course::new(
                             course.id,
-                            c.id.as_i64().unwrap(),
+                            c.key.as_i64().unwrap(),
                             course.teacher.as_str(),
                             course.image_url.as_str(),
                             course.name.as_str(),
@@ -111,8 +111,7 @@ struct CourseContent {
 
 #[derive(Deserialize, Serialize, Debug)]
 struct ClassRaw {
-    #[serde(alias = "key")]
-    id: serde_json::Value,
+    key: serde_json::Value,
     content: CourseContent,
 }
 
