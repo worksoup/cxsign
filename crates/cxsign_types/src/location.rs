@@ -17,13 +17,13 @@ pub struct Location {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LocationWithRange {
-    #[serde(alias = "address")]
+    #[serde(rename = "address")]
     addr: String,
-    #[serde(alias = "longitude")]
+    #[serde(rename = "longitude")]
     lon: String,
-    #[serde(alias = "latitude")]
+    #[serde(rename = "latitude")]
     lat: String,
-    #[serde(alias = "locationrange")]
+    #[serde(rename = "locationrange")]
     range: u32,
 }
 

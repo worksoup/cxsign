@@ -83,11 +83,11 @@ impl RawSign {
     pub(crate) fn get_sign_detail(active_id: &str, session: &Session) -> Result<SignDetail, Error> {
         #[derive(Deserialize)]
         struct GetSignDetailR {
-            #[serde(alias = "ifPhoto")]
+            #[serde(rename = "ifPhoto")]
             is_photo_sign: i64,
-            #[serde(alias = "ifRefreshEwm")]
+            #[serde(rename = "ifRefreshEwm")]
             is_refresh_qrcode: i64,
-            #[serde(alias = "signCode")]
+            #[serde(rename = "signCode")]
             sign_code: Option<String>,
         }
         let r = protocol::sign_detail(session, active_id)?;

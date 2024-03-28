@@ -89,19 +89,19 @@ pub struct OtherActivity {
 
 #[derive(Deserialize, Serialize)]
 struct ActivityRaw {
-    #[serde(alias = "nameOne")]
+    #[serde(rename = "nameOne")]
     name_one: String,
     id: i64,
-    #[serde(alias = "otherId")]
+    #[serde(rename = "otherId")]
     other_id: Option<String>,
     status: i32,
-    #[serde(alias = "startTime")]
+    #[serde(rename = "startTime")]
     start_time: u64,
 }
 
 #[derive(Deserialize, Serialize)]
 struct Data {
-    #[serde(alias = "activeList")]
+    #[serde(rename = "activeList")]
     active_list: Vec<ActivityRaw>,
 }
 

@@ -14,7 +14,7 @@ impl Photo {
         let r = cxsign_pan::protocol::pan_token(session)?;
         #[derive(Deserialize)]
         struct Tmp {
-            #[serde(alias = "_token")]
+            #[serde(rename = "_token")]
             token: String,
         }
         let r: Tmp = r.into_json().unwrap();
@@ -26,7 +26,7 @@ impl Photo {
         let r = cxsign_pan::protocol::pan_upload(session, file, session.get_uid(), &token, file_name)?;
         #[derive(Deserialize)]
         struct Tmp {
-            #[serde(alias = "objectId")]
+            #[serde(rename = "objectId")]
             object_id: String,
         }
         let tmp: Tmp = r.into_json().unwrap();
@@ -57,7 +57,7 @@ impl Photo {
         #[derive(Deserialize)]
         struct CloudFile {
             name: String,
-            #[serde(alias = "objectId")]
+            #[serde(rename = "objectId")]
             object_id: Option<String>,
         }
         #[derive(Deserialize)]
