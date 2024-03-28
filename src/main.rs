@@ -6,19 +6,22 @@
 #![feature(let_chains)]
 
 mod cli;
-mod protocol;
-mod session;
 mod tools;
 
 use cli::{
     arg::{AccCmds, Args, MainCmds},
     location::Struct位置操作使用的信息,
 };
-use store::sql::{AccountTable, DataBase, DataBaseTableTrait};
-use types::{Course, CourseTable};
+use cxsign::{
+    store::{
+        tables::{AccountTable, CourseTable},
+        DataBase, DataBaseTableTrait,
+    },
+    utils::DIR,
+    Course, SignTrait,
+};
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -38,7 +41,7 @@ async fn main() {
                     match acc_sub_cmd {
                         AccCmds::Add { uname } => {
                             // 添加账号。
-                            tools::account::添加账号(&db, uname, None).await;
+                            tools::添加账号(&db, uname, None);
                         }
                         AccCmds::Remove { uname, yes } => {
                             if !yes {
@@ -60,7 +63,7 @@ async fn main() {
                     if fresh {
                         for (uname, (ref enc_pwd, _)) in accounts {
                             table.delete_account(&uname);
-                            tools::account::添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(&db, uname, enc_pwd).await;
+                            tools::添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(&db, uname, enc_pwd);
                         }
                     }
                     // 列出所有账号。
@@ -74,7 +77,7 @@ async fn main() {
                 let table = CourseTable::from_ref(&db);
                 if fresh {
                     // 重新获取课程信息并缓存。
-                    let sessions = tools::account::通过账号获取签到会话(
+                    let sessions = tools::通过账号获取签到会话(
                         &db,
                         &AccountTable::from_ref(&db)
                             .get_accounts()
@@ -82,7 +85,7 @@ async fn main() {
                             .map(|s| s.as_str())
                             .collect(),
                     )
-                    .await;
+                    ;
                     CourseTable::delete(&db);
                     for (_, session) in sessions {
                         let courses = Course::get_courses(&session).unwrap();
@@ -128,7 +131,7 @@ async fn main() {
                 cli::location::location(&db, args)
             }
             MainCmds::List { course, all } => {
-                let sessions = tools::account::通过账号获取签到会话(
+                let sessions = tools::通过账号获取签到会话(
                     &db,
                     &AccountTable::from_ref(&db)
                         .get_accounts()
@@ -136,39 +139,39 @@ async fn main() {
                         .map(|s| s.as_str())
                         .collect(),
                 )
-                .await;
+                ;
                 let (available_sign_activities, other_sign_activities) =
-                    utils::sign::获取所有签到(&sessions).await;
+                    tools::获取所有签到(&sessions);
                 if let Some(course) = course {
                     // 列出指定课程的有效签到。
                     for a in available_sign_activities {
-                        if a.0.课程.get_课程号() == course {
-                            a.0.display(true);
+                        if a.0.as_inner().course.get_id() == course {
+                            println!("{}", a.0.as_inner().fmt_without_course_info());
                         }
                     }
                     if all {
                         // 列出指定课程的所有签到。
                         for a in other_sign_activities {
-                            if a.0.课程.get_课程号() == course {
-                                a.0.display(true);
+                            if a.0.as_inner().course.get_id() == course {
+                                println!("{}", a.0.as_inner().fmt_without_course_info());
                             }
                         }
                     }
                 } else {
                     // 列出所有有效签到。
                     for a in available_sign_activities {
-                        a.0.display(false);
+                        println!("{}", a.0.as_inner());
                     }
                     if all {
                         // 列出所有签到。
                         for a in other_sign_activities {
-                            a.0.display(false);
+                            println!("{}", a.0.as_inner());
                         }
                     }
                 }
             }
             MainCmds::WhereIsConfig => {
-                println!("{:?}", std::ops::Deref::deref(&配置文件夹));
+                println!("{}", &DIR.get_config_dir().to_str().unwrap());
             }
         }
     } else {
@@ -180,8 +183,8 @@ async fn main() {
             是否禁用随机偏移: no_random_shift,
         };
         cli::签到(&db, active_id, accounts, 签到可能使用的信息)
-            .await
+            
             .unwrap();
     }
-    utils::打印当前时间();
+    cxsign::utils::print_now();
 }

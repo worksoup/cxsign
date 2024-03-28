@@ -1,115 +1,98 @@
-pub mod account;
-pub mod address;
-pub mod photo;
-pub mod sign;
-pub mod sql;
-
-use des::{
-    cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit},
-    Des,
+use cxsign::{
+    store::{
+        tables::{AccountTable, CourseTable},
+        DataBase, DataBaseTableTrait,
+    },
+    utils::DIR,
+    Course, Session, Sign,
 };
-use directories::ProjectDirs;
-use lazy_static::lazy_static;
-use std::path::PathBuf;
-use unicode_width::UnicodeWidthStr;
-lazy_static! {
-    pub static ref 配置文件夹: PathBuf = {
-        let is_testing = std::env::var("TEST_CXSIGN").is_ok();
-        let binding = ProjectDirs::from("rt.lea", "worksoup", "cxsign").unwrap();
-        let dir = if is_testing {
-            binding.config_dir().join("test").to_owned()
-        } else {
-            binding.config_dir().to_owned()
-        };
-        let _ = std::fs::create_dir_all(dir.clone());
-        dir
-    };
-}
+use std::collections::{hash_map::OccupiedError, HashMap};
 
-pub fn 打印当前时间() {
-    let str = chrono::DateTime::<chrono::Local>::from(std::time::SystemTime::now())
-        .format("%+")
-        .to_string();
-    println!("{str}");
-}
-
-pub fn 请求确认(询问文本: &str, 提示文本: &str) -> bool {
-    inquire::Confirm::new(询问文本)
-        .with_help_message(提示文本)
-        .with_default_value_formatter(&|v| if v { "是[默认]" } else { "否[默认]" }.into())
-        .with_formatter(&|v| if v { "是" } else { "否" }.into())
-        .with_parser(&|s| match inquire::Confirm::DEFAULT_PARSER(s) {
-            r @ Ok(_) => r,
-            Err(_) => {
-                if s == "是" {
-                    Ok(true)
-                } else if s == "否" {
-                    Ok(false)
-                } else {
-                    Err(())
-                }
-            }
-        })
-        .with_error_message("请以\"y\", \"yes\"等表示“是”，\"n\", \"no\"等表示“否”。")
-        .with_default(true)
-        .prompt()
-        .unwrap()
-}
-
-pub fn des加密(密码文本: &str) -> String {
-    fn pkcs7填充(密码文本: &str) -> Vec<[u8; 8]> {
-        assert!(密码文本.len() > 7);
-        assert!(密码文本.len() < 17);
-        let mut r = Vec::new();
-        let pwd = 密码文本.as_bytes();
-        let len = pwd.len();
-        let batch = len / 8;
-        let m = len % 8;
-        for i in 0..batch {
-            let mut a = [0u8; 8];
-            a.copy_from_slice(&pwd[i * 8..8 + i * 8]);
-            r.push(a);
-        }
-        let mut b = [0u8; 8];
-        for i in 0..m {
-            b[i] = pwd[8 * batch + i];
-        }
-        for item in b.iter_mut().skip(m) {
-            *item = (8 - m) as u8;
-        }
-        r.push(b);
-        // #[cfg(debug_assertions)]
-        // println!("{r:?}");
-        r
-    }
-    let key = b"u2oh6Vu^".to_owned();
-    let key = GenericArray::from(key);
-    let des = Des::new(&key);
-    let 填充分块后的密码 = pkcs7填充(密码文本);
-    let mut 加密后的数据块 = Vec::new();
-    for 块 in 填充分块后的密码 {
-        let mut 块 = GenericArray::from(块);
-        des.encrypt_block(&mut 块);
-        let mut 块 = 块.to_vec();
-        加密后的数据块.append(&mut 块);
-    }
-    hex::encode(加密后的数据块)
-}
-
-pub fn 获取unicode字符串定宽显示时应当设置的宽度(
-    s: &str,
-    希望显示的宽度: usize,
-) -> usize {
-    if UnicodeWidthStr::width(s) > 希望显示的宽度 {
-        希望显示的宽度
+// 添加账号。TODO: 跳过输入密码阶段
+pub fn 添加账号(db: &DataBase, uname: String, pwd: Option<String>) {
+    let pwd = if let Some(pwd) = pwd {
+        pwd
     } else {
-        UnicodeWidthStr::width(s) + 12 - s.len()
+        inquire::Password::new("密码：")
+            .without_confirmation()
+            .prompt()
+            .unwrap()
+    };
+    let enc_pwd = cxsign::utils::des_enc(&pwd);
+    let session = Session::login(&DIR, &uname, &enc_pwd).unwrap();
+    let table = AccountTable::from_ref(&db);
+    let name = session.get_stu_name();
+    table.add_account_or(&uname, &enc_pwd, name, AccountTable::update_account);
+    let courses = Course::get_courses(&session).unwrap();
+    for c in courses {
+        let table = CourseTable::from_ref(&db);
+        table.add_course_or(&c, |_, _| {});
+    }
+}
+pub fn 添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(
+    db: &DataBase,
+    uname: String,
+    加密过的密码: &str,
+) {
+    let session = Session::login(&DIR, &uname, 加密过的密码).unwrap();
+    let name = session.get_stu_name();
+    let table = AccountTable::from_ref(&db);
+    table.add_account_or(&uname, 加密过的密码, name, AccountTable::update_account);
+    let courses = Course::get_courses(&session).unwrap();
+    for c in courses {
+        let table = CourseTable::from_ref(&db);
+        table.add_course_or(&c, |_, _| {});
     }
 }
 
-// mod test {
-//     #[test]
-//     fn test_des() {
-//         println!("{}", crate::tools::pwd_des("0123456789."));
-//     }
-// }
+pub fn 通过账号获取签到会话(
+    db: &DataBase,
+    账号列表: &Vec<&str>,
+) -> HashMap<String, Session> {
+    let mut s = HashMap::new();
+    for 账号 in 账号列表 {
+        let table = AccountTable::from_ref(&db);
+        if table.has_account(账号) {
+            let 签到会话 = Session::load_json(&DIR, 账号).unwrap();
+            s.insert(账号.to_string(), 签到会话);
+        }
+    }
+    s
+}
+
+pub fn 获取所有签到(
+    sessions: &HashMap<String, Session>,
+) -> (
+    HashMap<Sign, HashMap<&String, &Session>>,
+    HashMap<Sign, HashMap<&String, &Session>>,
+) {
+    let mut 有效签到 = HashMap::new();
+    let mut 其他签到 = HashMap::new();
+    for session in sessions {
+        let (available_sign_activities, other_sign_activities, _) =
+            cxsign::Activity::get_all_activities(session.1).unwrap();
+        for sa in available_sign_activities {
+            let mut map = HashMap::new();
+            map.insert(session.0, session.1);
+            if let Err(OccupiedError {
+                mut entry,
+                value: _,
+            }) = 有效签到.try_insert(sa, map)
+            {
+                entry.get_mut().insert(session.0, session.1);
+            }
+        }
+        for sa in other_sign_activities {
+            let mut map = HashMap::new();
+            map.insert(session.0, session.1);
+            if let Err(OccupiedError {
+                mut entry,
+                value: _,
+            }) = 其他签到.try_insert(sa, map)
+            {
+                entry.get_mut().insert(session.0, session.1);
+            }
+        }
+    }
+    (有效签到, 其他签到)
+}

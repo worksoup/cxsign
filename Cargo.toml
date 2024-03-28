@@ -6,53 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-activity = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
-chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
-cookie_store = "0.20"
-des = "0.8"
-dir = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
-directories = "5.0"
-futures = "0.3"
-hex-literal = "0.4"
-hex = "0.4"
-#image = "0.25"
+cxsign = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
 inquire = "0.7"
-lazy_static = "1.4"
-login = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
-percent-encoding = "2.3"
-rand = "0.8"
-reqwest = { version = "0.12", features = [
-    "json",
-    "cookies",
-    "gzip",
-    "deflate",
-    "multipart",
-] }
-reqwest_cookie_store = "0.7"
-rxing = "0.5"
-# screenshots = "0.8"
-# display-info = "0.5"
-xcap = "0.0.5"
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"
-store = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
-sqlite = "0.34"
-tokio = { version = "1.35", features = ["full"] }
-toml = "0.8"
-types = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
-tokio-stream = "0.1"
-unicode-width = "0.1"
-ureq = { version = "2.9", features = ["cookies", "json"] }
-user = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
-utils = { git = "https://github.com/worksoup/cxsign.git", branch = "newsign" }
-num_enum = "0.7"
-# url = "2.4"
-# strfmt = "*"
-# utf8_slice = "1.0"
-# trauma = "2.2"
-# thread_local = "1.1"
-# ctrlc = "3.4"
-# regex = "1.10"
-# toml = "0.8"
