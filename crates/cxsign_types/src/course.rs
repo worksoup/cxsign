@@ -44,7 +44,7 @@ impl Course {
                             course.id,
                             c.key.as_i64().unwrap(),
                             course.teacher.as_str(),
-                            course.image_url.as_str(),
+                            course.imageurl.as_str(),
                             course.name.as_str(),
                         ))
                     }
@@ -95,7 +95,7 @@ struct CourseRaw {
     #[serde(alias = "teacherfactor")]
     teacher: String,
     #[serde(alias = "imageurl")]
-    image_url: String,
+    imageurl: String,
     name: String,
 }
 
