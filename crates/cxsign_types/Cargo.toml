@@ -8,11 +8,11 @@ edition = "2021"
 
 [dependencies]
 cxsign_dir = { path = "../cxsign_dir" }
-log.workspace = true
 cxsign_pan = { path = "../cxsign_pan" }
+cxsign_store = { path = "../cxsign_store" }
+cxsign_user = { path = "../cxsign_user" }
+log.workspace = true
 rand.workspace = true
 serde = { workspace = true, features = ["derive"] }
 sqlite.workspace = true
-cxsign_store = { path = "../cxsign_store" }
 ureq = { workspace = true, features = ["cookies", "json"] }
-cxsign_user = { path = "../cxsign_user" }

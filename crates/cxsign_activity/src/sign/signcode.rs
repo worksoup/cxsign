@@ -1,6 +1,6 @@
 use crate::sign::{RawSign, SignResult, SignTrait};
-use ureq::Error;
 use cxsign_user::Session;
+use ureq::Error;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct SigncodeSign {
@@ -20,6 +20,9 @@ impl SigncodeSign {
 impl SignTrait for SigncodeSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign
+    }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        &mut self.raw_sign
     }
     fn is_ready_for_sign(&self) -> bool {
         self.signcode.is_some()

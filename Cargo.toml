@@ -28,18 +28,8 @@ thiserror = "1.0"
 ureq = "2.9"
 
 [dependencies]
-cxsign_activity = { path = "crates/cxsign_activity" }
-cxsign_dir = { path = "crates/cxsign_dir" }
-cxsign_error = { path = "crates/cxsign_error" }
-cxsign_login = { path = "crates/cxsign_login" }
-cxsign_pan = { path = "crates/cxsign_pan" }
-cxsign_store = { path = "crates/cxsign_store" }
-cxsign_types = { path = "crates/cxsign_types" }
-#cxsign_unused = { path = "crates/cxsign_unused" }
-cxsign_user = { path = "crates/cxsign_user" }
-cxsign_utils = { path = "crates/cxsign_utils" }
+cxsign_app = { path = "crates/cxsign_app" }
 
-#cxsign_types = { path = "crates/cxsign_types" }
 #chrono = "0.4"
 #clap = { version = "4.5", features = ["derive"] }
 #cookie_store = "0.21"

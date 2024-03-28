@@ -118,7 +118,7 @@ impl LocationWithRange {
             },
         })
     }
-    pub fn get_shifted_location(&self) -> Location {
+    pub fn to_shifted_location(&self) -> Location {
         const R: f64 = 6371393.0;
         let LocationWithRange {
             addr,

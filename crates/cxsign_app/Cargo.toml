@@ -1,0 +1,20 @@
+[package]
+name = "cxsign_app"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+cxsign_activity = { path = "../cxsign_activity" }
+cxsign_dir = { path = "../cxsign_dir" }
+cxsign_error = { path = "../cxsign_error" }
+cxsign_login = { path = "../cxsign_login" }
+cxsign_pan = { path = "../cxsign_pan" }
+cxsign_store = { path = "../cxsign_store" }
+cxsign_types = { path = "../cxsign_types" }
+#cxsign_unused = { path = "../cxsign_unused" }
+cxsign_user = { path = "../cxsign_user" }
+cxsign_utils = { path = "../cxsign_utils" }
+log.workspace = true
+rxing = "0.5"
+xcap = "0.0.5"

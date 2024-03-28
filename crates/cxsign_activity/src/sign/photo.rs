@@ -1,8 +1,8 @@
 use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Photo;
-use ureq::Error;
 use cxsign_user::Session;
+use ureq::Error;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PhotoSign {
@@ -18,6 +18,11 @@ impl SignTrait for PhotoSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign
     }
+
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        &mut self.raw_sign
+    }
+
     fn is_ready_for_sign(&self) -> bool {
         self.photo.is_some()
     }

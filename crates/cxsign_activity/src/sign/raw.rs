@@ -3,13 +3,13 @@ use crate::sign::{
     GestureSign, LocationSign, NormalQrCodeSign, NormalSign, PhotoSign, QrCodeSign,
     RefreshQrCodeSign, Sign, SignDetail, SignResult, SignTrait, SigncodeSign,
 };
+use cxsign_types::Course;
+use cxsign_user::Session;
+use cxsign_utils::get_width_str_should_be;
 use log::{debug, error, info};
 use serde::Deserialize;
 use std::fmt::{Display, Formatter};
-use cxsign_types::Course;
 use ureq::Error;
-use cxsign_user::Session;
-use cxsign_utils::get_width_str_should_be;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct RawSign {
@@ -24,6 +24,9 @@ pub struct RawSign {
 impl SignTrait for RawSign {
     fn as_inner(&self) -> &RawSign {
         &self
+    }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        self
     }
     fn pre_sign(&self, session: &Session) -> Result<SignResult, Error> {
         let active_id = self.active_id.as_str();
@@ -145,7 +148,7 @@ impl RawSign {
             4 => Sign::Location(LocationSign {
                 raw_sign: self,
                 location: None,
-                need_location: false,
+                has_range: false,
             }),
             5 => Sign::Signcode(SigncodeSign {
                 signcode: None,

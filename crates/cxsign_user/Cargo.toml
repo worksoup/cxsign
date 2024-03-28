@@ -7,9 +7,9 @@ authors.workspace = true
 [dependencies]
 cookie_store.workspace = true
 cxsign_dir = { path = "../cxsign_dir" }
-log.workspace = true
 cxsign_error = { path = "../cxsign_error" }
 cxsign_login = { path = "../cxsign_login" }
+log.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 ureq = { workspace = true, features = ["cookies", "json"] }

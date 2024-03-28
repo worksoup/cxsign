@@ -14,12 +14,13 @@ pub use qrcode::*;
 pub use raw::*;
 pub use signcode::*;
 
-use serde::Deserialize;
 use cxsign_types::Course;
 use cxsign_user::Session;
+use serde::Deserialize;
 
 pub trait SignTrait: Ord {
     fn as_inner(&self) -> &RawSign;
+    fn as_inner_mut(&mut self) -> &mut RawSign;
     fn is_ready_for_sign(&self) -> bool {
         true
     }
@@ -115,6 +116,17 @@ impl SignTrait for Sign {
             Sign::Location(a) => a.as_inner(),
             Sign::Signcode(a) => a.as_inner(),
             Sign::Unknown(a) => a.as_inner(),
+        }
+    }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        match self {
+            Sign::Photo(a) => a.as_inner_mut(),
+            Sign::Normal(a) => a.as_inner_mut(),
+            Sign::QrCode(a) => a.as_inner_mut(),
+            Sign::Gesture(a) => a.as_inner_mut(),
+            Sign::Location(a) => a.as_inner_mut(),
+            Sign::Signcode(a) => a.as_inner_mut(),
+            Sign::Unknown(a) => a.as_inner_mut(),
         }
     }
     fn is_ready_for_sign(&self) -> bool {

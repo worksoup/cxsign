@@ -1,26 +1,29 @@
 use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Location;
-use ureq::Error;
 use cxsign_user::Session;
+use ureq::Error;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct LocationSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) location: Option<Location>,
-    pub(crate) need_location: bool,
+    pub(crate) has_range: bool,
 }
 impl LocationSign {
     pub fn set_location(&mut self, location: Location) {
         self.location = Some(location)
     }
-    pub fn set_need_location(&mut self, is_auto_location: bool) {
-        self.need_location = is_auto_location
+    pub fn set_has_range(&mut self, has_range: bool) {
+        self.has_range = has_range
     }
 }
 impl SignTrait for LocationSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign
+    }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        &mut self.raw_sign
     }
     fn is_ready_for_sign(&self) -> bool {
         self.location.is_some()
@@ -33,7 +36,7 @@ impl SignTrait for LocationSign {
             session.get_stu_name(),
             unsafe { self.location.as_ref().unwrap_unchecked() },
             self.raw_sign.active_id.as_str(),
-            self.need_location,
+            self.has_range,
         )?;
         Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
     }

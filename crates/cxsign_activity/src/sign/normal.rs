@@ -9,4 +9,7 @@ impl SignTrait for NormalSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign
     }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        &mut self.raw_sign
+    }
 }

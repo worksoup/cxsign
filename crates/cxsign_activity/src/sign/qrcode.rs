@@ -1,9 +1,9 @@
 use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
-use log::info;
 use cxsign_types::Location;
-use ureq::Error;
 use cxsign_user::Session;
+use log::info;
+use ureq::Error;
 fn sign_unchecked<T: SignTrait>(
     sign: &T,
     enc: &str,
@@ -45,6 +45,9 @@ impl RefreshQrCodeSign {
 impl SignTrait for RefreshQrCodeSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign
+    }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        &mut self.raw_sign
     }
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
@@ -89,6 +92,9 @@ impl SignTrait for NormalQrCodeSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign
     }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        &mut self.raw_sign
+    }
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
     }
@@ -128,6 +134,12 @@ impl SignTrait for QrCodeSign {
         match self {
             QrCodeSign::RefreshQrCodeSign(a) => a.as_inner(),
             QrCodeSign::NormalQrCodeSign(a) => a.as_inner(),
+        }
+    }
+    fn as_inner_mut(&mut self) -> &mut RawSign {
+        match self {
+            QrCodeSign::RefreshQrCodeSign(a) => a.as_inner_mut(),
+            QrCodeSign::NormalQrCodeSign(a) => a.as_inner_mut(),
         }
     }
     fn pre_sign(&self, session: &Session) -> Result<SignResult, Error> {
