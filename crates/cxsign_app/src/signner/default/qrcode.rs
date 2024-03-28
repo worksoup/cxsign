@@ -1,3 +1,4 @@
+use crate::signner::default::location_or_qrcode_signner_sign_single;
 use crate::utils::pic_dir_or_path_to_pic_path;
 use crate::SignnerTrait;
 use cxsign_activity::sign::{QrCodeSign, SignResult, SignTrait};
@@ -5,7 +6,6 @@ use cxsign_error::Error;
 use cxsign_store::{DataBase, DataBaseTableTrait};
 use cxsign_types::{Location, LocationTable, LocationWithRange};
 use cxsign_user::Session;
-use log::{info, warn};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -45,57 +45,56 @@ impl<'l> SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'l> {
         sign: &mut QrCodeSign,
         sessions: Sessions,
     ) -> Result<HashMap<&'a Session, SignResult>, Error> {
-        let locations =
-            match crate::utils::location_str_to_location(self.db, self.location_str) {
-                Ok(位置) => {
-                    vec![位置]
+        let locations = match crate::utils::location_str_to_location(self.db, self.location_str) {
+            Ok(位置) => {
+                vec![位置]
+            }
+            Err(位置字符串) => {
+                let mut 预设位置列表 = HashMap::new();
+                for session in sessions.clone() {
+                    预设位置列表 = LocationWithRange::from_log(session, &sign.as_inner().course)?;
+                    break;
                 }
-                Err(位置字符串) => {
-                    let mut 预设位置列表 = HashMap::new();
-                    for session in sessions.clone() {
-                        预设位置列表 =
-                            LocationWithRange::from_log(session, &sign.as_inner().course)?;
-                        break;
-                    }
-                    let 预设位置 = 预设位置列表.get(&sign.as_inner().active_id).map(|l| {
-                        if self.no_rand_shift {
-                            l.to_location()
-                        } else {
-                            l.to_shifted_location()
-                        }
-                    });
-                    let table = LocationTable::from_ref(self.db);
-                    let locations = if 位置字符串.is_empty() {
-                        let mut 全局位置列表 = table.get_location_list_by_course(-1);
-                        let mut 位置列表 =
-                            table.get_location_list_by_course(sign.as_inner().course.get_id());
-                        全局位置列表.append(&mut 位置列表);
-                        if let Some(location) = 预设位置 {
-                            全局位置列表.push(location)
-                        }
-                        全局位置列表
+                let 预设位置 = 预设位置列表.get(&sign.as_inner().active_id).map(|l| {
+                    if self.no_rand_shift {
+                        l.to_location()
                     } else {
-                        let 预设位置 = 预设位置.map(|l| {
-                            Location::new(&位置字符串, l.get_lon(), l.get_lat(), l.get_alt())
-                        });
-                        if let Some(location) = 预设位置 {
-                            vec![location]
-                        } else {
-                            vec![]
-                        }
-                    };
-                    locations
-                }
-            };
+                        l.to_shifted_location()
+                    }
+                });
+                let table = LocationTable::from_ref(self.db);
+                let locations = if 位置字符串.is_empty() {
+                    let mut 全局位置列表 = table.get_location_list_by_course(-1);
+                    let mut 位置列表 =
+                        table.get_location_list_by_course(sign.as_inner().course.get_id());
+                    全局位置列表.append(&mut 位置列表);
+                    if let Some(location) = 预设位置 {
+                        全局位置列表.push(location)
+                    } else if 全局位置列表.is_empty() {
+                        // 必须保证有一个地址。否则下面循环无法进入。
+                        全局位置列表.push(Location::new("", "", "", ""))
+                    }
+                    全局位置列表
+                } else {
+                    let 预设位置 = 预设位置
+                        .map(|l| Location::new(&位置字符串, l.get_lon(), l.get_lat(), l.get_alt()));
+                    if let Some(location) = 预设位置 {
+                        vec![location]
+                    } else {
+                        // 必须保证有一个地址。否则下面循环无法进入。
+                        vec![Location::new("", "", "", "")]
+                    }
+                };
+                locations
+            }
+        };
         let enc = if let Some(enc) = self.enc {
             enc.clone()
         } else if let Some(pic) = self.path {
             if std::fs::metadata(pic).unwrap().is_dir() {
                 if let Some(pic) = pic_dir_or_path_to_pic_path(pic)?
                     && let Some(enc) =
-                        crate::utils::pic_path_to_qrcode_result(
-                            pic.to_str().unwrap(),
-                        )
+                        crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
                 {
                     enc
                 } else {
@@ -103,10 +102,7 @@ impl<'l> SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'l> {
                         "图片文件夹下没有图片（`png` 或 `jpg` 文件）！".to_owned(),
                     ));
                 }
-            } else if let Some(enc) =
-                crate::utils::pic_path_to_qrcode_result(
-                    pic.to_str().unwrap(),
-                )
+            } else if let Some(enc) = crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
             {
                 enc
             } else {
@@ -138,42 +134,6 @@ impl<'l> SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'l> {
         session: &Session,
         locations: &Vec<Location>,
     ) -> Result<SignResult, Error> {
-        let state = match sign.pre_sign(session)? {
-            SignResult::Susses => SignResult::Susses,
-            SignResult::Fail { .. } => {
-                let mut state = SignResult::Fail {
-                    msg: "所有位置均不可用".into(),
-                };
-                for location in locations {
-                    sign.set_location(location.clone());
-                    match unsafe { sign.sign_unchecked(session) }? {
-                        SignResult::Susses => {
-                            state = SignResult::Susses;
-                            break;
-                        }
-                        SignResult::Fail { msg } => {
-                            if msg == "您已签到过了".to_owned() {
-                                state = SignResult::Susses;
-                                info!(
-                                    "用户[{}]: 您已经签过[{}]了！",
-                                    session.get_stu_name(),
-                                    sign.as_inner().name,
-                                );
-                                break;
-                            } else {
-                                warn!(
-                                    "用户[{}]在二维码签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
-                                    session.get_stu_name(),
-                                    sign.as_inner().name,
-                                    location,msg
-                                );
-                            }
-                        }
-                    };
-                }
-                state
-            }
-        };
-        Ok(state)
+        location_or_qrcode_signner_sign_single(sign, session, locations)
     }
 }
