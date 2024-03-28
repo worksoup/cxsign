@@ -1,10 +1,10 @@
 use crate::protocol;
+use cxsign_user::Session;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::ops::Deref;
 use ureq::serde_json;
-use cxsign_user::Session;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Course {
@@ -44,7 +44,7 @@ impl Course {
                             course.id,
                             c.key.as_i64().unwrap(),
                             course.teacher.as_str(),
-                            course.imageurl.as_str(),
+                            course.image_url.unwrap_or("".into()).as_str(),
                             course.name.as_str(),
                         ))
                     }
@@ -95,7 +95,7 @@ struct CourseRaw {
     #[serde(alias = "teacherfactor")]
     teacher: String,
     #[serde(alias = "imageurl")]
-    imageurl: String,
+    image_url: Option<String>,
     name: String,
 }
 
