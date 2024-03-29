@@ -14,14 +14,17 @@ use cli::{
 };
 use cxsign::{
     store::{
-        tables::{AccountTable, CourseTable},
+        tables::{AccountTable, AliasTable, CourseTable, ExcludeTable, LocationTable},
         DataBase, DataBaseTableTrait,
     },
     utils::DIR,
-    Course, SignTrait,
+    Activity, Course, SignTrait,
 };
 
 fn main() {
+    let mut builder = env_logger::Builder::from_default_env();
+    builder.target(env_logger::Target::Stdout);
+    builder.init();
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -34,6 +37,11 @@ fn main() {
         no_random_shift,
     } = args;
     let db = DataBase::default();
+    db.add_table::<AccountTable>();
+    db.add_table::<CourseTable>();
+    db.add_table::<ExcludeTable>();
+    db.add_table::<AliasTable>();
+    db.add_table::<LocationTable>();
     if let Some(sub_cmd) = command {
         match sub_cmd {
             MainCmds::Account { command, fresh } => {
@@ -125,8 +133,13 @@ fn main() {
             }
             MainCmds::List { course, all } => {
                 let sessions = AccountTable::from_ref(&db).get_sessions();
-                let (available_sign_activities, other_sign_activities) =
-                    tools::获取所有签到(&sessions);
+                let (available_sign_activities, other_sign_activities, _) =
+                    Activity::get_all_activities(
+                        ExcludeTable::from_ref(&db),
+                        sessions.values().into_iter(),
+                        all,
+                    )
+                    .unwrap();
                 if let Some(course) = course {
                     // 列出指定课程的有效签到。
                     for a in available_sign_activities {

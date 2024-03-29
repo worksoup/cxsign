@@ -560,7 +560,6 @@ checksum = "ef8ae57c4978a2acd8b869ce6b9ca1dfe817bff704c220209fdef2c0b75a01b9"
 [[package]]
 name = "cxsign"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "cxsign_app",
 ]
@@ -571,15 +570,17 @@ version = "0.1.2"
 dependencies = [
  "clap",
  "cxsign 0.1.1",
+ "env_logger",
  "inquire",
+ "log",
 ]
 
 [[package]]
 name = "cxsign_activity"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "chrono",
+ "cxsign_store",
  "cxsign_types",
  "cxsign_user",
  "cxsign_utils",
@@ -593,7 +594,6 @@ dependencies = [
 [[package]]
 name = "cxsign_app"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "cxsign_activity",
  "cxsign_dir",
@@ -612,7 +612,6 @@ dependencies = [
 [[package]]
 name = "cxsign_dir"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "directories",
  "lazy_static",
@@ -621,7 +620,6 @@ dependencies = [
 [[package]]
 name = "cxsign_error"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "thiserror",
  "ureq",
@@ -630,7 +628,6 @@ dependencies = [
 [[package]]
 name = "cxsign_login"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "cookie_store",
  "cxsign_error",
@@ -645,7 +642,6 @@ dependencies = [
 [[package]]
 name = "cxsign_pan"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "log",
  "mime_guess",
@@ -656,7 +652,6 @@ dependencies = [
 [[package]]
 name = "cxsign_store"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "cxsign_dir",
  "cxsign_user",
@@ -667,7 +662,6 @@ dependencies = [
 [[package]]
 name = "cxsign_types"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "cxsign_dir",
  "cxsign_pan",
@@ -683,7 +677,6 @@ dependencies = [
 [[package]]
 name = "cxsign_user"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "cookie_store",
  "cxsign_dir",
@@ -698,7 +691,6 @@ dependencies = [
 [[package]]
 name = "cxsign_utils"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#96d89fec9f809cc324cada4070dd34c2182a358a"
 dependencies = [
  "chrono",
  "inquire",
@@ -831,6 +823,29 @@ name = "encoding_index_tests"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a246d82be1c9d791c5dfde9a2bd045fc3cbba3fa2b11ad558f27d01712f00569"
+
+[[package]]
+name = "env_filter"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a009aa4810eb158359dda09d0c87378e4bbb89b5a801f016885a4707ba24f7ea"
+dependencies = [
+ "log",
+ "regex",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38b35839ba51819680ba087cd351788c9a3c476841207e0b8cee0b04722343b9"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "env_filter",
+ "humantime",
+ "log",
+]
 
 [[package]]
 name = "equivalent"
@@ -1013,6 +1028,12 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "iana-time-zone"
@@ -1363,9 +1384,9 @@ dependencies = [
 
 [[package]]
 name = "nalgebra"
-version = "0.32.4"
+version = "0.32.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4541eb06dce09c0241ebbaab7102f0a01a0c8994afed2e5d0d66775016e25ac2"
+checksum = "3ea4908d4f23254adda3daa60ffef0f1ac7b8c3e9a864cf3cc154b251908a2ef"
 dependencies = [
  "approx",
  "matrixmultiply",

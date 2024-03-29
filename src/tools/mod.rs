@@ -4,9 +4,8 @@ use cxsign::{
         DataBase, DataBaseTableTrait,
     },
     utils::DIR,
-    Course, Session, Sign,
+    Course, Session,
 };
-use std::collections::{hash_map::OccupiedError, HashMap};
 
 // 添加账号。TODO: 跳过输入密码阶段
 pub fn 添加账号(db: &DataBase, uname: String, pwd: Option<String>) {
@@ -43,41 +42,4 @@ pub fn 添加账号_使用加密过的密码_刷新时用_此时密码一定是�
         let table = CourseTable::from_ref(&db);
         table.add_course_or(&c, |_, _| {});
     }
-}
-
-pub fn 获取所有签到(
-    sessions: &HashMap<String, Session>,
-) -> (
-    HashMap<Sign, HashMap<&String, &Session>>,
-    HashMap<Sign, HashMap<&String, &Session>>,
-) {
-    let mut 有效签到 = HashMap::new();
-    let mut 其他签到 = HashMap::new();
-    for session in sessions {
-        let (available_sign_activities, other_sign_activities, _) =
-            cxsign::Activity::get_all_activities(session.1).unwrap();
-        for sa in available_sign_activities {
-            let mut map = HashMap::new();
-            map.insert(session.0, session.1);
-            if let Err(OccupiedError {
-                mut entry,
-                value: _,
-            }) = 有效签到.try_insert(sa, map)
-            {
-                entry.get_mut().insert(session.0, session.1);
-            }
-        }
-        for sa in other_sign_activities {
-            let mut map = HashMap::new();
-            map.insert(session.0, session.1);
-            if let Err(OccupiedError {
-                mut entry,
-                value: _,
-            }) = 其他签到.try_insert(sa, map)
-            {
-                entry.get_mut().insert(session.0, session.1);
-            }
-        }
-    }
-    (有效签到, 其他签到)
 }

@@ -2,19 +2,21 @@ pub mod arg;
 pub mod location;
 
 use cxsign::{
-    store::{tables::AccountTable, DataBase, DataBaseTableTrait},
-    DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
+    store::{
+        tables::{AccountTable, ExcludeTable},
+        DataBase, DataBaseTableTrait,
+    },
+    Activity, DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
     DefaultPhotoSignner, DefaultQrCodeSignner, Session, Sign, SignResult, SignTrait, SignnerTrait,
 };
 use std::collections::HashMap;
 
 use self::arg::CliArgs;
-use crate::tools;
 
 fn 区分签到类型并进行签到<'a>(
     签到: &mut Sign,
     db: &DataBase,
-    签到会话列表: Vec<&Session>,
+    签到会话列表: &Vec<Session>,
     签到可能使用的信息: &CliArgs,
 ) -> Result<(), cxsign::Error> {
     let CliArgs {
@@ -107,7 +109,12 @@ pub fn 签到(
     } else {
         account_table.get_sessions()
     };
-    let (有效签到列表, 其他签到列表) = tools::获取所有签到(&sessions);
+    let (有效签到列表, 其他签到列表, _) = Activity::get_all_activities(
+        ExcludeTable::from_ref(db),
+        sessions.values().into_iter(),
+        false,
+    )
+    .unwrap();
     let signs = if let Some(active_id) = active_id {
         let s1 = 有效签到列表
             .into_iter()
@@ -128,23 +135,20 @@ pub fn 签到(
                 }
             }
         };
-        let 账号对象_签到所需的_vec = 所有sessions_对应于_签到_需要处理的
-            .into_values()
-            .collect::<Vec<_>>();
+        let 账号对象_签到所需的_vec = 所有sessions_对应于_签到_需要处理的;
         let mut map = HashMap::new();
         map.insert(签到_需要处理的, 账号对象_签到所需的_vec);
         map
     } else {
         let mut signs = HashMap::new();
         for (sign, full_sessions) in 有效签到列表 {
-            let 账号对象_签到所需的_vec = full_sessions.into_values().collect::<Vec<_>>();
+            let 账号对象_签到所需的_vec = full_sessions;
             signs.insert(sign, 账号对象_签到所需的_vec);
         }
         signs
     };
-    let iter: Vec<(Sign, Vec<&Session>)> = signs.into_iter().collect();
-    for (mut sign, sessions) in iter {
-        区分签到类型并进行签到(&mut sign, db, sessions, &签到可能使用的信息)?;
+    for (mut sign, sessions) in signs.into_iter() {
+        区分签到类型并进行签到(&mut sign, db, &sessions, &签到可能使用的信息)?;
     }
     Ok(())
 }
