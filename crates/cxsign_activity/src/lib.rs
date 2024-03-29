@@ -10,6 +10,7 @@ use cxsign_user::Session;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::OccupiedError;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub enum Activity {
@@ -22,9 +23,9 @@ impl Activity {
         sessions: Sessions,
     ) -> Result<
         (
-            HashMap<Sign, Vec<&'a Session>>,
-            HashMap<Sign, Vec<&'a Session>>,
-            HashMap<OtherActivity, Vec<&'a Session>>,
+            HashMap<Sign, Vec<Session>>,
+            HashMap<Sign, Vec<Session>>,
+            HashMap<OtherActivity, Vec<Session>>,
         ),
         ureq::Error,
     > {
@@ -35,9 +36,9 @@ impl Activity {
                 if let Err(OccupiedError {
                     mut entry,
                     value: _,
-                }) = courses.try_insert(course, vec![session])
+                }) = courses.try_insert(course, vec![session.clone()])
                 {
-                    entry.get_mut().push(session);
+                    entry.get_mut().push(session.clone());
                 }
             }
         }
@@ -46,38 +47,54 @@ impl Activity {
             .keys()
             .map(|c| c.clone())
             .collect::<Vec<_>>();
-        let mut valid_signs = HashMap::new();
-        let mut other_signs = HashMap::new();
-        let mut other_activities = HashMap::new();
+        let valid_signs = Arc::new(Mutex::new(HashMap::new()));
+        let other_signs = Arc::new(Mutex::new(HashMap::new()));
+        let other_activities = Arc::new(Mutex::new(HashMap::new()));
+        let mut handles = Vec::new();
         for course in courses {
             for session in &course_sessions_map[&course] {
-                let activities = Self::get_list_from_course(session, &course).unwrap_or(vec![]);
-                let mut v = Vec::new();
-                let mut n = Vec::new();
-                let mut o = Vec::new();
-                for activity in activities {
-                    if let Self::Sign(sign) = activity {
-                        if sign.is_valid() {
-                            v.push(sign);
-                        } else {
-                            n.push(sign);
+                let session = (*session).clone();
+                let valid_signs = Arc::clone(&valid_signs);
+                let other_signs = Arc::clone(&other_signs);
+                let other_activities = Arc::clone(&other_activities);
+                let sessions = course_sessions_map[&course].clone();
+                let handle = std::thread::spawn(move || {
+                    let activities =
+                        Self::get_list_from_course(&session, &course).unwrap_or(vec![]);
+                    let mut v = Vec::new();
+                    let mut n = Vec::new();
+                    let mut o = Vec::new();
+                    for activity in activities {
+                        if let Self::Sign(sign) = activity {
+                            if sign.is_valid() {
+                                v.push(sign);
+                            } else {
+                                n.push(sign);
+                            }
+                        } else if let Self::Other(other_activity) = activity {
+                            o.push(other_activity);
                         }
-                    } else if let Self::Other(other_activity) = activity {
-                        o.push(other_activity);
                     }
-                }
-                for v in v {
-                    valid_signs.insert(v, course_sessions_map[&course].clone());
-                }
-                for n in n {
-                    other_signs.insert(n, course_sessions_map[&course].clone());
-                }
-                for o in o {
-                    other_activities.insert(o, course_sessions_map[&course].clone());
-                }
+                    for v in v {
+                        valid_signs.lock().unwrap().insert(v, sessions.clone());
+                    }
+                    for n in n {
+                        other_signs.lock().unwrap().insert(n, sessions.clone());
+                    }
+                    for o in o {
+                        other_activities.lock().unwrap().insert(o, sessions.clone());
+                    }
+                });
+                handles.push(handle);
                 break;
             }
         }
+        let valid_signs = Arc::into_inner(valid_signs).unwrap().into_inner().unwrap();
+        let other_signs = Arc::into_inner(other_signs).unwrap().into_inner().unwrap();
+        let other_activities = Arc::into_inner(other_activities)
+            .unwrap()
+            .into_inner()
+            .unwrap();
         Ok((valid_signs, other_signs, other_activities))
     }
     pub fn get_list_from_course(session: &Session, c: &Course) -> Result<Vec<Self>, ureq::Error> {
