@@ -85,6 +85,7 @@ impl Activity {
                     for o in o {
                         other_activities.lock().unwrap().insert(o, sessions.clone());
                     }
+                    debug!("course: list_activities, ok.");
                 });
                 handles.push(handle);
                 break;
