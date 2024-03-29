@@ -51,7 +51,7 @@ impl Activity {
         let valid_signs = Arc::new(Mutex::new(HashMap::new()));
         let other_signs = Arc::new(Mutex::new(HashMap::new()));
         let other_activities = Arc::new(Mutex::new(HashMap::new()));
-        let thread_count = 32;
+        let thread_count = 256;
         let len = courses.len();
         let chunk_rest = len % thread_count;
         let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 1 };
@@ -120,7 +120,7 @@ impl Activity {
         let r: GetActivityR = r.into_json().unwrap();
         let activities = Arc::new(Mutex::new(Vec::new()));
         if let Some(data) = r.data {
-            let thread_count = 16;
+            let thread_count = 1;
             let len = data.active_list.len();
             let chunk_rest = len % thread_count;
             let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 0 };
