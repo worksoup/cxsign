@@ -24,7 +24,7 @@ impl Activity {
         let other_activities = Arc::new(Mutex::new(Vec::new()));
         let courses = Course::get_courses(session)?;
         let len = courses.len();
-        let thread_count = 64;
+        let thread_count = 237;
         let chunk_rest = len % thread_count;
         let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 1 };
         for i in 0..chunk_count {
