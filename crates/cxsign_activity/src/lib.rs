@@ -6,6 +6,8 @@ pub mod sign;
 use crate::sign::{RawSign, Sign, SignTrait};
 use cxsign_types::Course;
 use cxsign_user::Session;
+use cxsign_utils::{now_string, print_now};
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -24,7 +26,7 @@ impl Activity {
         let other_activities = Arc::new(Mutex::new(Vec::new()));
         let courses = Course::get_courses(session)?;
         let len = courses.len();
-        let thread_count = 237;
+        let thread_count = 8;
         let chunk_rest = len % thread_count;
         let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 1 };
         for i in 0..chunk_count {
@@ -41,8 +43,10 @@ impl Activity {
                 let other_signs = Arc::clone(&other_signs);
                 let other_activities = Arc::clone(&other_activities);
                 let handle = std::thread::spawn(move || {
+                    debug!("{}, {}", course.get_id(), now_string());
                     let activities =
                         Self::get_list_from_course(&session, &course).unwrap_or(vec![]);
+                    debug!("{}, {}", course.get_id(), now_string());
                     for activity in activities {
                         if let Self::Sign(sign) = activity {
                             if sign.is_valid() {

@@ -1,10 +1,13 @@
-use unicode_width::UnicodeWidthStr;
 use log::info;
+use unicode_width::UnicodeWidthStr;
+pub fn now_string() -> String {
+    chrono::DateTime::<chrono::Local>::from(std::time::SystemTime::now())
+        .format("%+")
+        .to_string()
+}
 
 pub fn print_now() {
-    let str = chrono::DateTime::<chrono::Local>::from(std::time::SystemTime::now())
-        .format("%+")
-        .to_string();
+    let str = now_string();
     info!("{str}");
 }
 
