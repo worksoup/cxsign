@@ -118,38 +118,67 @@ impl Activity {
     pub fn get_list_from_course(session: &Session, c: &Course) -> Result<Vec<Self>, ureq::Error> {
         let r = crate::protocol::active_list(session, c.clone())?;
         let r: GetActivityR = r.into_json().unwrap();
-        let mut activities = Vec::new();
+        let activities = Arc::new(Mutex::new(Vec::new()));
         if let Some(data) = r.data {
-            for ar in data.active_list {
-                if let Some(other_id) = ar.other_id
-                    && {
-                        let other_id_i64: i64 = other_id.parse().unwrap();
-                        (0..=5).contains(&other_id_i64)
-                    }
-                {
-                    let active_id = ar.id.to_string();
-                    let detail = RawSign::get_sign_detail(active_id.as_str(), session)?;
-                    let base_sign = RawSign {
-                        active_id,
-                        name: ar.name_one,
-                        course: c.clone(),
-                        other_id,
-                        status_code: ar.status,
-                        start_timestamp: (ar.start_time / 1000) as i64,
-                        sign_detail: detail,
-                    };
-                    activities.push(Self::Sign(base_sign.to_sign()))
+            let thread_count = 16;
+            let len = data.active_list.len();
+            let chunk_rest = len % thread_count;
+            let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 0 };
+            for i in 0..chunk_count {
+                let ars = &data.active_list[i * thread_count..if i != chunk_count - 1 {
+                    (i + 1) * thread_count
                 } else {
-                    activities.push(Self::Other(OtherActivity {
-                        id: ar.id.to_string(),
-                        name: ar.name_one,
-                        course: c.clone(),
-                        status: ar.status,
-                        start_time_secs: (ar.start_time / 1000) as i64,
-                    }))
+                    len
+                }];
+                let mut handles = Vec::new();
+                for ar in ars {
+                    let ar = ar.clone();
+                    let session = session.clone();
+                    let c = c.clone();
+                    let activities = activities.clone();
+                    let handle = std::thread::spawn(move || {
+                        if let Some(other_id) = ar.other_id
+                            && {
+                                let other_id_i64: i64 = other_id.parse().unwrap();
+                                (0..=5).contains(&other_id_i64)
+                            }
+                        {
+                            let active_id = ar.id.to_string();
+                            if let Ok(detail) =
+                                RawSign::get_sign_detail(active_id.as_str(), &session)
+                            {
+                                let base_sign = RawSign {
+                                    active_id,
+                                    name: ar.name_one,
+                                    course: c.clone(),
+                                    other_id,
+                                    status_code: ar.status,
+                                    start_timestamp: (ar.start_time / 1000) as i64,
+                                    sign_detail: detail,
+                                };
+                                activities
+                                    .lock()
+                                    .unwrap()
+                                    .push(Self::Sign(base_sign.to_sign()))
+                            }
+                        } else {
+                            activities.lock().unwrap().push(Self::Other(OtherActivity {
+                                id: ar.id.to_string(),
+                                name: ar.name_one,
+                                course: c.clone(),
+                                status: ar.status,
+                                start_time_secs: (ar.start_time / 1000) as i64,
+                            }))
+                        }
+                    });
+                    handles.push(handle);
+                }
+                for h in handles {
+                    h.join().unwrap();
                 }
             }
         }
+        let activities = Arc::into_inner(activities).unwrap().into_inner().unwrap();
         Ok(activities)
     }
 }
@@ -163,7 +192,7 @@ pub struct OtherActivity {
     pub start_time_secs: i64,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 struct ActivityRaw {
     #[serde(rename = "nameOne")]
     name_one: String,
