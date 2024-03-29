@@ -96,14 +96,13 @@ pub async fn 二维码签到_单个账号<'a>(
                         };
                     }
                     if 位置列表.is_empty() {
-                        let r = protocol::qrcode_sign(session, enc, self.活动id.as_str(), &Struct位置::new("", "", "", "")).await?;
+                        let r = protocol::qrcode_sign(session, enc, sign.活动id.as_str(), &Struct位置::new("", "", "", "")).await?;
 
                         match Struct签到::通过文本判断签到结果(
                             &r.text().await.unwrap(),
                         ) {
                             Enum签到结果::成功 => {
                                 state = Enum签到结果::成功;
-                                break;
                             }
                             Enum签到结果::失败 { 失败信息 } => {
                                 eprintln!(
@@ -114,7 +113,6 @@ pub async fn 二维码签到_单个账号<'a>(
                                 );
                                 if 失败信息 == "您已签到过了".to_owned() {
                                     state = Enum签到结果::成功;
-                                    break;
                                 }
                             }
                         };
