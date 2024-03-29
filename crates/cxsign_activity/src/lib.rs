@@ -89,6 +89,9 @@ impl Activity {
                 break;
             }
         }
+        for h in handles {
+            h.join().unwrap();
+        }
         let valid_signs = Arc::into_inner(valid_signs).unwrap().into_inner().unwrap();
         let other_signs = Arc::into_inner(other_signs).unwrap().into_inner().unwrap();
         let other_activities = Arc::into_inner(other_activities)
