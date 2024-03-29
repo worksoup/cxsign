@@ -72,6 +72,8 @@ pub async fn 二维码签到_单个账号<'a>(
                             }
                         }
                     };
+                } else {
+                    需要再次尝试 = true;
                 }
                 if 需要再次尝试 {
                     for 位置 in 位置列表 {
