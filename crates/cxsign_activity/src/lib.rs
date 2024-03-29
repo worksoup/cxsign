@@ -4,9 +4,10 @@ pub mod protocol;
 pub mod sign;
 
 use crate::sign::{RawSign, Sign, SignTrait};
-use serde::{Deserialize, Serialize};
 use cxsign_types::Course;
 use cxsign_user::Session;
+use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub enum Activity {
@@ -18,25 +19,54 @@ impl Activity {
     pub fn get_all_activities(
         session: &Session,
     ) -> Result<(Vec<Sign>, Vec<Sign>, Vec<OtherActivity>), ureq::Error> {
-        let mut valid_signs = Vec::new();
-        let mut other_signs = Vec::new();
-        let mut other_activities = Vec::new();
+        let valid_signs = Arc::new(Mutex::new(Vec::new()));
+        let other_signs = Arc::new(Mutex::new(Vec::new()));
+        let other_activities = Arc::new(Mutex::new(Vec::new()));
         let courses = Course::get_courses(session)?;
-        for course in courses {
-            let activities = Self::get_list_from_course(session, &course)?;
-            for activity in activities {
-                if let Self::Sign(sign) = activity {
-                    if sign.is_valid() {
-                        valid_signs.push(sign);
-                    } else {
-                        other_signs.push(sign);
+        let len = courses.len();
+        let thread_count = 64;
+        let chunk_rest = len % thread_count;
+        let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 1 };
+        for i in 0..chunk_count {
+            let mut handles = Vec::new();
+            let courses = &courses[i * thread_count..if i != chunk_count - 1 {
+                (i + 1) * thread_count
+            } else {
+                len
+            }];
+            for course in courses {
+                let session = session.clone();
+                let course = course.clone();
+                let valid_signs = Arc::clone(&valid_signs);
+                let other_signs = Arc::clone(&other_signs);
+                let other_activities = Arc::clone(&other_activities);
+                let handle = std::thread::spawn(move || {
+                    let activities =
+                        Self::get_list_from_course(&session, &course).unwrap_or(vec![]);
+                    for activity in activities {
+                        if let Self::Sign(sign) = activity {
+                            if sign.is_valid() {
+                                valid_signs.lock().unwrap().push(sign);
+                            } else {
+                                other_signs.lock().unwrap().push(sign);
+                            }
+                        } else if let Self::Other(other_activity) = activity {
+                            other_activities.lock().unwrap().push(other_activity);
+                        }
                     }
-                } else if let Self::Other(other_activity) = activity {
-                    other_activities.push(other_activity);
-                }
+                });
+                handles.push(handle);
+            }
+            for h in handles {
+                h.join().unwrap();
             }
         }
-        valid_signs.sort();
+        let valid_signs = Arc::into_inner(valid_signs).unwrap().into_inner().unwrap();
+        let other_signs = Arc::into_inner(other_signs).unwrap().into_inner().unwrap();
+        let other_activities = Arc::into_inner(other_activities)
+            .unwrap()
+            .into_inner()
+            .unwrap();
         Ok((valid_signs, other_signs, other_activities))
     }
     pub fn get_list_from_course(session: &Session, c: &Course) -> Result<Vec<Self>, ureq::Error> {
