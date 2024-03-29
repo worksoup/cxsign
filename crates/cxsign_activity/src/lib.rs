@@ -75,6 +75,7 @@ impl Activity {
                 for o in o {
                     other_activities.insert(o, course_sessions_map[&course].clone());
                 }
+                break;
             }
         }
         Ok((valid_signs, other_signs, other_activities))
