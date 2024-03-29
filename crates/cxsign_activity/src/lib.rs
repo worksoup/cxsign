@@ -7,6 +7,7 @@ pub mod sign;
 use crate::sign::{RawSign, Sign, SignTrait};
 use cxsign_types::Course;
 use cxsign_user::Session;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::OccupiedError;
 use std::collections::HashMap;
@@ -90,6 +91,7 @@ impl Activity {
             }
         }
         for h in handles {
+            debug!("handle: {h:?} join.");
             h.join().unwrap();
         }
         let valid_signs = Arc::into_inner(valid_signs).unwrap().into_inner().unwrap();
