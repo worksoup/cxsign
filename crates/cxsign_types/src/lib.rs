@@ -1,5 +1,5 @@
 #![feature(let_chains)]
-
+#![feature(map_try_insert)]
 mod course;
 mod location;
 mod photo;

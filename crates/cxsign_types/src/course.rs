@@ -19,8 +19,8 @@ impl Display for Course {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "课程号: {}, 课程名: {}, 任课教师: {}",
-            self.id, self.name, self.teacher
+            "班级号：{}, 课程号: {}, 课程名: {}, 任课教师: {}",
+            self.class_id, self.id, self.name, self.teacher
         )
     }
 }
