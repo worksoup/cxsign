@@ -5,6 +5,7 @@ pub mod protocol;
 pub mod sign;
 
 use crate::sign::{RawSign, Sign, SignTrait};
+use cxsign_store::ExcludeTable;
 use cxsign_types::Course;
 use cxsign_user::Session;
 use log::debug;
@@ -21,7 +22,9 @@ pub enum Activity {
 
 impl Activity {
     pub fn get_all_activities<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
+        table: ExcludeTable,
         sessions: Sessions,
+        set_excludes: bool,
     ) -> Result<
         (
             HashMap<Sign, Vec<Session>>,
@@ -30,14 +33,17 @@ impl Activity {
         ),
         ureq::Error,
     > {
+        let excludes = table.get_excludes();
+        let set_excludes = set_excludes || excludes.is_empty();
         let mut courses = HashMap::new();
         for session in sessions.clone() {
             let courses_ = Course::get_courses(session)?;
             for course in courses_ {
-                if let Err(OccupiedError {
-                    mut entry,
-                    value: _,
-                }) = courses.try_insert(course, vec![session.clone()])
+                if (set_excludes || !excludes.contains(&course.get_id()))
+                    && let Err(OccupiedError {
+                        mut entry,
+                        value: _,
+                    }) = courses.try_insert(course, vec![session.clone()])
                 {
                     entry.get_mut().push(session.clone());
                 }
@@ -48,6 +54,7 @@ impl Activity {
             .keys()
             .map(|c| c.clone())
             .collect::<Vec<_>>();
+        let excludes = Arc::new(Mutex::new(Vec::new()));
         let valid_signs = Arc::new(Mutex::new(HashMap::new()));
         let other_signs = Arc::new(Mutex::new(HashMap::new()));
         let other_activities = Arc::new(Mutex::new(HashMap::new()));
@@ -69,6 +76,7 @@ impl Activity {
                     let valid_signs = Arc::clone(&valid_signs);
                     let other_signs = Arc::clone(&other_signs);
                     let other_activities = Arc::clone(&other_activities);
+                    let excludes = excludes.clone();
                     let sessions = course_sessions_map[&course].clone();
                     let handle = std::thread::spawn(move || {
                         let activities =
@@ -76,8 +84,22 @@ impl Activity {
                         let mut v = Vec::new();
                         let mut n = Vec::new();
                         let mut o = Vec::new();
+                        let mut dont_exclude = false;
                         for activity in activities {
                             if let Self::Sign(sign) = activity {
+                                if set_excludes {
+                                    let start_time = chrono::DateTime::from_timestamp(
+                                        sign.as_inner().start_timestamp,
+                                        0,
+                                    )
+                                    .unwrap();
+                                    let now = chrono::DateTime::<chrono::Local>::from(
+                                        std::time::SystemTime::now(),
+                                    );
+                                    if now.signed_duration_since(start_time).num_days() < 180 {
+                                        dont_exclude = true;
+                                    }
+                                }
                                 if sign.is_valid() {
                                     v.push(sign);
                                 } else {
@@ -97,6 +119,9 @@ impl Activity {
                             other_activities.lock().unwrap().insert(o, sessions.clone());
                         }
                         debug!("course: list_activities, ok.");
+                        if set_excludes && !dont_exclude {
+                            excludes.lock().unwrap().push(course.get_id())
+                        }
                     });
                     handles.push(handle);
                     break;
@@ -113,6 +138,9 @@ impl Activity {
             .unwrap()
             .into_inner()
             .unwrap();
+        if set_excludes {
+            table.update_excludes(&Arc::into_inner(excludes).unwrap().into_inner().unwrap());
+        }
         Ok((valid_signs, other_signs, other_activities))
     }
     pub fn get_list_from_course(session: &Session, c: &Course) -> Result<Vec<Self>, ureq::Error> {

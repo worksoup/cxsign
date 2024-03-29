@@ -1,8 +1,5 @@
-use cxsign_user::Session;
-
 use crate::sql::{DataBase, DataBaseTableTrait};
 use log::warn;
-use std::collections::HashMap;
 
 pub struct ExcludeTable<'a> {
     db: &'a DataBase,

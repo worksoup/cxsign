@@ -10,23 +10,16 @@ fn sign_unchecked<T: SignTrait>(
     location: &Option<Location>,
     session: &Session,
 ) -> Result<SignResult, Error> {
-    let r = T::pre_sign(sign, session);
-    if let Ok(a) = r.as_ref()
-        && !a.is_susses()
-    {
-        let r = protocol::qrcode_sign(
-            session,
-            enc,
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
-            sign.as_inner().active_id.as_str(),
-            location,
-        )?;
-        Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
-    } else {
-        r
-    }
+    let r = protocol::qrcode_sign(
+        session,
+        session.get_uid(),
+        session.get_fid(),
+        session.get_stu_name(),
+        enc,
+        sign.as_inner().active_id.as_str(),
+        location,
+    )?;
+    Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
 }
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct RefreshQrCodeSign {
@@ -143,6 +136,7 @@ impl SignTrait for QrCodeSign {
         }
     }
     fn pre_sign(&self, session: &Session) -> Result<SignResult, Error> {
+        println!("sessions len: {}", session.get_stu_name());
         match self {
             QrCodeSign::RefreshQrCodeSign(a) => a.pre_sign(session),
             QrCodeSign::NormalQrCodeSign(a) => a.pre_sign(session),

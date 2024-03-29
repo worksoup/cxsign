@@ -43,8 +43,13 @@ impl Session {
         })
     }
 
-    pub fn login(dir: &Dir, account: &str, enc_passwd: &str) -> Result<Session, cxsign_error::Error> {
-        let client = cxsign_login::login_enc(account, enc_passwd, Some(dir.get_json_file_path(account)))?;
+    pub fn login(
+        dir: &Dir,
+        account: &str,
+        enc_passwd: &str,
+    ) -> Result<Session, cxsign_error::Error> {
+        let client =
+            cxsign_login::login_enc(account, enc_passwd, Some(dir.get_json_file_path(account)))?;
         let cookies = UserCookies::new(&client);
         let stu_name = Self::find_stu_name_in_html(&client)?;
         info!("用户[{}]登录成功！", stu_name);

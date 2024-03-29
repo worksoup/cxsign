@@ -163,7 +163,17 @@ impl SignTrait for Sign {
             Sign::Unknown(a) => a.get_sign_state(session),
         }
     }
-
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+        match self {
+            Sign::Photo(a) => a.pre_sign(session),
+            Sign::Normal(a) => a.pre_sign(session),
+            Sign::QrCode(a) => a.pre_sign(session),
+            Sign::Gesture(a) => a.pre_sign(session),
+            Sign::Location(a) => a.pre_sign(session),
+            Sign::Signcode(a) => a.pre_sign(session),
+            Sign::Unknown(a) => a.pre_sign(session),
+        }
+    }
     unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
         unsafe {
             match self {

@@ -26,7 +26,7 @@ pub mod protocol {
 pub mod store {
     pub use cxsign_store::{DataBase, DataBaseTableTrait};
     pub mod tables {
-        pub use cxsign_store::{AccountTable, AliasTable};
+        pub use cxsign_store::{AccountTable, AliasTable, ExcludeTable};
         pub use cxsign_types::{CourseTable, LocationTable};
     }
 }

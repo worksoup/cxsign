@@ -4,6 +4,7 @@ mod exclude_table;
 
 pub use account_table::*;
 pub use alias_table::*;
+pub use exclude_table::*;
 
 use cxsign_dir::{Dir, DIR};
 use log::info;

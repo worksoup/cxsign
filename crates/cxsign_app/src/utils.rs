@@ -202,6 +202,6 @@ pub fn location_str_to_location(
         }
     } else {
         warn!("位置字符串不存在！");
-        Err("位置字符串不存在！".to_string())
+        Err("".to_string())
     }
 }
