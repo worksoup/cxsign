@@ -51,49 +51,61 @@ impl Activity {
         let valid_signs = Arc::new(Mutex::new(HashMap::new()));
         let other_signs = Arc::new(Mutex::new(HashMap::new()));
         let other_activities = Arc::new(Mutex::new(HashMap::new()));
-        let mut handles = Vec::new();
-        for course in courses {
-            for session in &course_sessions_map[&course] {
-                let session = (*session).clone();
-                let valid_signs = Arc::clone(&valid_signs);
-                let other_signs = Arc::clone(&other_signs);
-                let other_activities = Arc::clone(&other_activities);
-                let sessions = course_sessions_map[&course].clone();
-                let handle = std::thread::spawn(move || {
-                    let activities =
-                        Self::get_list_from_course(&session, &course).unwrap_or(vec![]);
-                    let mut v = Vec::new();
-                    let mut n = Vec::new();
-                    let mut o = Vec::new();
-                    for activity in activities {
-                        if let Self::Sign(sign) = activity {
-                            if sign.is_valid() {
-                                v.push(sign);
-                            } else {
-                                n.push(sign);
+        let thread_count = 32;
+        let len = courses.len();
+        let chunk_rest = len % thread_count;
+        let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 1 };
+        for i in 0..chunk_count {
+            let courses = &courses[i * thread_count..if i != chunk_count - 1 {
+                (i + 1) * thread_count
+            } else {
+                len
+            }];
+            let mut handles = Vec::new();
+            for course in courses {
+                for session in &course_sessions_map[&course] {
+                    let course = course.clone();
+                    let session = (*session).clone();
+                    let valid_signs = Arc::clone(&valid_signs);
+                    let other_signs = Arc::clone(&other_signs);
+                    let other_activities = Arc::clone(&other_activities);
+                    let sessions = course_sessions_map[&course].clone();
+                    let handle = std::thread::spawn(move || {
+                        let activities =
+                            Self::get_list_from_course(&session, &course).unwrap_or(vec![]);
+                        let mut v = Vec::new();
+                        let mut n = Vec::new();
+                        let mut o = Vec::new();
+                        for activity in activities {
+                            if let Self::Sign(sign) = activity {
+                                if sign.is_valid() {
+                                    v.push(sign);
+                                } else {
+                                    n.push(sign);
+                                }
+                            } else if let Self::Other(other_activity) = activity {
+                                o.push(other_activity);
                             }
-                        } else if let Self::Other(other_activity) = activity {
-                            o.push(other_activity);
                         }
-                    }
-                    for v in v {
-                        valid_signs.lock().unwrap().insert(v, sessions.clone());
-                    }
-                    for n in n {
-                        other_signs.lock().unwrap().insert(n, sessions.clone());
-                    }
-                    for o in o {
-                        other_activities.lock().unwrap().insert(o, sessions.clone());
-                    }
-                    debug!("course: list_activities, ok.");
-                });
-                handles.push(handle);
-                break;
+                        for v in v {
+                            valid_signs.lock().unwrap().insert(v, sessions.clone());
+                        }
+                        for n in n {
+                            other_signs.lock().unwrap().insert(n, sessions.clone());
+                        }
+                        for o in o {
+                            other_activities.lock().unwrap().insert(o, sessions.clone());
+                        }
+                        debug!("course: list_activities, ok.");
+                    });
+                    handles.push(handle);
+                    break;
+                }
             }
-        }
-        for h in handles {
-            debug!("handle: {h:?} join.");
-            h.join().unwrap();
+            for h in handles {
+                debug!("handle: {h:?} join.");
+                h.join().unwrap();
+            }
         }
         let valid_signs = Arc::into_inner(valid_signs).unwrap().into_inner().unwrap();
         let other_signs = Arc::into_inner(other_signs).unwrap().into_inner().unwrap();
