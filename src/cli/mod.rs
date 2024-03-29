@@ -100,15 +100,13 @@ pub fn 签到(
     签到可能使用的信息: CliArgs,
 ) -> Result<(), cxsign::Error> {
     let mut 是否指定accounts参数 = false;
-    let 数据库完整账号列表 = AccountTable::from_ref(db).get_accounts();
-    let 签到所需的账号列表: Vec<&str> = if let Some(账号列表字符串) = &账号列表字符串
-    {
+    let account_table = AccountTable::from_ref(db);
+    let sessions = if let Some(账号列表字符串) = &账号列表字符串 {
         是否指定accounts参数 = true;
-        账号列表字符串.split(",").map(|a| a.trim()).collect()
+        account_table.get_sessions_by_accounts_str(账号列表字符串)
     } else {
-        数据库完整账号列表.keys().map(|s| s.as_str()).collect()
+        account_table.get_sessions()
     };
-    let sessions = tools::通过账号获取签到会话(&db, &签到所需的账号列表);
     let (有效签到列表, 其他签到列表) = tools::获取所有签到(&sessions);
     let signs = if let Some(active_id) = active_id {
         let s1 = 有效签到列表
@@ -130,24 +128,16 @@ pub fn 签到(
                 }
             }
         };
-        let mut 账号对象_签到所需的_vec = Vec::new();
-        for (uname, session) in 所有sessions_对应于_签到_需要处理的 {
-            if 签到所需的账号列表.contains(&uname.as_str()) {
-                账号对象_签到所需的_vec.push(session)
-            }
-        }
+        let 账号对象_签到所需的_vec = 所有sessions_对应于_签到_需要处理的
+            .into_values()
+            .collect::<Vec<_>>();
         let mut map = HashMap::new();
         map.insert(签到_需要处理的, 账号对象_签到所需的_vec);
         map
     } else {
         let mut signs = HashMap::new();
         for (sign, full_sessions) in 有效签到列表 {
-            let mut 账号对象_签到所需的_vec = Vec::new();
-            for (uname, session) in &full_sessions {
-                if 签到所需的账号列表.contains(&uname.as_str()) {
-                    账号对象_签到所需的_vec.push(*session)
-                }
-            }
+            let 账号对象_签到所需的_vec = full_sessions.into_values().collect::<Vec<_>>();
             signs.insert(sign, 账号对象_签到所需的_vec);
         }
         signs

@@ -77,15 +77,8 @@ fn main() {
                 let table = CourseTable::from_ref(&db);
                 if fresh {
                     // 重新获取课程信息并缓存。
-                    let sessions = tools::通过账号获取签到会话(
-                        &db,
-                        &AccountTable::from_ref(&db)
-                            .get_accounts()
-                            .keys()
-                            .map(|s| s.as_str())
-                            .collect(),
-                    )
-                    ;
+                    let account_table = AccountTable::from_ref(&db);
+                    let sessions = account_table.get_sessions();
                     CourseTable::delete(&db);
                     for (_, session) in sessions {
                         let courses = Course::get_courses(&session).unwrap();
@@ -131,15 +124,7 @@ fn main() {
                 cli::location::location(&db, args)
             }
             MainCmds::List { course, all } => {
-                let sessions = tools::通过账号获取签到会话(
-                    &db,
-                    &AccountTable::from_ref(&db)
-                        .get_accounts()
-                        .keys()
-                        .map(|s| s.as_str())
-                        .collect(),
-                )
-                ;
+                let sessions = AccountTable::from_ref(&db).get_sessions();
                 let (available_sign_activities, other_sign_activities) =
                     tools::获取所有签到(&sessions);
                 if let Some(course) = course {
@@ -182,9 +167,7 @@ fn main() {
             是否精确识别二维码: precisely,
             是否禁用随机偏移: no_random_shift,
         };
-        cli::签到(&db, active_id, accounts, 签到可能使用的信息)
-            
-            .unwrap();
+        cli::签到(&db, active_id, accounts, 签到可能使用的信息).unwrap();
     }
     cxsign::utils::print_now();
 }

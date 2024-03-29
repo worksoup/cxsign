@@ -45,21 +45,6 @@ pub fn 添加账号_使用加密过的密码_刷新时用_此时密码一定是�
     }
 }
 
-pub fn 通过账号获取签到会话(
-    db: &DataBase,
-    账号列表: &Vec<&str>,
-) -> HashMap<String, Session> {
-    let mut s = HashMap::new();
-    for 账号 in 账号列表 {
-        let table = AccountTable::from_ref(&db);
-        if table.has_account(账号) {
-            let 签到会话 = Session::load_json(&DIR, 账号).unwrap();
-            s.insert(账号.to_string(), 签到会话);
-        }
-    }
-    s
-}
-
 pub fn 获取所有签到(
     sessions: &HashMap<String, Session>,
 ) -> (
