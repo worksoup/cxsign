@@ -6,8 +6,8 @@ pub mod sign;
 use crate::sign::{RawSign, Sign, SignTrait};
 use cxsign_types::Course;
 use cxsign_user::Session;
-use cxsign_utils::{now_string, print_now};
-use log::{debug, info};
+use cxsign_utils::now_string;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 

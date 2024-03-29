@@ -20,7 +20,7 @@ impl Display for Course {
         write!(
             f,
             "课程号: {}, 课程名: {}, 任课教师: {}",
-            self.id, self.class_id, self.teacher
+            self.id, self.name, self.teacher
         )
     }
 }
