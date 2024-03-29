@@ -1,8 +1,6 @@
 use crate::activity::sign::{Enum签到结果, Struct签到};
-use crate::{
-    session::Struct签到会话,
-    utils::{address::Struct位置, photo::Struct在线图片},
-};
+use crate::{protocol, session::Struct签到会话, utils::{address::Struct位置, photo::Struct在线图片}};
+use crate::cli::arg::MainCmds::Location;
 
 pub async fn 拍照签到_单个账号<'a>(
     sign: &Struct签到,
@@ -97,6 +95,30 @@ pub async fn 二维码签到_单个账号<'a>(
                             }
                         };
                     }
+                    if 位置列表.is_empty() {
+                        let r = protocol::qrcode_sign(session, enc, self.活动id.as_str(), &Struct位置::new("", "", "", "")).await?;
+
+                        match Struct签到::通过文本判断签到结果(
+                            &r.text().await.unwrap(),
+                        ) {
+                            Enum签到结果::成功 => {
+                                state = Enum签到结果::成功;
+                                break;
+                            }
+                            Enum签到结果::失败 { 失败信息 } => {
+                                eprintln!(
+                                    "用户[{}]在二维码签到[{}]时失败！失败信息：[{:?}]",
+                                    session.get_用户真名(),
+                                    sign.签到名,
+                                    失败信息
+                                );
+                                if 失败信息 == "您已签到过了".to_owned() {
+                                    state = Enum签到结果::成功;
+                                    break;
+                                }
+                            }
+                        };
+                    }
                 }
                 state
             }
@@ -118,7 +140,7 @@ pub async fn 位置签到_单个账号<'a>(
             Enum签到结果::失败 { 失败信息 } => {
                 if 是否自动获取签到位置
                     && let Some(位置及范围) =
-                        crate::utils::address::在html文本中寻找位置及范围(&失败信息)
+                    crate::utils::address::在html文本中寻找位置及范围(&失败信息)
                 {
                     println!(
                         "用户[{}]已获取到教师指定的签到位置：{}, 要求范围：{} 米，将使用随机偏移后的位置签到。",
