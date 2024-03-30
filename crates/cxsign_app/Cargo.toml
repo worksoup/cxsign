@@ -17,4 +17,4 @@ cxsign_user = { path = "../cxsign_user" }
 cxsign_utils = { path = "../cxsign_utils" }
 log.workspace = true
 rxing = "0.5"
-xcap = "0.0.6"
+xcap = "0.0.8"
