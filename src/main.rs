@@ -180,7 +180,7 @@ fn main() {
             是否精确识别二维码: precisely,
             是否禁用随机偏移: no_random_shift,
         };
-        cli::签到(&db, active_id, accounts, 签到可能使用的信息).unwrap();
+        cli::签到(db, active_id, accounts, 签到可能使用的信息).unwrap();
     }
     cxsign::utils::print_now();
 }

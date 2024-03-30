@@ -148,6 +148,7 @@ pub enum AccCmds {
     },
 }
 
+#[derive(Clone)]
 pub struct CliArgs {
     pub 位置字符串: Option<String>,
     pub 图片或图片路径: Option<std::path::PathBuf>,
