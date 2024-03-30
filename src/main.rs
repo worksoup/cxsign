@@ -22,7 +22,8 @@ use cxsign::{
 };
 
 fn main() {
-    let mut builder = env_logger::Builder::from_default_env();
+    let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
+    let mut builder = env_logger::Builder::from_env(env);
     builder.target(env_logger::Target::Stdout);
     builder.init();
     let args = <Args as clap::Parser>::parse();
@@ -182,5 +183,4 @@ fn main() {
         };
         cli::签到(db, active_id, accounts, 签到可能使用的信息).unwrap();
     }
-    cxsign::utils::print_now();
 }

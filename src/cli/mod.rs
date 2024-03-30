@@ -104,7 +104,7 @@ fn 区分签到类型并进行签到<'a>(
                     msg
                 );
             } else {
-                info!("\t用户[{}]签到成功！", 用户真名.get_stu_name(),);
+                println!("\t用户[{}]签到成功！", 用户真名.get_stu_name(),);
             }
         }
     }
