@@ -164,7 +164,7 @@ pub fn 签到(
         signs
     };
     if signs.is_empty() {
-        warn!("签到列表为空！");
+        warn!("签到列表为空。");
     }
     for (sign, sessions) in signs.into_iter() {
         区分签到类型并进行签到(sign, &db, &sessions, &签到可能使用的信息)

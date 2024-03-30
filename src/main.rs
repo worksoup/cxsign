@@ -20,7 +20,24 @@ use cxsign::{
     utils::DIR,
     Activity, Course, SignTrait,
 };
+use log::warn;
+const NOTICE: &str = r#"
+    
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+    列出签到时会默认排除从未发过签到或最后一次签到在 160 天
+    之前的课程。
+
+    如有需要，请使用 `cxsign list -a` 命令强制列出所有签到
+    或使用 `cxsign list -c <COURSE_ID>` 列出特定课程的签
+    到，此时将会刷新排除列表。
+
+    注意，`cxsign list -a` 耗时十几秒到数分钟不等。不过后者
+    耗时较短。
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+"#;
 fn main() {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
@@ -134,29 +151,41 @@ fn main() {
             }
             MainCmds::List { course, all } => {
                 let sessions = AccountTable::from_ref(&db).get_sessions();
-                let (available_sign_activities, other_sign_activities, _) =
-                    Activity::get_all_activities(
-                        ExcludeTable::from_ref(&db),
-                        sessions.values().into_iter(),
-                        all,
-                    )
-                    .unwrap();
                 if let Some(course) = course {
+                    let (a, n) = if let Some(course) =
+                        CourseTable::from_ref(&db).get_courses().get(&course)
+                        && let Some(session) = sessions.values().next()
+                        && let Ok((a, n, _)) = Activity::get_course_activities(
+                            ExcludeTable::from_ref(&db),
+                            session,
+                            course,
+                        ) {
+                        (a, n)
+                    } else {
+                        (vec![], vec![])
+                    };
                     // 列出指定课程的有效签到。
-                    for a in available_sign_activities {
-                        if a.0.as_inner().course.get_id() == course {
-                            println!("{}", a.0.as_inner().fmt_without_course_info());
+                    for a in a {
+                        if a.course.get_id() == course {
+                            println!("{}", a.fmt_without_course_info());
                         }
                     }
                     if all {
                         // 列出指定课程的所有签到。
-                        for a in other_sign_activities {
-                            if a.0.as_inner().course.get_id() == course {
-                                println!("{}", a.0.as_inner().fmt_without_course_info());
+                        for a in n {
+                            if a.course.get_id() == course {
+                                println!("{}", a.fmt_without_course_info());
                             }
                         }
                     }
                 } else {
+                    let (available_sign_activities, other_sign_activities, _) =
+                        Activity::get_all_activities(
+                            ExcludeTable::from_ref(&db),
+                            sessions.values().into_iter(),
+                            all,
+                        )
+                        .unwrap();
                     // 列出所有有效签到。
                     for a in available_sign_activities {
                         println!("{}", a.0.as_inner());
@@ -166,6 +195,8 @@ fn main() {
                         for a in other_sign_activities {
                             println!("{}", a.0.as_inner());
                         }
+                    } else {
+                        warn!("{NOTICE}");
                     }
                 }
             }
@@ -181,6 +212,7 @@ fn main() {
             是否精确识别二维码: precisely,
             是否禁用随机偏移: no_random_shift,
         };
+        warn!("{NOTICE}");
         cli::签到(db, active_id, accounts, 签到可能使用的信息).unwrap();
     }
 }
