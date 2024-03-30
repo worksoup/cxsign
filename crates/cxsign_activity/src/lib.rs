@@ -4,7 +4,7 @@
 pub mod protocol;
 pub mod sign;
 
-use crate::sign::{RawSign, Sign, SignTrait};
+use crate::sign::{RawSign, SignTrait};
 use cxsign_store::ExcludeTable;
 use cxsign_types::Course;
 use cxsign_user::Session;
@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub enum Activity {
-    Sign(Sign),
+    RawSign(RawSign),
     Other(OtherActivity),
 }
 
@@ -27,8 +27,8 @@ impl Activity {
         set_excludes: bool,
     ) -> Result<
         (
-            HashMap<Sign, Vec<Session>>,
-            HashMap<Sign, Vec<Session>>,
+            HashMap<RawSign, Vec<Session>>,
+            HashMap<RawSign, Vec<Session>>,
             HashMap<OtherActivity, Vec<Session>>,
         ),
         ureq::Error,
@@ -86,17 +86,16 @@ impl Activity {
                         let mut o = Vec::new();
                         let mut dont_exclude = false;
                         for activity in activities {
-                            if let Self::Sign(sign) = activity {
+                            if let Self::RawSign(sign) = activity {
                                 if set_excludes {
-                                    let start_time = chrono::DateTime::from_timestamp(
-                                        sign.as_inner().start_timestamp,
-                                        0,
-                                    )
-                                    .unwrap();
+                                    let start_time =
+                                        chrono::DateTime::from_timestamp(sign.start_timestamp, 0)
+                                            .unwrap();
                                     let now = chrono::DateTime::<chrono::Local>::from(
                                         std::time::SystemTime::now(),
                                     );
                                     if now.signed_duration_since(start_time).num_days() < 180 {
+                                        println!("{}", start_time.format("%+").to_string());
                                         dont_exclude = true;
                                     }
                                 }
@@ -161,7 +160,6 @@ impl Activity {
                 let mut handles = Vec::new();
                 for ar in ars {
                     let ar = ar.clone();
-                    let session = session.clone();
                     let c = c.clone();
                     let activities = activities.clone();
                     let handle = std::thread::spawn(move || {
@@ -172,23 +170,15 @@ impl Activity {
                             }
                         {
                             let active_id = ar.id.to_string();
-                            if let Ok(detail) =
-                                RawSign::get_sign_detail(active_id.as_str(), &session)
-                            {
-                                let base_sign = RawSign {
-                                    active_id,
-                                    name: ar.name_one,
-                                    course: c.clone(),
-                                    other_id,
-                                    status_code: ar.status,
-                                    start_timestamp: (ar.start_time / 1000) as i64,
-                                    sign_detail: detail,
-                                };
-                                activities
-                                    .lock()
-                                    .unwrap()
-                                    .push(Self::Sign(base_sign.to_sign()))
-                            }
+                            let base_sign = RawSign {
+                                active_id,
+                                name: ar.name_one,
+                                course: c.clone(),
+                                other_id,
+                                status_code: ar.status,
+                                start_timestamp: (ar.start_time / 1000) as i64,
+                            };
+                            activities.lock().unwrap().push(Self::RawSign(base_sign))
                         } else {
                             activities.lock().unwrap().push(Self::Other(OtherActivity {
                                 id: ar.id.to_string(),

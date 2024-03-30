@@ -23,10 +23,10 @@ impl<'a> DefaultLocationSignner<'a> {
     }
 }
 impl<'a> SignnerTrait<LocationSign> for DefaultLocationSignner<'a> {
-    type ExtData = &'a Vec<Location>;
+    type ExtData<'e> = Vec<Location>;
 
     fn sign<'b, Sessions: Iterator<Item = &'b Session> + Clone>(
-        &self,
+        &mut self,
         sign: &mut LocationSign,
         sessions: Sessions,
     ) -> Result<HashMap<&'b Session, SignResult>, Error> {
@@ -73,18 +73,17 @@ impl<'a> SignnerTrait<LocationSign> for DefaultLocationSignner<'a> {
         };
         let mut map = HashMap::new();
         for session in sessions {
-            let r = self.sign_single(sign, session, &locations)?;
+            let r = Self::sign_single(sign, session, locations.clone())?;
             map.insert(session, r);
         }
         Ok(map)
     }
 
     fn sign_single(
-        &self,
         sign: &mut LocationSign,
         session: &Session,
-        locations: &'a Vec<Location>,
+        locations: Vec<Location>,
     ) -> Result<SignResult, Error> {
-        location_or_qrcode_signner_sign_single(sign, session, locations)
+        location_or_qrcode_signner_sign_single(sign, session, &locations)
     }
 }

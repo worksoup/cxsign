@@ -11,7 +11,7 @@ use serde::Deserialize;
 use std::fmt::{Display, Formatter};
 use ureq::Error;
 
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone)]
 pub struct RawSign {
     pub start_timestamp: i64,
     pub active_id: String,
@@ -19,7 +19,6 @@ pub struct RawSign {
     pub course: Course,
     pub other_id: String,
     pub status_code: i32,
-    pub sign_detail: SignDetail,
 }
 impl SignTrait for RawSign {
     fn as_inner(&self) -> &RawSign {
@@ -103,52 +102,58 @@ impl RawSign {
 }
 
 impl RawSign {
-    pub fn to_sign(self) -> Sign {
-        match self.other_id.parse::<u8>().unwrap_or_else(|e| {
-            error!("{}", self.other_id);
-            error!("{}", self.course.get_name());
-            panic!("{e}")
-        }) {
-            0 => {
-                if self.sign_detail.is_photo {
-                    Sign::Photo(PhotoSign {
-                        raw_sign: self,
-                        photo: None,
-                    })
-                } else {
-                    Sign::Normal(NormalSign { raw_sign: self })
+    pub fn to_sign(self, session: &Session) -> Sign {
+        if let Ok(sign_detail) = RawSign::get_sign_detail(self.active_id.as_str(), session) {
+            match self.other_id.parse::<u8>().unwrap_or_else(|e| {
+                error!("{}", self.other_id);
+                error!("{}", self.course.get_name());
+                panic!("{e}")
+            }) {
+                0 => {
+                    if sign_detail.is_photo {
+                        Sign::Photo(PhotoSign {
+                            raw_sign: self,
+                            photo: None,
+                        })
+                    } else {
+                        Sign::Normal(NormalSign { raw_sign: self })
+                    }
                 }
-            }
-            1 => Sign::Unknown(self),
-            2 => {
-                if self.sign_detail.is_refresh_qrcode {
-                    Sign::QrCode(QrCodeSign::RefreshQrCodeSign(RefreshQrCodeSign {
-                        enc: None,
-                        raw_sign: self,
-                        location: None,
-                    }))
-                } else {
-                    Sign::QrCode(QrCodeSign::NormalQrCodeSign(NormalQrCodeSign {
-                        enc: None,
-                        raw_sign: self,
-                        location: None,
-                    }))
+                1 => Sign::Unknown(self),
+                2 => {
+                    if sign_detail.is_refresh_qrcode {
+                        Sign::QrCode(QrCodeSign::RefreshQrCodeSign(RefreshQrCodeSign {
+                            enc: None,
+                            c: sign_detail.c.clone(),
+                            raw_sign: self,
+                            location: None,
+                        }))
+                    } else {
+                        Sign::QrCode(QrCodeSign::NormalQrCodeSign(NormalQrCodeSign {
+                            enc: None,
+                            c: sign_detail.c.clone(),
+                            raw_sign: self,
+                            location: None,
+                        }))
+                    }
                 }
+                3 => Sign::Gesture(GestureSign {
+                    raw_sign: self,
+                    gesture: None,
+                }),
+                4 => Sign::Location(LocationSign {
+                    raw_sign: self,
+                    location: None,
+                    has_range: false,
+                }),
+                5 => Sign::Signcode(SigncodeSign {
+                    signcode: None,
+                    raw_sign: self,
+                }),
+                _ => Sign::Unknown(self),
             }
-            3 => Sign::Gesture(GestureSign {
-                raw_sign: self,
-                gesture: None,
-            }),
-            4 => Sign::Location(LocationSign {
-                raw_sign: self,
-                location: None,
-                has_range: false,
-            }),
-            5 => Sign::Signcode(SigncodeSign {
-                signcode: None,
-                raw_sign: self,
-            }),
-            _ => Sign::Unknown(self),
+        } else {
+            Sign::Unknown(self)
         }
     }
     pub fn fmt_without_course_info(&self) -> String {

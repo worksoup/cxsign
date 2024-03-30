@@ -13,10 +13,11 @@ fn sign_unchecked<T: SignTrait>(
     let r = protocol::qrcode_sign(session, enc, sign.as_inner().active_id.as_str(), location)?;
     Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
 }
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone)]
 pub struct RefreshQrCodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) enc: Option<String>,
+    pub(crate) c: String,
     pub(crate) location: Option<Location>,
 }
 impl RefreshQrCodeSign {
@@ -47,7 +48,7 @@ impl SignTrait for RefreshQrCodeSign {
             raw.course.clone(),
             active_id,
             uid,
-            &raw.sign_detail.c,
+            &self.c,
             enc,
         )?;
         info!("用户[{}]预签到已请求。", session.get_stu_name());
@@ -59,10 +60,11 @@ impl SignTrait for RefreshQrCodeSign {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct NormalQrCodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) enc: Option<String>,
+    pub(crate) c: String,
     pub(crate) location: Option<Location>,
 }
 impl NormalQrCodeSign {
@@ -89,7 +91,7 @@ impl SignTrait for NormalQrCodeSign {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub enum QrCodeSign {
     RefreshQrCodeSign(RefreshQrCodeSign),
     NormalQrCodeSign(NormalQrCodeSign),
@@ -97,8 +99,8 @@ pub enum QrCodeSign {
 impl QrCodeSign {
     pub fn get_qrcode_arg_c(&self) -> &str {
         match self {
-            QrCodeSign::RefreshQrCodeSign(a) => &a.raw_sign.sign_detail.c,
-            QrCodeSign::NormalQrCodeSign(a) => &a.raw_sign.sign_detail.c,
+            QrCodeSign::RefreshQrCodeSign(a) => &a.c,
+            QrCodeSign::NormalQrCodeSign(a) => &a.c,
         }
     }
     pub fn set_enc(&mut self, enc: String) {

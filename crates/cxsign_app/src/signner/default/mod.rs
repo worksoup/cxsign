@@ -4,7 +4,9 @@ mod normal_or_raw;
 mod photo;
 mod qrcode;
 
-use cxsign_activity::sign::{LocationSign, QrCodeSign, SignResult, SignTrait};
+use cxsign_activity::sign::{
+    LocationSign, NormalQrCodeSign, QrCodeSign, RefreshQrCodeSign, SignResult, SignTrait,
+};
 use cxsign_error::Error;
 use cxsign_types::Location;
 use cxsign_user::Session;
@@ -14,11 +16,20 @@ use log::{info, warn};
 pub use normal_or_raw::*;
 pub use photo::*;
 pub use qrcode::*;
-
 trait SetLocationTrait {
     fn set_location(&mut self, location: Location);
 }
 impl SetLocationTrait for QrCodeSign {
+    fn set_location(&mut self, location: Location) {
+        self.set_location(location)
+    }
+}
+impl SetLocationTrait for RefreshQrCodeSign {
+    fn set_location(&mut self, location: Location) {
+        self.set_location(location)
+    }
+}
+impl SetLocationTrait for NormalQrCodeSign {
     fn set_location(&mut self, location: Location) {
         self.set_location(location)
     }

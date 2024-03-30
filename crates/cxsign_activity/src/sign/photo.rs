@@ -4,7 +4,7 @@ use cxsign_types::Photo;
 use cxsign_user::Session;
 use ureq::Error;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct PhotoSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) photo: Option<Photo>,

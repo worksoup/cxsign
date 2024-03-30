@@ -28,10 +28,10 @@ impl DefaultPhotoSignner {
     }
 }
 impl SignnerTrait<PhotoSign> for DefaultPhotoSignner {
-    type ExtData = ();
+    type ExtData<'e> = ();
 
     fn sign<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
-        &self,
+        &mut self,
         sign: &mut PhotoSign,
         sessions: Sessions,
     ) -> Result<HashMap<&'a Session, SignResult>, Error> {
@@ -66,7 +66,7 @@ impl SignnerTrait<PhotoSign> for DefaultPhotoSignner {
             let index = session_to_index[session];
             if let Some(photo) = pic_map.get(&index).cloned() {
                 sign.set_photo(photo);
-                let a = self.sign_single(sign, session, ())?;
+                let a = Self::sign_single(sign, session, ())?;
                 map.insert(session, a);
             } else {
                 map.insert(
@@ -80,12 +80,7 @@ impl SignnerTrait<PhotoSign> for DefaultPhotoSignner {
         Ok(map)
     }
 
-    fn sign_single(
-        &self,
-        sign: &mut PhotoSign,
-        session: &Session,
-        _: (),
-    ) -> Result<SignResult, Error> {
+    fn sign_single(sign: &mut PhotoSign, session: &Session, _: ()) -> Result<SignResult, Error> {
         sign.pre_sign_and_sign(session).map_err(|e| e.into())
     }
 }
