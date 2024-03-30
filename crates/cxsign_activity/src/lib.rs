@@ -21,10 +21,45 @@ pub enum Activity {
 }
 
 impl Activity {
-    pub fn get_all_activities<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
+    pub fn get_course_activities(
         table: ExcludeTable,
-        sessions: Sessions,
+        session: &Session,
+        course: &Course,
+    ) -> Result<(Vec<RawSign>, Vec<RawSign>, Vec<OtherActivity>), ureq::Error> {
+        let mut v = Vec::new();
+        let mut n = Vec::new();
+        let mut o = Vec::new();
+        let activities = Self::get_list_from_course(&session, &course).unwrap_or(vec![]);
+        let mut dont_exclude = false;
+        for activity in activities {
+            if let Self::RawSign(sign) = activity {
+                let start_time = chrono::DateTime::from_timestamp(sign.start_timestamp, 0).unwrap();
+                let now = chrono::DateTime::<chrono::Local>::from(std::time::SystemTime::now());
+                if now.signed_duration_since(start_time).num_days() < 160 {
+                    dont_exclude = true;
+                }
+                if sign.is_valid() {
+                    v.push(sign);
+                } else {
+                    n.push(sign);
+                }
+            } else if let Self::Other(other_activity) = activity {
+                o.push(other_activity);
+            }
+        }
+        let id = course.get_id();
+        let excluded = table.has_exclude(id);
+        if dont_exclude && excluded {
+            table.delete_exclude(id);
+        } else if !dont_exclude && !excluded {
+            table.add_exclude(id);
+        }
+        Ok((v, n, o))
+    }
+    fn get_activities(
+        table: ExcludeTable,
         set_excludes: bool,
+        courses: HashMap<Course, Vec<Session>>,
     ) -> Result<
         (
             HashMap<RawSign, Vec<Session>>,
@@ -33,22 +68,6 @@ impl Activity {
         ),
         ureq::Error,
     > {
-        let excludes = table.get_excludes();
-        let set_excludes = set_excludes || excludes.is_empty();
-        let mut courses = HashMap::new();
-        for session in sessions.clone() {
-            let courses_ = Course::get_courses(session)?;
-            for course in courses_ {
-                if (set_excludes || !excludes.contains(&course.get_id()))
-                    && let Err(OccupiedError {
-                        mut entry,
-                        value: _,
-                    }) = courses.try_insert(course, vec![session.clone()])
-                {
-                    entry.get_mut().push(session.clone());
-                }
-            }
-        }
         let course_sessions_map = courses;
         let courses = course_sessions_map
             .keys()
@@ -142,6 +161,36 @@ impl Activity {
             table.update_excludes(&Arc::into_inner(excludes).unwrap().into_inner().unwrap());
         }
         Ok((valid_signs, other_signs, other_activities))
+    }
+    pub fn get_all_activities<'a, Sessions: Iterator<Item = &'a Session> + Clone>(
+        table: ExcludeTable,
+        sessions: Sessions,
+        set_excludes: bool,
+    ) -> Result<
+        (
+            HashMap<RawSign, Vec<Session>>,
+            HashMap<RawSign, Vec<Session>>,
+            HashMap<OtherActivity, Vec<Session>>,
+        ),
+        ureq::Error,
+    > {
+        let excludes = table.get_excludes();
+        let set_excludes = set_excludes || excludes.is_empty();
+        let mut courses = HashMap::new();
+        for session in sessions.clone() {
+            let courses_ = Course::get_courses(session)?;
+            for course in courses_ {
+                if (set_excludes || !excludes.contains(&course.get_id()))
+                    && let Err(OccupiedError {
+                        mut entry,
+                        value: _,
+                    }) = courses.try_insert(course, vec![session.clone()])
+                {
+                    entry.get_mut().push(session.clone());
+                }
+            }
+        }
+        Self::get_activities(table, set_excludes, courses)
     }
     pub fn get_list_from_course(session: &Session, c: &Course) -> Result<Vec<Self>, ureq::Error> {
         let r = crate::protocol::active_list(session, c.clone())?;

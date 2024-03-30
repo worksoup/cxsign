@@ -6,6 +6,20 @@ pub struct ExcludeTable<'a> {
 }
 
 impl<'a> ExcludeTable<'a> {
+
+    pub fn has_exclude(&self, id: i64) -> bool {
+        let mut query = self
+            .db
+            .prepare(format!(
+                "SELECT count(*) FROM {} WHERE id=?;",
+                Self::TABLE_NAME
+            ))
+            .unwrap();
+        query.bind((1, id)).unwrap();
+        query.next().unwrap();
+        query.read::<i64, _>(0).unwrap() > 0
+    }
+
     pub fn get_excludes(&self) -> Vec<i64> {
         let mut query = self
             .db
@@ -23,7 +37,7 @@ impl<'a> ExcludeTable<'a> {
         excludes
     }
 
-    fn add_exclude(&self, id: i64) {
+    pub fn add_exclude(&self, id: i64) {
         let mut query = self
             .db
             .prepare(format!("INSERT INTO {}(id) values(:id);", Self::TABLE_NAME))
@@ -33,6 +47,18 @@ impl<'a> ExcludeTable<'a> {
             .unwrap();
         let _ = query.next();
     }
+
+    pub fn delete_exclude(&self, id: i64) {
+        if self.has_exclude(id) {
+            let mut query = self
+                .db
+                .prepare(format!("DELETE FROM {} WHERE id=?;", Self::TABLE_NAME))
+                .unwrap();
+            query.bind((1, id)).unwrap();
+            query.next().unwrap();
+        }
+    }
+
     pub fn update_excludes(&self, excludes: &Vec<i64>) {
         Self::delete(self.db);
         for exclude in excludes {
