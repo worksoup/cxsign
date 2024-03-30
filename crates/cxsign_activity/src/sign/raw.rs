@@ -37,13 +37,7 @@ impl SignTrait for RawSign {
         self.analysis_after_presign(active_id, session, response_of_pre_sign)
     }
     unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
-        let r = protocol::general_sign(
-            session,
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
-            self.active_id.as_str(),
-        )?;
+        let r = protocol::general_sign(session, self.active_id.as_str())?;
         Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
     }
 }
@@ -220,14 +214,7 @@ impl RawSign {
         signcode: &str,
     ) -> Result<SignResult, Error> {
         if Self::check_signcode(session, &self.active_id, signcode)? {
-            let r = protocol::signcode_sign(
-                session,
-                session.get_uid(),
-                session.get_fid(),
-                session.get_stu_name(),
-                self.active_id.as_str(),
-                signcode,
-            )?;
+            let r = protocol::signcode_sign(session, self.active_id.as_str(), signcode)?;
             Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
         } else {
             Ok(SignResult::Fail {

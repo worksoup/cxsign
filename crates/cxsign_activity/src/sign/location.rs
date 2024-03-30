@@ -31,9 +31,6 @@ impl SignTrait for LocationSign {
     unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
         let r = protocol::location_sign(
             session,
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
             unsafe { self.location.as_ref().unwrap_unchecked() },
             self.raw_sign.active_id.as_str(),
             self.has_range,

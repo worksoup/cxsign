@@ -10,15 +10,7 @@ fn sign_unchecked<T: SignTrait>(
     location: &Option<Location>,
     session: &Session,
 ) -> Result<SignResult, Error> {
-    let r = protocol::qrcode_sign(
-        session,
-        session.get_uid(),
-        session.get_fid(),
-        session.get_stu_name(),
-        enc,
-        sign.as_inner().active_id.as_str(),
-        location,
-    )?;
+    let r = protocol::qrcode_sign(session, enc, sign.as_inner().active_id.as_str(), location)?;
     Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
 }
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]

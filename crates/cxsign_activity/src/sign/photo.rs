@@ -30,9 +30,6 @@ impl SignTrait for PhotoSign {
         let photo = self.photo.as_ref().unwrap();
         let r = protocol::photo_sign(
             session,
-            session.get_uid(),
-            session.get_fid(),
-            session.get_stu_name(),
             self.raw_sign.active_id.as_str(),
             photo.get_object_id(),
         )?;
