@@ -84,6 +84,8 @@ impl Activity {
                         let mut v = Vec::new();
                         let mut n = Vec::new();
                         let mut o = Vec::new();
+                        // NOTE: 此处也会将没有过签到的课程排除掉。
+                        // TODO: 需要修改。
                         let mut dont_exclude = false;
                         for activity in activities {
                             if let Self::RawSign(sign) = activity {
@@ -94,8 +96,7 @@ impl Activity {
                                     let now = chrono::DateTime::<chrono::Local>::from(
                                         std::time::SystemTime::now(),
                                     );
-                                    if now.signed_duration_since(start_time).num_days() < 180 {
-                                        println!("{}", start_time.format("%+").to_string());
+                                    if now.signed_duration_since(start_time).num_days() < 160 {
                                         dont_exclude = true;
                                     }
                                 }
