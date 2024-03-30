@@ -35,7 +35,7 @@ impl<'a> AccountTable<'a> {
             if self.has_account(account) {
                 let session = Session::load_json(&self.db.dir, account).unwrap();
                 s.insert(account.to_string(), session);
-            }else{
+            } else {
                 warn!("没有该账号：[`{account}`]，跳过。请检查输入或登录。");
             }
         }
@@ -131,7 +131,7 @@ impl<'a> AccountTable<'a> {
                 warn!("账号解析行出错：{c:?}.");
             }
         }
-        if accounts.is_empty(){
+        if accounts.is_empty() {
             warn!("没有登录的账号，请登录。");
         }
         accounts
