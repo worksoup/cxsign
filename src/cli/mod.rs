@@ -1,171 +1,35 @@
 pub mod arg;
 pub mod location;
-mod sign;
-mod single_sign;
 
-use crate::activity::sign::{Enum签到类型, Enum签到结果, Struct签到};
-use crate::utils;
-use crate::utils::sign::截屏获取二维码签到所需参数;
-use crate::{
-    session::Struct签到会话,
-    utils::{address::Struct位置, sql::DataBase},
+use cxsign::{
+    store::{
+        tables::{AccountTable, ExcludeTable},
+        DataBase, DataBaseTableTrait,
+    },
+    Activity, DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
+    DefaultPhotoSignner, DefaultQrCodeSignner, RawSign, Session, Sign, SignResult, SignTrait,
+    SignnerTrait,
 };
-use std::fs::DirEntry;
-use std::{collections::HashMap, path::PathBuf};
+use log::{info, warn};
+use std::collections::HashMap;
 
 use self::arg::CliArgs;
 
-pub fn 通过目录决定图片路径(图片所在目录: &PathBuf) -> Option<PathBuf> {
-    loop {
-        let 答案 = utils::请求确认("二维码图片是否就绪？", "本程序会读取 `--pic` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。");
-        if 答案 {
-            break;
-        }
-    }
-    let 图片路径 = if let Ok(图片所在目录) = std::fs::read_dir(图片所在目录) {
-        let mut 目录下所有文件: Vec<DirEntry> = 图片所在目录
-            .filter_map(|k| {
-                let r = k.as_ref().is_ok_and(|k| {
-                    k.file_type().is_ok_and(|t| {
-                        t.is_file() && {
-                            let 文件名 = k.file_name();
-                            let 文件后缀名 = 文件名.to_str().unwrap().split('.').last().unwrap();
-                            文件后缀名 == "png" || 文件后缀名 == "jpg"
-                        }
-                    })
-                });
-                if r {
-                    Some(unsafe { k.unwrap_unchecked() })
-                } else {
-                    None
-                }
-            })
-            .collect();
-        if 目录下所有文件.is_empty() {
-            eprintln!("文件夹下没有图片！（只支持 `*.png` 文件或 `*.jpg` 文件。）");
-            None
-        } else {
-            目录下所有文件.sort_by(|a, b| {
-                b.metadata()
-                    .unwrap()
-                    .modified()
-                    .unwrap()
-                    .cmp(&a.metadata().unwrap().modified().unwrap())
-            });
-            Some(目录下所有文件[0].path())
-        }
-    } else {
-        eprintln!("遍历文件夹失败！");
-        None
-    };
-    图片路径
-}
-
-async fn 通过位置字符串决定位置(
+fn 区分签到类型并进行签到<'a>(
+    签到: RawSign,
     db: &DataBase,
-    位置字符串: &Option<String>,
-) -> Result<Struct位置, String> {
-    if let Some(ref 位置字符串) = 位置字符串 {
-        let 位置字符串 = 位置字符串.trim();
-        if let Ok(位置) = 位置字符串.parse() {
-            Ok(位置)
-        } else if let Some(位置) = db.获取为某别名的位置(位置字符串) {
-            Ok(位置)
-        } else if let Ok(位置id) = 位置字符串.parse() {
-            if db.是否存在为某id的位置(位置id) {
-                let (_, 位置) = db.获取为某id的位置(位置id);
-                Ok(位置)
-            } else {
-                Err(位置字符串.to_owned())
-            }
-        } else {
-            Err(位置字符串.to_owned())
-        }
-    } else {
-        Err("".to_string())
-    }
-}
-
-fn 打印对于sign无法获取二维码时的错误信息(sign: &Struct签到) {
-    eprintln!(
-        "所有用户在二维码签到[{}]中签到失败！二维码签到需要提供签到二维码！",
-        sign.签到名
-    );
-}
-
-async fn qrcode_sign_by_pic_arg<'a>(
-    签到: &Struct签到,
-    pic: &PathBuf,
-    db: &DataBase,
-    位置: &Option<String>,
-    sessions: &'a Vec<&Struct签到会话>,
-    是否禁用随机偏移: bool,
-    自动获取时的位置地址名: &str,
-) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
-    let mut 自动获取时的位置地址名2 = "".to_string();
-    let 位置列表 = match 通过位置字符串决定位置(db, 位置).await {
-        Ok(位置) => {
-            vec![位置]
-        }
-        Err(位置字符串) => {
-            if 位置字符串.is_empty() {
-                let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
-                let mut 全局位置列表 = db.获取特定课程的位置(-1);
-                位置列表.append(&mut 全局位置列表);
-                位置列表
-            } else {
-                if 自动获取时的位置地址名.is_empty() {
-                    自动获取时的位置地址名2 = 位置字符串;
-                } else {
-                    自动获取时的位置地址名2 = 自动获取时的位置地址名.to_owned();
-                }
-                vec![]
-            }
-        }
-    };
-    let mut states = HashMap::new();
-    if std::fs::metadata(pic).unwrap().is_dir() {
-        if let Some(pic) = 通过目录决定图片路径(pic)
-            && let Some(enc) = utils::sign::扫描路径中二维码并获取签到所需参数(
-                pic.to_str().unwrap(),
-            )
-        {
-            states = sign::二维码签到(
-                签到,
-                签到.get_二维码签到时的c参数(),
-                &enc,
-                &位置列表,
-                sessions,
-                是否禁用随机偏移,
-                &自动获取时的位置地址名2,
-            )
-            .await?;
-        } else {
-            打印对于sign无法获取二维码时的错误信息(签到);
-        }
-    } else if let Some(enc) =
-        utils::sign::扫描路径中二维码并获取签到所需参数(pic.to_str().unwrap())
-    {
-        states = sign::二维码签到(
-            签到,
-            签到.get_二维码签到时的c参数(),
-            &enc,
-            &位置列表,
-            sessions,
-            是否禁用随机偏移,
-            &自动获取时的位置地址名2,
-        )
-        .await?;
-    }
-    Ok(states)
-}
-
-async fn 区分签到类型并进行签到<'a>(
-    签到: &Struct签到,
-    db: &DataBase,
-    签到会话列表: &'a Vec<&Struct签到会话>,
+    签到会话列表: &Vec<Session>,
     签到可能使用的信息: &CliArgs,
-) -> Result<(), reqwest::Error> {
+) -> Result<(), cxsign::Error> {
+    let sign_name = 签到.name.clone();
+    let mut 签到 = if 签到会话列表.is_empty() {
+        warn!("无法判断签到[{sign_name}]的签到类型。");
+        Sign::Unknown(签到)
+    } else {
+        info!("成功判断签到[{sign_name}]的签到类型。");
+        签到.to_sign(&签到会话列表[0])
+    };
+    let 签到 = &mut 签到;
     let CliArgs {
         位置字符串,
         图片或图片路径: pic,
@@ -173,152 +37,113 @@ async fn 区分签到类型并进行签到<'a>(
         是否精确识别二维码,
         是否禁用随机偏移,
     } = 签到可能使用的信息;
-    let 签到类型 = 签到.get_sign_type();
     let mut 签到结果列表 = HashMap::new();
-
-    match 签到类型 {
-        Enum签到类型::拍照签到 => {
-            let pic = if let Some(pic) = pic
-                && let Ok(metadata) = std::fs::metadata(pic)
-            {
-                if metadata.is_dir() {
-                    通过目录决定图片路径(pic)
-                } else {
-                    Some(pic.to_owned())
-                }
-            } else {
-                None
-            };
-            签到结果列表 = sign::拍照签到(签到, &pic, 签到会话列表).await?;
+    let sessions = 签到会话列表.into_iter();
+    match 签到 {
+        Sign::Photo(ps) => {
+            info!("签到[{sign_name}]为拍照签到。");
+            签到结果列表 = DefaultPhotoSignner::new(&pic).sign(ps, sessions)?;
         }
-        Enum签到类型::普通签到 => {
-            签到结果列表 = sign::普通签到(签到, 签到会话列表).await?;
+        Sign::Normal(ns) => {
+            info!("签到[{sign_name}]为普通签到。");
+            签到结果列表 = DefaultNormalOrRawSignner.sign(ns, sessions)?;
         }
-        Enum签到类型::二维码签到 => {
-            let mut 自动获取时的位置地址名 = "".to_string();
-            let 位置列表 = match 通过位置字符串决定位置(db, 位置字符串).await {
-                Ok(位置) => {
-                    vec![位置]
-                }
-                Err(位置字符串) => {
-                    if 位置字符串.is_empty() {
-                        let mut 全局位置列表 = db.获取特定课程的位置(-1);
-                        let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
-                        位置列表.append(&mut 全局位置列表);
-                        位置列表
-                    } else {
-                        自动获取时的位置地址名 = 位置字符串;
-                        vec![]
-                    }
-                }
-            };
-            //  如果有 pic 参数，那么使用它。
-            if let Some(pic) = pic {
-                签到结果列表 = qrcode_sign_by_pic_arg(
-                    签到,
-                    pic,
-                    db,
-                    位置字符串,
-                    签到会话列表,
-                    *是否禁用随机偏移,
-                    &自动获取时的位置地址名,
-                )
-                .await?;
-            }
-            // 如果没有则试图截屏。
-            else if let Some(enc) =
-                截屏获取二维码签到所需参数(签到.二维码是否刷新(), *是否精确识别二维码)
-            {
-                签到结果列表 = sign::二维码签到(
-                    签到,
-                    签到.get_二维码签到时的c参数(),
-                    &enc,
-                    &位置列表,
-                    签到会话列表,
-                    *是否禁用随机偏移,
-                    &自动获取时的位置地址名,
-                )
-                .await?;
-            }
-            // 这下是真没有了。
-            else {
-                打印对于sign无法获取二维码时的错误信息(签到);
-            }
+        Sign::QrCode(qs) => {
+            info!("签到[{sign_name}]为二维码签到。");
+            签到结果列表 = DefaultQrCodeSignner::new(
+                &db,
+                &位置字符串,
+                &pic,
+                &None,
+                *是否精确识别二维码,
+                *是否禁用随机偏移,
+            )
+            .sign(qs, sessions)?;
         }
-        Enum签到类型::位置签到 => {
-            if let Ok(位置) = 通过位置字符串决定位置(db, 位置字符串).await {
-                println!("解析位置成功，将使用位置 `{}` 签到。", 位置);
-                签到结果列表 =
-                    sign::位置签到(签到, &vec![位置], false, 签到会话列表, *是否禁用随机偏移)
-                        .await?;
-            } else {
-                let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
-                let mut 全局位置列表 = db.获取特定课程的位置(-1);
-                位置列表.append(&mut 全局位置列表);
-                签到结果列表 =
-                    sign::位置签到(签到, &位置列表, true, 签到会话列表, *是否禁用随机偏移).await?;
-            };
-        }
-        Enum签到类型::非已知签到 => {
-            eprintln!("签到活动[{}]为无效签到类型！", 签到.签到名);
-        }
-        signcode_sign_type => {
+        Sign::Gesture(gs) => {
+            info!("签到[{sign_name}]为手势签到。");
             if let Some(signcode) = 签到码 {
-                签到结果列表 = sign::签到码签到(签到, signcode, 签到会话列表).await?;
+                签到结果列表 =
+                    DefaultGestureOrSigncodeSignner::new(&signcode).sign(gs, sessions)?;
             } else {
-                let sign_type_str = match signcode_sign_type {
-                    Enum签到类型::手势签到 => "手势",
-                    Enum签到类型::签到码签到 => "签到码",
-                    _ => unreachable!(),
-                };
-                eprintln!(
-                    "所有用户在{sign_type_str}签到[{}]中签到失败！需要提供签到码！",
-                    签到.签到名
+                warn!(
+                    "所有用户在手势签到[{}]中签到失败！需要提供签到码！",
+                    gs.as_inner().name
                 )
             }
         }
-    };
-    if !签到结果列表.is_empty() {
-        println!("签到活动[{}]签到结果：", 签到.签到名);
-        for (用户真名, 签到结果) in 签到结果列表 {
-            if let Enum签到结果::失败 { 失败信息 } = 签到结果 {
-                eprintln!("\t用户[{}]签到失败！失败信息：[{:?}]", 用户真名, 失败信息);
+        Sign::Location(ls) => {
+            info!("签到[{sign_name}]为位置签到。");
+            签到结果列表 = DefaultLocationSignner::new(&db, &位置字符串, *是否禁用随机偏移)
+                .sign(ls, sessions)?;
+        }
+        Sign::Signcode(ss) => {
+            info!("签到[{sign_name}]为签到码签到。");
+            if let Some(signcode) = 签到码 {
+                签到结果列表 =
+                    DefaultGestureOrSigncodeSignner::new(&signcode).sign(ss, sessions)?;
             } else {
-                println!("\t用户[{}]签到成功！", 用户真名,);
+                warn!(
+                    "所有用户在手势签到[{}]中签到失败！需要提供签到码！",
+                    ss.as_inner().name
+                )
+            }
+        }
+        Sign::Unknown(us) => {
+            warn!("签到[{}]为无效签到类型！", us.name);
+            签到结果列表 = DefaultNormalOrRawSignner.sign(us, sessions)?;
+        }
+    }
+    if !签到结果列表.is_empty() {
+        println!("签到活动[{}]签到结果：", 签到.as_inner().name);
+        for (用户真名, 签到结果) in 签到结果列表 {
+            if let SignResult::Fail { msg } = 签到结果 {
+                warn!(
+                    "\t用户[{}]签到失败！失败信息：[{:?}]",
+                    用户真名.get_stu_name(),
+                    msg
+                );
+            } else {
+                println!("\t用户[{}]签到成功！", 用户真名.get_stu_name(),);
             }
         }
     }
     Ok(())
 }
 
-pub async fn 签到(
-    db: &DataBase,
+pub fn 签到(
+    db: DataBase,
     active_id: Option<i64>,
     账号列表字符串: Option<String>,
     签到可能使用的信息: CliArgs,
-) -> Result<(), reqwest::Error> {
-    let mut 是否指定accounts参数 = false;
-    let 数据库完整账号列表 = db.get_accounts();
-    let 签到所需的账号列表: Vec<&str> = if let Some(账号列表字符串) = &账号列表字符串
+) -> Result<(), cxsign::Error> {
+    let account_table = AccountTable::from_ref(&db);
+    let (sessions, 是否指定accounts参数) = if let Some(账号列表字符串) = &账号列表字符串
     {
-        是否指定accounts参数 = true;
-        账号列表字符串.split(",").map(|a| a.trim()).collect()
+        (
+            account_table.get_sessions_by_accounts_str(账号列表字符串),
+            true,
+        )
     } else {
-        数据库完整账号列表.keys().map(|s| s.as_str()).collect()
+        (account_table.get_sessions(), false)
     };
-    let sessions = utils::account::通过账号获取签到会话(&db, &签到所需的账号列表).await;
-    let (有效签到列表, 其他签到列表) = utils::sign::获取所有签到(&sessions).await;
+    let (有效签到列表, 其他签到列表, _) = Activity::get_all_activities(
+        ExcludeTable::from_ref(&db),
+        sessions.values().into_iter(),
+        false,
+    )
+    .unwrap();
     let signs = if let Some(active_id) = active_id {
-        let s1 = 有效签到列表
-            .iter()
-            .find(|kv| kv.0.活动id == active_id.to_string());
-        let s2 = 其他签到列表
-            .iter()
-            .find(|kv| kv.0.活动id == active_id.to_string());
-        let (签到_需要处理的, 所有sessions_对应于_签到_需要处理的) = {
-            if let Some(s1) = s1 {
+        let (签到_需要处理的, 账号对象_签到所需的_vec) = {
+            if let Some(s1) = 有效签到列表
+                .into_iter()
+                .find(|kv| kv.0.as_inner().active_id == active_id.to_string())
+            {
                 s1
-            } else if let Some(s2) = s2 {
+            } else if let Some(s2) = 其他签到列表
+                .into_iter()
+                .find(|kv| kv.0.as_inner().active_id == active_id.to_string())
+            {
                 s2
             } else {
                 if 是否指定accounts参数 {
@@ -328,31 +153,22 @@ pub async fn 签到(
                 }
             }
         };
-        let mut 账号对象_签到所需的_vec = Vec::new();
-        for (uname, session) in 所有sessions_对应于_签到_需要处理的 {
-            if 签到所需的账号列表.contains(&uname.as_str()) {
-                账号对象_签到所需的_vec.push(*session)
-            }
-        }
         let mut map = HashMap::new();
         map.insert(签到_需要处理的, 账号对象_签到所需的_vec);
         map
     } else {
         let mut signs = HashMap::new();
-        for (sign, full_sessions) in &有效签到列表 {
-            let mut 账号对象_签到所需的_vec = Vec::new();
-            for (uname, session) in full_sessions {
-                if 签到所需的账号列表.contains(&uname.as_str()) {
-                    账号对象_签到所需的_vec.push(*session)
-                }
-            }
+        for (sign, 账号对象_签到所需的_vec) in 有效签到列表 {
             signs.insert(sign, 账号对象_签到所需的_vec);
         }
         signs
     };
-
-    for (sign, sessions) in signs {
-        区分签到类型并进行签到(sign, db, &sessions, &签到可能使用的信息).await?;
+    if signs.is_empty() {
+        warn!("签到列表为空。");
+    }
+    for (sign, sessions) in signs.into_iter() {
+        区分签到类型并进行签到(sign, &db, &sessions, &签到可能使用的信息)
+            .unwrap_or_else(|e| warn!("{e}"));
     }
     Ok(())
 }
