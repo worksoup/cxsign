@@ -31,15 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 excludes = [
-    # Plain text files AS IS
-    "*.txt",
-
-    # Test files
-    "fmt/tests/content/**",
-    "tests/load_header_path/**",
-
-    # Generated files
-    ".github/workflows/release.yml",
 ]
 
 [properties]
