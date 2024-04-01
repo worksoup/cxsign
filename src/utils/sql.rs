@@ -127,6 +127,9 @@ impl DataBase {
                 eprintln!("账号解析行出错：{c:?}.");
             }
         }
+        if accounts.is_empty() {
+            eprintln!("无登录账号,请参照 [wiki](https://github.com/worksoup/cxsign/wiki/%E5%91%BD%E4%BB%A4%EF%BC%9A%E8%B4%A6%E5%8F%B7%E7%9B%B8%E5%85%B3#cxsign-account-add-12345678910) 登录!")
+        }
         accounts
     }
 }
@@ -297,7 +300,10 @@ impl DataBase {
         let courseid = row.read("courseid");
         (courseid, Struct位置::new(addr, lon, lat, alt))
     }
-    pub fn 获取特定课程的位置和其id(&self, course_id: i64) -> HashMap<i64, Struct位置> {
+    pub fn 获取特定课程的位置和其id(
+        &self,
+        course_id: i64,
+    ) -> HashMap<i64, Struct位置> {
         let mut query = self
             .connection
             .prepare("SELECT * FROM pos WHERE courseid=?;")
@@ -396,7 +402,9 @@ impl DataBase {
             .prepare("UPDATE alias SET name=:name,posid=:posid WHERE name=:name;")
             .unwrap();
         query
-            .bind::<&[(_, sqlite::Value)]>(&[(":name", alias.into()), (":posid", 位置id.into())][..])
+            .bind::<&[(_, sqlite::Value)]>(
+                &[(":name", alias.into()), (":posid", 位置id.into())][..],
+            )
             .unwrap();
         query.next().unwrap();
     }

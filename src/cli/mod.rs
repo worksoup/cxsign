@@ -64,25 +64,25 @@ pub fn 通过目录决定图片路径(图片所在目录: &PathBuf) -> Option<Pa
 async fn 通过位置字符串决定位置(
     db: &DataBase,
     位置字符串: &Option<String>,
-) -> Option<Struct位置> {
+) -> Result<Struct位置, String> {
     if let Some(ref 位置字符串) = 位置字符串 {
         let 位置字符串 = 位置字符串.trim();
-        if let Ok(位置) = Struct位置::从字符串解析(&位置字符串) {
-            Some(位置)
+        if let Ok(位置) = 位置字符串.parse() {
+            Ok(位置)
         } else if let Some(位置) = db.获取为某别名的位置(位置字符串) {
-            Some(位置)
+            Ok(位置)
         } else if let Ok(位置id) = 位置字符串.parse() {
             if db.是否存在为某id的位置(位置id) {
                 let (_, 位置) = db.获取为某id的位置(位置id);
-                Some(位置)
+                Ok(位置)
             } else {
-                None
+                Err(位置字符串.to_owned())
             }
         } else {
-            None
+            Err(位置字符串.to_owned())
         }
     } else {
-        None
+        Err("".to_string())
     }
 }
 
@@ -100,21 +100,36 @@ async fn qrcode_sign_by_pic_arg<'a>(
     位置: &Option<String>,
     sessions: &'a Vec<&Struct签到会话>,
     是否禁用随机偏移: bool,
+    自动获取时的位置地址名: &str,
 ) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
-    let 位置列表 = if let Some(位置) = 通过位置字符串决定位置(db, 位置).await {
-        vec![位置]
-    } else {
-        let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
-        let mut 全局位置列表 = db.获取特定课程的位置(-1);
-        位置列表.append(&mut 全局位置列表);
-        位置列表
+    let mut 自动获取时的位置地址名2 = "".to_string();
+    let 位置列表 = match 通过位置字符串决定位置(db, 位置).await {
+        Ok(位置) => {
+            vec![位置]
+        }
+        Err(位置字符串) => {
+            if 位置字符串.is_empty() {
+                let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
+                let mut 全局位置列表 = db.获取特定课程的位置(-1);
+                位置列表.append(&mut 全局位置列表);
+                位置列表
+            } else {
+                if 自动获取时的位置地址名.is_empty() {
+                    自动获取时的位置地址名2 = 位置字符串;
+                } else {
+                    自动获取时的位置地址名2 = 自动获取时的位置地址名.to_owned();
+                }
+                vec![]
+            }
+        }
     };
     let mut states = HashMap::new();
     if std::fs::metadata(pic).unwrap().is_dir() {
-        if let Some(pic) = 通过目录决定图片路径(pic) {
-            let enc = utils::sign::扫描路径中二维码并获取签到所需参数(
+        if let Some(pic) = 通过目录决定图片路径(pic)
+            && let Some(enc) = utils::sign::扫描路径中二维码并获取签到所需参数(
                 pic.to_str().unwrap(),
-            );
+            )
+        {
             states = sign::二维码签到(
                 签到,
                 签到.get_二维码签到时的c参数(),
@@ -122,14 +137,15 @@ async fn qrcode_sign_by_pic_arg<'a>(
                 &位置列表,
                 sessions,
                 是否禁用随机偏移,
+                &自动获取时的位置地址名2,
             )
             .await?;
         } else {
             打印对于sign无法获取二维码时的错误信息(签到);
         }
-    } else {
-        let enc =
-            utils::sign::扫描路径中二维码并获取签到所需参数(pic.to_str().unwrap());
+    } else if let Some(enc) =
+        utils::sign::扫描路径中二维码并获取签到所需参数(pic.to_str().unwrap())
+    {
         states = sign::二维码签到(
             签到,
             签到.get_二维码签到时的c参数(),
@@ -137,6 +153,7 @@ async fn qrcode_sign_by_pic_arg<'a>(
             &位置列表,
             sessions,
             是否禁用随机偏移,
+            &自动获取时的位置地址名2,
         )
         .await?;
     }
@@ -178,14 +195,22 @@ async fn 区分签到类型并进行签到<'a>(
             签到结果列表 = sign::普通签到(签到, 签到会话列表).await?;
         }
         Enum签到类型::二维码签到 => {
-            let 位置列表 = if let Some(位置) = 通过位置字符串决定位置(db, 位置字符串).await
-            {
-                vec![位置]
-            } else {
-                let mut 全局位置列表 = db.获取特定课程的位置(-1);
-                let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
-                位置列表.append(&mut 全局位置列表);
-                位置列表
+            let mut 自动获取时的位置地址名 = "".to_string();
+            let 位置列表 = match 通过位置字符串决定位置(db, 位置字符串).await {
+                Ok(位置) => {
+                    vec![位置]
+                }
+                Err(位置字符串) => {
+                    if 位置字符串.is_empty() {
+                        let mut 全局位置列表 = db.获取特定课程的位置(-1);
+                        let mut 位置列表 = db.获取特定课程的位置(签到.课程.get_课程号());
+                        位置列表.append(&mut 全局位置列表);
+                        位置列表
+                    } else {
+                        自动获取时的位置地址名 = 位置字符串;
+                        vec![]
+                    }
+                }
             };
             //  如果有 pic 参数，那么使用它。
             if let Some(pic) = pic {
@@ -196,6 +221,7 @@ async fn 区分签到类型并进行签到<'a>(
                     位置字符串,
                     签到会话列表,
                     *是否禁用随机偏移,
+                    &自动获取时的位置地址名,
                 )
                 .await?;
             }
@@ -210,6 +236,7 @@ async fn 区分签到类型并进行签到<'a>(
                     &位置列表,
                     签到会话列表,
                     *是否禁用随机偏移,
+                    &自动获取时的位置地址名,
                 )
                 .await?;
             }
@@ -219,7 +246,7 @@ async fn 区分签到类型并进行签到<'a>(
             }
         }
         Enum签到类型::位置签到 => {
-            if let Some(位置) = 通过位置字符串决定位置(db, 位置字符串).await {
+            if let Ok(位置) = 通过位置字符串决定位置(db, 位置字符串).await {
                 println!("解析位置成功，将使用位置 `{}` 签到。", 位置);
                 签到结果列表 =
                     sign::位置签到(签到, &vec![位置], false, 签到会话列表, *是否禁用随机偏移)

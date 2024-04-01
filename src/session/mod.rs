@@ -148,7 +148,7 @@ impl Struct签到会话 {
         };
         let cookies = UserCookies::new(store);
         let 用户真名 = Self::获取用户真名(&client).await?;
-        println!("用户[{用户真名}]登录成功！");
+        println!("用户[{}]登录成功！", 用户真名);
         Ok(Struct签到会话 {
             client,
             用户真名,

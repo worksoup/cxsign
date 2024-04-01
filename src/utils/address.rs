@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::f64::consts::PI;
+use std::str::FromStr;
 
 use crate::protocol::get_location_log;
 use crate::session::course::Struct课程;
@@ -17,21 +18,21 @@ pub struct Struct位置 {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct Data {
-    #[serde(rename= "data")]
+    #[serde(rename = "data")]
     位置及范围及签到id列表: Vec<Struct位置及范围及签到id>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct Struct位置及范围及签到id {
-    #[serde(rename= "activeid")]
+    #[serde(rename = "activeid")]
     签到id: i64,
-    #[serde(rename= "address")]
+    #[serde(rename = "address")]
     地址: String,
-    #[serde(rename= "longitude")]
+    #[serde(rename = "longitude")]
     经度: f64,
-    #[serde(rename= "latitude")]
+    #[serde(rename = "latitude")]
     纬度: f64,
-    #[serde(rename= "locationrange")]
+    #[serde(rename = "locationrange")]
     范围: String,
 }
 
@@ -48,13 +49,13 @@ impl Struct位置及范围及签到id {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Struct位置及范围 {
-    #[serde(rename= "address")]
+    #[serde(rename = "address")]
     地址: String,
-    #[serde(rename= "longitude")]
+    #[serde(rename = "longitude")]
     经度: String,
-    #[serde(rename= "latitude")]
+    #[serde(rename = "latitude")]
     纬度: String,
-    #[serde(rename= "locationrange")]
+    #[serde(rename = "locationrange")]
     范围: u32,
 }
 
@@ -110,7 +111,13 @@ impl Struct位置及范围 {
         self.范围
     }
 }
+impl FromStr for Struct位置 {
+    type Err = String;
 
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Struct位置::从字符串解析(s).map_err(|e| e.to_owned())
+    }
+}
 impl Struct位置 {
     pub fn 从字符串解析(位置字符串: &str) -> Result<Self, &str> {
         let 位置字符串: Vec<&str> = 位置字符串.split(',').map(|item| item.trim()).collect();

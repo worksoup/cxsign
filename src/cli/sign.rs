@@ -76,6 +76,7 @@ pub async fn 二维码签到<'a>(
     位置列表: &Vec<Struct位置>,
     签到会话列表: &'a Vec<&Struct签到会话>,
     是否禁用随机偏移: bool,
+    自动获取时的位置地址名: &str,
 ) -> Result<HashMap<&'a str, Enum签到结果>, reqwest::Error> {
     let mut 用户真名_签到结果_哈希表 = HashMap::new();
     let mut tasks = FuturesUnordered::new();
@@ -85,6 +86,18 @@ pub async fn 二维码签到<'a>(
             l.获取位置()
         } else {
             l.获取随机偏移后的位置()
+        }
+    });
+    let 预设位置 = 预设位置.map(|l| {
+        if 自动获取时的位置地址名.is_empty() {
+            l
+        } else {
+            Struct位置::new(
+                自动获取时的位置地址名,
+                l.get_经度(),
+                l.get_纬度(),
+                l.get_海拔(),
+            )
         }
     });
     for 签到会话 in 签到会话列表 {
