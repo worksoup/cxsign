@@ -560,7 +560,7 @@ checksum = "ef8ae57c4978a2acd8b869ce6b9ca1dfe817bff704c220209fdef2c0b75a01b9"
 [[package]]
 name = "cxsign"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "cxsign_app",
 ]
@@ -579,7 +579,7 @@ dependencies = [
 [[package]]
 name = "cxsign_activity"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "chrono",
  "cxsign_store",
@@ -596,7 +596,7 @@ dependencies = [
 [[package]]
 name = "cxsign_app"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "cxsign_activity",
  "cxsign_dir",
@@ -615,7 +615,7 @@ dependencies = [
 [[package]]
 name = "cxsign_dir"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "directories",
  "lazy_static",
@@ -624,7 +624,7 @@ dependencies = [
 [[package]]
 name = "cxsign_error"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "thiserror",
  "ureq",
@@ -633,7 +633,7 @@ dependencies = [
 [[package]]
 name = "cxsign_login"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "cookie_store",
  "cxsign_error",
@@ -648,7 +648,7 @@ dependencies = [
 [[package]]
 name = "cxsign_pan"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "log",
  "mime_guess",
@@ -659,7 +659,7 @@ dependencies = [
 [[package]]
 name = "cxsign_store"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "cxsign_dir",
  "cxsign_user",
@@ -670,7 +670,7 @@ dependencies = [
 [[package]]
 name = "cxsign_types"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "cxsign_dir",
  "cxsign_pan",
@@ -686,7 +686,7 @@ dependencies = [
 [[package]]
 name = "cxsign_user"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "cookie_store",
  "cxsign_dir",
@@ -701,7 +701,7 @@ dependencies = [
 [[package]]
 name = "cxsign_utils"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#a552de647cd97c21e1ca8230768e0db6686eedba"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#e8a2554d1956637478cd13d7a737232527c2e125"
 dependencies = [
  "chrono",
  "inquire",
