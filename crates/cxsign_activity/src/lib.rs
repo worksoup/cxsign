@@ -1,5 +1,7 @@
 #![feature(let_chains)]
 #![feature(map_try_insert)]
+#![allow(incomplete_features)]
+#![feature(inherent_associated_types)]
 
 pub mod protocol;
 pub mod sign;
@@ -14,6 +16,12 @@ use std::collections::hash_map::OccupiedError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+pub type ActivitiesSessionsMap = (
+    HashMap<RawSign, Vec<Session>>,
+    HashMap<RawSign, Vec<Session>>,
+    HashMap<OtherActivity, Vec<Session>>,
+);
+pub type Activities = (Vec<RawSign>, Vec<RawSign>, Vec<OtherActivity>);
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub enum Activity {
     RawSign(RawSign),
@@ -25,11 +33,11 @@ impl Activity {
         table: ExcludeTable,
         session: &Session,
         course: &Course,
-    ) -> Result<(Vec<RawSign>, Vec<RawSign>, Vec<OtherActivity>), ureq::Error> {
+    ) -> Result<Activities, Box<ureq::Error>> {
         let mut v = Vec::new();
         let mut n = Vec::new();
         let mut o = Vec::new();
-        let activities = Self::get_list_from_course(&session, &course).unwrap_or(vec![]);
+        let activities = Self::get_list_from_course(session, course).unwrap_or_default();
         let mut dont_exclude = false;
         for activity in activities {
             if let Self::RawSign(sign) = activity {
@@ -60,19 +68,9 @@ impl Activity {
         table: ExcludeTable,
         set_excludes: bool,
         courses: HashMap<Course, Vec<Session>>,
-    ) -> Result<
-        (
-            HashMap<RawSign, Vec<Session>>,
-            HashMap<RawSign, Vec<Session>>,
-            HashMap<OtherActivity, Vec<Session>>,
-        ),
-        ureq::Error,
-    > {
+    ) -> Result<ActivitiesSessionsMap, Box<ureq::Error>> {
         let course_sessions_map = courses;
-        let courses = course_sessions_map
-            .keys()
-            .map(|c| c.clone())
-            .collect::<Vec<_>>();
+        let courses = course_sessions_map.keys().cloned().collect::<Vec<_>>();
         let excludes = Arc::new(Mutex::new(Vec::new()));
         let valid_signs = Arc::new(Mutex::new(HashMap::new()));
         let other_signs = Arc::new(Mutex::new(HashMap::new()));
@@ -89,7 +87,7 @@ impl Activity {
             }];
             let mut handles = Vec::new();
             for course in courses {
-                for session in &course_sessions_map[&course] {
+                if let Some(session) = &course_sessions_map[course].first() {
                     let course = course.clone();
                     let session = (*session).clone();
                     let valid_signs = Arc::clone(&valid_signs);
@@ -143,7 +141,6 @@ impl Activity {
                         }
                     });
                     handles.push(handle);
-                    break;
                 }
             }
             for h in handles {
@@ -166,14 +163,7 @@ impl Activity {
         table: ExcludeTable,
         sessions: Sessions,
         set_excludes: bool,
-    ) -> Result<
-        (
-            HashMap<RawSign, Vec<Session>>,
-            HashMap<RawSign, Vec<Session>>,
-            HashMap<OtherActivity, Vec<Session>>,
-        ),
-        ureq::Error,
-    > {
+    ) -> Result<ActivitiesSessionsMap, Box<ureq::Error>> {
         let excludes = table.get_excludes();
         let set_excludes = set_excludes || excludes.is_empty();
         let mut courses = HashMap::new();
@@ -192,7 +182,10 @@ impl Activity {
         }
         Self::get_activities(table, set_excludes, courses)
     }
-    pub fn get_list_from_course(session: &Session, c: &Course) -> Result<Vec<Self>, ureq::Error> {
+    pub fn get_list_from_course(
+        session: &Session,
+        c: &Course,
+    ) -> Result<Vec<Self>, Box<ureq::Error>> {
         let r = crate::protocol::active_list(session, c.clone())?;
         let r: GetActivityR = r.into_json().unwrap();
         let activities = Arc::new(Mutex::new(Vec::new()));
@@ -200,7 +193,7 @@ impl Activity {
             let thread_count = 1;
             let len = data.active_list.len();
             let chunk_rest = len % thread_count;
-            let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 0 };
+            let chunk_count = len / thread_count + if chunk_rest == 0 { 0 } else { 1 };
             for i in 0..chunk_count {
                 let ars = &data.active_list[i * thread_count..if i != chunk_count - 1 {
                     (i + 1) * thread_count

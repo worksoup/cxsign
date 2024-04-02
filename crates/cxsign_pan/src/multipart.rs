@@ -117,7 +117,7 @@ impl<'d> PreparedFields<'d> {
                         &field.name,
                         &boundary,
                         &stream.content_type,
-                        stream.filename.as_ref().map(|f| &**f),
+                        stream.filename.as_deref(),
                         stream.stream,
                     ));
                 }

@@ -2,7 +2,6 @@ use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Location;
 use cxsign_user::Session;
-use ureq::Error;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct LocationSign {
@@ -28,7 +27,7 @@ impl SignTrait for LocationSign {
     fn is_ready_for_sign(&self) -> bool {
         self.location.is_some()
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         let r = protocol::location_sign(
             session,
             unsafe { self.location.as_ref().unwrap_unchecked() },

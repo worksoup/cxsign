@@ -9,14 +9,13 @@ pub fn pre_sign(
     course: Course,
     active_id: &str,
     uid: &str,
-) -> Result<Response, ureq::Error> {
+) -> Result<Response, Box<ureq::Error>> {
     let course_id = course.get_id();
     let class_id = course.get_class_id();
     let url = PRE_SIGN;
     let url =
         format!("{url}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0");
-
-    client.get(&url).call()
+    Ok(client.get(&url).call()?)
 }
 pub fn pre_sign_for_qrcode_sign(
     client: &Agent,
@@ -25,17 +24,12 @@ pub fn pre_sign_for_qrcode_sign(
     uid: &str,
     c: &str,
     enc: &str,
-) -> Result<Response, ureq::Error> {
+) -> Result<Response, Box<ureq::Error>> {
     let course_id = course.get_id();
     let class_id = course.get_class_id();
     let url =
-        format!("{PRE_SIGN}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0&rcode={}", format!(
-            "&rcode={}",
-            percent_encoding::utf8_percent_encode(
-                &format!("SIGNIN:aid={active_id}&source=15&Code={c}&enc={enc}"),
-                percent_encoding::NON_ALPHANUMERIC,
-            )
+        format!("{PRE_SIGN}?courseId={course_id}&classId={class_id}&activePrimaryId={active_id}&general=1&sys=1&ls=1&appType=15&&tid=&uid={uid}&ut=s&isTeacherViewOpen=0&rcode={}", format_args!(
+            "&rcode={}",percent_encoding::utf8_percent_encode(&format!("SIGNIN:aid={active_id}&source=15&Code={c}&enc={enc}"), percent_encoding::NON_ALPHANUMERIC)
         ));
-
-    client.get(&url).call()
+    Ok(client.get(&url).call()?)
 }

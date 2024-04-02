@@ -1,7 +1,7 @@
 use crate::location::Location;
+use cxsign_store::{AliasTable, DataBase, DataBaseTableTrait};
 use log::warn;
 use std::collections::HashMap;
-use cxsign_store::{AliasTable, DataBase, DataBaseTableTrait};
 
 pub struct LocationTable<'a> {
     db: &'a DataBase,

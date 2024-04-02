@@ -80,7 +80,11 @@ impl SignnerTrait<PhotoSign> for DefaultPhotoSignner {
         Ok(map)
     }
 
-    fn sign_single(sign: &mut PhotoSign, session: &Session, _: ()) -> Result<SignResult, Error> {
-        sign.pre_sign_and_sign(session).map_err(|e| e.into())
+    fn sign_single(
+        sign: &mut PhotoSign,
+        session: &Session,
+        _: Self::ExtData<'_>,
+    ) -> Result<SignResult, Error> {
+        Ok(sign.pre_sign_and_sign(session)?)
     }
 }

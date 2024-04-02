@@ -41,7 +41,7 @@ pub fn pic_dir_or_path_to_pic_path(pic_dir: &PathBuf) -> Result<Option<PathBuf>,
                 .unwrap()
                 .cmp(&a.metadata().unwrap().modified().unwrap())
         });
-        all_files_in_dir.get(0).map(|d| d.path())
+        all_files_in_dir.first().map(|d| d.path())
     };
     Ok(pic_path)
 }
@@ -64,7 +64,7 @@ fn scan_result_to_enc(url: &str) -> Option<String> {
 
 pub fn pic_path_to_qrcode_result(pic_path: &str) -> Option<String> {
     let r = rxing::helpers::detect_multiple_in_file(pic_path).expect("decodes");
-    scan_result_to_enc(r.get(0)?.getText())
+    scan_result_to_enc(r.first()?.getText())
 }
 
 fn get_rect_contains_vertex(vertex: &Vec<Point>) -> (PointU, PointU) {
@@ -130,13 +130,14 @@ pub fn cut_picture(
 pub fn capture_screen_for_enc(is_refresh: bool, precise: bool) -> Option<String> {
     let screens = xcap::Monitor::all().unwrap_or_else(|e| panic!("{e:?}"));
     // 在所有屏幕中寻找。
-    if !precise && is_refresh {
-        if !inquire_confirm(
+    if !precise
+        && is_refresh
+        && !inquire_confirm(
             "二维码图片是否就绪？",
             "本程序将在屏幕上寻找签到二维码，待二维码刷新后按下回车进行签到。",
-        ) {
-            return None;
-        }
+        )
+    {
+        return None;
     }
     for screen in screens {
         // 先截取整个屏幕。

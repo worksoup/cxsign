@@ -9,7 +9,6 @@ use cxsign_utils::get_width_str_should_be;
 use log::{debug, error, info};
 use serde::Deserialize;
 use std::fmt::{Display, Formatter};
-use ureq::Error;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone)]
 pub struct RawSign {
@@ -22,12 +21,12 @@ pub struct RawSign {
 }
 impl SignTrait for RawSign {
     fn as_inner(&self) -> &RawSign {
-        &self
+        self
     }
     fn as_inner_mut(&mut self) -> &mut RawSign {
         self
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, Error> {
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         let active_id = self.active_id.as_str();
         let uid = session.get_uid();
         let response_of_pre_sign =
@@ -35,7 +34,7 @@ impl SignTrait for RawSign {
         info!("用户[{}]预签到已请求。", session.get_stu_name());
         self.analysis_after_presign(active_id, session, response_of_pre_sign)
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         let r = protocol::general_sign(session, self.active_id.as_str())?;
         Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
     }
@@ -62,7 +61,7 @@ impl RawSign {
         session: &Session,
         active_id: &str,
         signcode: &str,
-    ) -> Result<bool, Error> {
+    ) -> Result<bool, Box<ureq::Error>> {
         #[derive(Deserialize)]
         struct CheckR {
             #[allow(unused)]
@@ -73,7 +72,10 @@ impl RawSign {
             .unwrap();
         Ok(result == 1)
     }
-    pub(crate) fn get_sign_detail(active_id: &str, session: &Session) -> Result<SignDetail, Error> {
+    pub(crate) fn get_sign_detail(
+        active_id: &str,
+        session: &Session,
+    ) -> Result<SignDetail, Box<ureq::Error>> {
         #[derive(Deserialize)]
         struct GetSignDetailR {
             #[serde(rename = "ifPhoto")]
@@ -104,11 +106,12 @@ impl RawSign {
 impl RawSign {
     pub fn to_sign(self, session: &Session) -> Sign {
         if let Ok(sign_detail) = RawSign::get_sign_detail(self.active_id.as_str(), session) {
-            match self.other_id.parse::<u8>().unwrap_or_else(|e| {
+            let r#else = |e| {
                 error!("{}", self.other_id);
                 error!("{}", self.course.get_name());
                 panic!("{e}")
-            }) {
+            };
+            match self.other_id.parse::<u8>().unwrap_or_else(r#else) {
                 0 => {
                     if sign_detail.is_photo {
                         Sign::Photo(PhotoSign {
@@ -174,7 +177,7 @@ impl RawSign {
         active_id: &str,
         session: &Session,
         response_of_presign: ureq::Response,
-    ) -> Result<SignResult, Error> {
+    ) -> Result<SignResult, Box<ureq::Error>> {
         let response_of_analysis = protocol::analysis(session, active_id)?;
         let data = response_of_analysis.into_string().unwrap();
         let code = {
@@ -204,7 +207,7 @@ impl RawSign {
                     }
                 }
             } else {
-                SignResult::Fail { msg: html.into() }
+                SignResult::Fail { msg: html }
             }
         };
         std::thread::sleep(std::time::Duration::from_millis(500));
@@ -217,7 +220,7 @@ impl RawSign {
         &self,
         session: &Session,
         signcode: &str,
-    ) -> Result<SignResult, Error> {
+    ) -> Result<SignResult, Box<ureq::Error>> {
         if Self::check_signcode(session, &self.active_id, signcode)? {
             let r = protocol::signcode_sign(session, self.active_id.as_str(), signcode)?;
             Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))

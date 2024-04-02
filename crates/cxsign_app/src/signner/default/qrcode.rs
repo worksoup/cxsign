@@ -23,9 +23,8 @@ trait GetLocationAndEncTraitInternal: SignTrait {
             Ok(位置) => Ok(vec![位置]),
             Err(位置字符串) => {
                 let mut 预设位置列表 = HashMap::new();
-                for session in sessions.clone() {
+                if let Some(session) = sessions.clone().next() {
                     预设位置列表 = LocationWithRange::from_log(session, &self.as_inner().course)?;
-                    break;
                 }
                 let 预设位置 = 预设位置列表.get(&self.as_inner().active_id).map(|l| {
                     if no_rand_shift {
@@ -80,7 +79,7 @@ trait GetLocationAndEncTraitInternal: SignTrait {
             if std::fs::metadata(pic).unwrap().is_dir() {
                 if let Some(pic) = pic_dir_or_path_to_pic_path(pic)?
                     && let Some(enc) =
-                    crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
+                        crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
                 {
                     enc
                 } else {
@@ -166,9 +165,9 @@ impl<'l> SignnerTrait<QrCodeSign> for DefaultQrCodeSignner<'l> {
     fn sign_single(
         sign: &mut QrCodeSign,
         session: &Session,
-        locations: Vec<Location>,
+        extra_data: Self::ExtData<'_>,
     ) -> Result<SignResult, Error> {
-        location_or_qrcode_signner_sign_single(sign, session, &locations)
+        location_or_qrcode_signner_sign_single(sign, session, &extra_data)
     }
 }
 
@@ -199,9 +198,9 @@ impl<'l> SignnerTrait<NormalQrCodeSign> for DefaultQrCodeSignner<'l> {
     fn sign_single(
         sign: &mut NormalQrCodeSign,
         session: &Session,
-        locations: &Vec<Location>,
+        extra_data: Self::ExtData<'_>,
     ) -> Result<SignResult, Error> {
-        location_or_qrcode_signner_sign_single(sign, session, locations)
+        location_or_qrcode_signner_sign_single(sign, session, extra_data)
     }
 }
 
@@ -224,9 +223,8 @@ impl<'l> SignnerTrait<RefreshQrCodeSign> for DefaultQrCodeSignner<'l> {
         let sessions = sessions.collect::<Vec<&'a Session>>();
         let mut map = HashMap::new();
         let index_result_map = Arc::new(Mutex::new(HashMap::new()));
-        let mut sessions_index = 0_usize;
         let mut handles = Vec::new();
-        for session in sessions.clone() {
+        for (sessions_index, session) in sessions.clone().into_iter().enumerate() {
             let locations = locations.clone();
             let index_result_map = Arc::clone(&index_result_map);
             let mut sign = sign.clone();
@@ -237,7 +235,6 @@ impl<'l> SignnerTrait<RefreshQrCodeSign> for DefaultQrCodeSignner<'l> {
                 index_result_map.lock().unwrap().insert(sessions_index, a);
             });
             handles.push(h);
-            sessions_index += 1;
         }
         for h in handles {
             h.join().unwrap();
@@ -255,8 +252,8 @@ impl<'l> SignnerTrait<RefreshQrCodeSign> for DefaultQrCodeSignner<'l> {
     fn sign_single(
         sign: &mut RefreshQrCodeSign,
         session: &Session,
-        locations: Vec<Location>,
+        extra_data: Self::ExtData<'_>,
     ) -> Result<SignResult, Error> {
-        location_or_qrcode_signner_sign_single(sign, session, &locations)
+        location_or_qrcode_signner_sign_single(sign, session, &extra_data)
     }
 }

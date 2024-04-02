@@ -1,7 +1,7 @@
 use crate::course::Course;
+use cxsign_store::{DataBase, DataBaseTableTrait};
 use log::warn;
 use std::collections::HashMap;
-use cxsign_store::{DataBase, DataBaseTableTrait};
 
 pub struct CourseTable<'a> {
     db: &'a DataBase,

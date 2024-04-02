@@ -1,11 +1,11 @@
-use log::debug;
 use cxsign_types::Course;
+use log::debug;
 use ureq::{Agent, Response};
 
 // 查询活动
 static ACTIVE_LIST: &str = "https://mobilelearn.chaoxing.com/v2/apis/active/student/activelist";
 
-pub fn active_list(client: &Agent, course: Course) -> Result<Response, ureq::Error> {
+pub fn active_list(client: &Agent, course: Course) -> Result<Response, Box<ureq::Error>> {
     let time = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
@@ -17,5 +17,5 @@ pub fn active_list(client: &Agent, course: Course) -> Result<Response, ureq::Err
         course.get_class_id(),
     );
     debug!("{url}");
-    client.get(&url).call()
+    Ok(client.get(&url).call()?)
 }

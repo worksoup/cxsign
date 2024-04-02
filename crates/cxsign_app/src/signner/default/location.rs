@@ -36,9 +36,9 @@ impl<'a> SignnerTrait<LocationSign> for DefaultLocationSignner<'a> {
             }
             Err(位置字符串) => {
                 let mut 预设位置列表 = HashMap::new();
-                for session in sessions.clone() {
-                    预设位置列表 = LocationWithRange::from_log(session, &sign.as_inner().course)?;
-                    break;
+                if let Some(session) = sessions.clone().next() {
+                    预设位置列表 = LocationWithRange::from_log(session, &sign.as_inner().course)
+                        .map_err(Error::from)?;
                 }
                 let 预设位置 = 预设位置列表.get(&sign.as_inner().active_id).map(|l| {
                     if self.no_rand_shift {
@@ -82,8 +82,8 @@ impl<'a> SignnerTrait<LocationSign> for DefaultLocationSignner<'a> {
     fn sign_single(
         sign: &mut LocationSign,
         session: &Session,
-        locations: Vec<Location>,
+        extra_data: Self::ExtData<'_>,
     ) -> Result<SignResult, Error> {
-        location_or_qrcode_signner_sign_single(sign, session, &locations)
+        location_or_qrcode_signner_sign_single(sign, session, &extra_data)
     }
 }

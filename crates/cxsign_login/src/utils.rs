@@ -1,4 +1,7 @@
-use des::{cipher::{generic_array::GenericArray, BlockEncrypt as _, KeyInit as _}, Des};
+use des::{
+    cipher::{generic_array::GenericArray, BlockEncrypt as _, KeyInit as _},
+    Des,
+};
 
 pub fn des_enc(text: &str) -> String {
     fn pkcs7(text: &str) -> Vec<[u8; 8]> {

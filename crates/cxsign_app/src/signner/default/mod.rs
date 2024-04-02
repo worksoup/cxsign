@@ -42,9 +42,9 @@ impl SetLocationTrait for LocationSign {
 fn location_or_qrcode_signner_sign_single<R: SignTrait + SetLocationTrait>(
     sign: &mut R,
     session: &Session,
-    locations: &Vec<Location>,
+    locations: &[Location],
 ) -> Result<SignResult, Error> {
-    let state = match sign.pre_sign(session)? {
+    let state = match sign.pre_sign(session).map_err(Error::from)? {
         SignResult::Susses => SignResult::Susses,
         SignResult::Fail { .. } => {
             let mut state = SignResult::Fail {
@@ -52,13 +52,13 @@ fn location_or_qrcode_signner_sign_single<R: SignTrait + SetLocationTrait>(
             };
             for location in locations.iter().rev() {
                 sign.set_location(location.clone());
-                match unsafe { sign.sign_unchecked(session) }? {
+                match unsafe { sign.sign_unchecked(session) }.map_err(Error::from)? {
                     SignResult::Susses => {
                         state = SignResult::Susses;
                         break;
                     }
                     SignResult::Fail { msg } => {
-                        if msg == "您已签到过了".to_owned() {
+                        if msg == *"您已签到过了" {
                             state = SignResult::Susses;
                             info!(
                                 "用户[{}]: 您已经签过[{}]了！",

@@ -8,10 +8,10 @@ pub fn check_signcode(
     client: &Agent,
     active_id: &str,
     signcode: &str,
-) -> Result<Response, ureq::Error> {
-    client
+) -> Result<Response, Box<ureq::Error>> {
+    Ok(client
         .get(&format!(
             "{CHECK_SIGNCODE}?activeId={active_id}&signCode={signcode}"
         ))
-        .call()
+        .call()?)
 }

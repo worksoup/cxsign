@@ -26,7 +26,7 @@ impl SignTrait for GestureSign {
     fn is_ready_for_sign(&self) -> bool {
         self.gesture.is_some()
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         self.as_inner()
             .sign_with_signcode(session, unsafe { self.gesture.as_ref().unwrap_unchecked() })
     }

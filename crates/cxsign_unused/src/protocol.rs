@@ -12,10 +12,10 @@ pub fn chat_group_pre_sign(
     uid: &str,
     chat_id: &str,
     tuid: &str,
-) -> Result<Response, ureq::Error> {
+) -> Result<Response, Box<ureq::Error>> {
     let url = CHAT_GROUP_PRE_SIGN;
     let url = format!("{url}?activeId={active_id}&code=&uid={uid}&courseId=null&classId=0&general=0&chatId={chat_id}&appType=0&tid={tuid}&atype=null&sys=0");
-    client.get(&url).call()
+    Ok(client.get(&url).call()?)
 }
 // 无课程群聊的签到
 static CHAT_GROUP_SIGN: &str = "https://mobilelearn.chaoxing.com/sign/stuSignajax";
@@ -23,10 +23,10 @@ pub fn chat_group_general_sign(
     client: &Agent,
     active_id: &str,
     uid: &str,
-) -> Result<Response, ureq::Error> {
+) -> Result<Response, Box<ureq::Error>> {
     let url = CHAT_GROUP_SIGN;
     let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=");
-    client.get(&url).call()
+    Ok(client.get(&url).call()?)
 }
 
 pub fn chat_group_photo_sign(
@@ -34,10 +34,10 @@ pub fn chat_group_photo_sign(
     active_id: &str,
     uid: &str,
     object_id: &str,
-) -> Result<Response, ureq::Error> {
+) -> Result<Response, Box<ureq::Error>> {
     let url = CHAT_GROUP_SIGN;
     let url = format!("{url}?activeId={active_id}&uid={uid}&clientip=&useragent=&latitude=-1&longitude=-1&fid=0&objectId={object_id}");
-    client.get(&url).call()
+    Ok(client.get(&url).call()?)
 }
 pub fn chat_group_location_sign(
     client: &Agent,
@@ -46,30 +46,29 @@ pub fn chat_group_location_sign(
     uid: &str,
     lat: &str,
     lon: &str,
-) -> Result<Response, ureq::Error> {
+) -> Result<Response, Box<ureq::Error>> {
     let address =
         percent_encoding::utf8_percent_encode(address, percent_encoding::NON_ALPHANUMERIC)
             .to_string();
     let body = format!(
         r#"address={address}&activeId={active_id}&uid={uid}&clientip=&useragent=&latitude={lat}&longitude={lon}&fid=&ifTiJiao=1"#
     );
-    let url = PPT_SIGN;
-    client
-        .post(url)
+    Ok(client
+        .post(PPT_SIGN)
         .set(
             "Content-Type",
             "application/x-www-form-urlencoded; charset=UTF-8",
         )
-        .send_string(&body)
+        .send_string(&body)?)
 }
 pub fn chat_group_signcode_sign(
     client: &Agent,
     active_id: &str,
     uid: &str,
     signcode: &str,
-) -> Result<Response, ureq::Error> {
+) -> Result<Response, Box<ureq::Error>> {
     warn!("`chat_group_signcode_sign` 该函数需要测试！");
     let url =
         format!("{CHAT_GROUP_SIGN}?activeId={active_id}&uid={uid}&clientip=&signCode={signcode}");
-    client.get(&url).call()
+    Ok(client.get(&url).call()?)
 }

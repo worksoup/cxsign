@@ -1,7 +1,7 @@
+use cxsign_user::Session;
 use serde::Deserialize;
 use std::fs::File;
 use std::path::Path;
-use cxsign_user::Session;
 
 // TODO: 删除 unwrap
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
@@ -10,7 +10,7 @@ pub struct Photo {
 }
 
 impl Photo {
-    pub fn get_pan_token(session: &Session) -> Result<String, ureq::Error> {
+    pub fn get_pan_token(session: &Session) -> Result<String, Box<ureq::Error>> {
         let r = cxsign_pan::protocol::pan_token(session)?;
         #[derive(Deserialize)]
         struct Tmp {
@@ -21,9 +21,10 @@ impl Photo {
         Ok(r.token)
     }
 
-    pub fn new(session: &Session, file: &File, file_name: &str) -> Result<Self, ureq::Error> {
+    pub fn new(session: &Session, file: &File, file_name: &str) -> Result<Self, Box<ureq::Error>> {
         let token = Self::get_pan_token(session)?;
-        let r = cxsign_pan::protocol::pan_upload(session, file, session.get_uid(), &token, file_name)?;
+        let r =
+            cxsign_pan::protocol::pan_upload(session, file, session.get_uid(), &token, file_name)?;
         #[derive(Deserialize)]
         struct Tmp {
             #[serde(rename = "objectId")]
@@ -43,7 +44,7 @@ impl Photo {
     pub fn find_in_cxpan(
         session: &Session,
         p: impl Fn(&str) -> bool,
-    ) -> Result<Option<Self>, ureq::Error> {
+    ) -> Result<Option<Self>, Box<ureq::Error>> {
         let r = cxsign_pan::protocol::pan_chaoxing(session)?;
         let r_text = r.into_string().unwrap();
         let start_of_enc = r_text.find("enc =\"").unwrap() + 6;
@@ -64,7 +65,7 @@ impl Photo {
         struct TmpR {
             list: Vec<CloudFile>,
         }
-        let r: TmpR = r.into_json()?;
+        let r: TmpR = r.into_json().map_err(ureq::Error::from)?;
         for item in r.list {
             if p(&item.name) {
                 return Ok(item.object_id.map(|object_id| Self { object_id }));

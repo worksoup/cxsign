@@ -6,7 +6,6 @@ pub struct ExcludeTable<'a> {
 }
 
 impl<'a> ExcludeTable<'a> {
-
     pub fn has_exclude(&self, id: i64) -> bool {
         let mut query = self
             .db

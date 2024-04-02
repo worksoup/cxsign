@@ -64,8 +64,7 @@ impl DataBase {
             File::create(db_dir.clone()).unwrap();
         }
         let connection = Connection::open(db_dir.to_str().unwrap()).unwrap();
-        let db = Self { connection, dir };
-        db
+        Self { connection, dir }
     }
     pub fn add_table<'a, T: DataBaseTableTrait<'a>>(&'a self) -> T {
         T::create(self);

@@ -32,8 +32,8 @@ pub trait SignTrait: Ord {
         self.as_inner().status_code == 1
             && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
     }
-    fn get_sign_state(&self, session: &Session) -> Result<SignState, ureq::Error> {
-        let r = crate::protocol::get_attend_info(&session, &self.as_inner().active_id)?;
+    fn get_sign_state(&self, session: &Session) -> Result<SignState, Box<ureq::Error>> {
+        let r = crate::protocol::get_attend_info(session, &self.as_inner().active_id)?;
         #[derive(Deserialize)]
         struct Status {
             status: i64,
@@ -47,7 +47,7 @@ pub trait SignTrait: Ord {
         } = r.into_json().unwrap();
         Ok(status.into())
     }
-    fn get_sign_detail(&self, session: &Session) -> Result<SignDetail, ureq::Error> {
+    fn get_sign_detail(&self, session: &Session) -> Result<SignDetail, Box<ureq::Error>> {
         RawSign::get_sign_detail(&self.as_inner().active_id, session)
     }
     fn guess_sign_result_by_text(&self, text: &str) -> SignResult {
@@ -63,13 +63,15 @@ pub trait SignTrait: Ord {
             },
         }
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         self.as_inner().pre_sign(session)
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    /// # Safety
+    /// 签到类型中有一些 `Option` 枚举，而本函数会使用 `unwrap_unchecked`.
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         unsafe { self.as_inner().sign_unchecked(session) }
     }
-    fn sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    fn sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         if self.is_ready_for_sign() {
             unsafe { self.sign_unchecked(session) }
         } else {
@@ -78,7 +80,7 @@ pub trait SignTrait: Ord {
             })
         }
     }
-    fn pre_sign_and_sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    fn pre_sign_and_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         let r = self.pre_sign(session);
         if let Ok(a) = r.as_ref()
             && !a.is_susses()
@@ -152,7 +154,7 @@ impl SignTrait for Sign {
         }
     }
 
-    fn get_sign_state(&self, session: &Session) -> Result<SignState, ureq::Error> {
+    fn get_sign_state(&self, session: &Session) -> Result<SignState, Box<ureq::Error>> {
         match self {
             Sign::Photo(a) => a.get_sign_state(session),
             Sign::Normal(a) => a.get_sign_state(session),
@@ -163,7 +165,7 @@ impl SignTrait for Sign {
             Sign::Unknown(a) => a.get_sign_state(session),
         }
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         match self {
             Sign::Photo(a) => a.pre_sign(session),
             Sign::Normal(a) => a.pre_sign(session),
@@ -174,7 +176,7 @@ impl SignTrait for Sign {
             Sign::Unknown(a) => a.pre_sign(session),
         }
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, ureq::Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         unsafe {
             match self {
                 Sign::Photo(a) => a.sign_unchecked(session),

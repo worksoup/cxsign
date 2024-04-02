@@ -31,7 +31,7 @@ impl LocationWithRange {
     pub fn from_log(
         session: &Session,
         course: &Course,
-    ) -> Result<HashMap<String, Self>, ureq::Error> {
+    ) -> Result<HashMap<String, Self>, Box<ureq::Error>> {
         #[derive(Debug, Clone, Deserialize, Serialize)]
         struct LocationWithRangeAndActiveId {
             #[serde(rename = "activeid")]
@@ -69,13 +69,13 @@ impl LocationWithRange {
         Ok(map)
     }
     pub fn find_in_html(html: &str) -> Option<LocationWithRange> {
-        let p = vec![
+        let p = [
             "id=\"locationText\"",
             "id=\"locationLongitude\"",
             "id=\"locationLatitude\"",
             "id=\"locationRange\"",
         ];
-        let mut start = vec![None, None, None, None];
+        let mut start = [None, None, None, None];
         let mut results1 = Vec::new();
         for i in 0..4 {
             let s = html.find(p[i]);
@@ -99,7 +99,7 @@ impl LocationWithRange {
         }
         let mut results3 = Vec::new();
         for r in &results2 {
-            let e = r.find("\"");
+            let e = r.find('"');
             if let Some(e) = e {
                 let r = &r[0..e];
                 results3.push(r);
@@ -130,10 +130,9 @@ impl LocationWithRange {
         let lon: f64 = lon.parse().unwrap();
         let mut r = rand::thread_rng().gen_range(0..range * 3) as f64 / (*range as f64) / 60.0;
         let theta = rand::thread_rng().gen_range(0..360) as f64 * PI / 180.0;
-        r = (*range as f64)
+        r *= (*range as f64)
             / R
-            / (1.0 - theta.cos().powi(2) * (lat * PI / 180.0).sin().powi(2)).sqrt()
-            * r;
+            / (1.0 - theta.cos().powi(2) * (lat * PI / 180.0).sin().powi(2)).sqrt();
         let lat = format!("{:.6}", ((lat * PI / 180.0) + r * theta.sin()) / PI * 180.0);
         let lon = format!("{:.6}", (lon * PI / 180.0 + r * theta.cos()) / PI * 180.0);
         Location {

@@ -2,7 +2,6 @@ use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Photo;
 use cxsign_user::Session;
-use ureq::Error;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct PhotoSign {
@@ -26,7 +25,7 @@ impl SignTrait for PhotoSign {
     fn is_ready_for_sign(&self) -> bool {
         self.photo.is_some()
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         let photo = self.photo.as_ref().unwrap();
         let r = protocol::photo_sign(
             session,

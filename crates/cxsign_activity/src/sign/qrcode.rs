@@ -3,13 +3,12 @@ use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Location;
 use cxsign_user::Session;
 use log::info;
-use ureq::Error;
 fn sign_unchecked<T: SignTrait>(
     sign: &T,
     enc: &str,
     location: &Option<Location>,
     session: &Session,
-) -> Result<SignResult, Error> {
+) -> Result<SignResult, Box<ureq::Error>> {
     let r = protocol::qrcode_sign(session, enc, sign.as_inner().active_id.as_str(), location)?;
     Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
 }
@@ -38,8 +37,8 @@ impl SignTrait for RefreshQrCodeSign {
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, Error> {
-        let enc = self.enc.as_ref().map(|s| s.as_str()).unwrap_or("");
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
+        let enc = self.enc.as_deref().unwrap_or("");
         let raw = self.as_inner();
         let active_id = raw.active_id.as_str();
         let uid = session.get_uid();
@@ -54,7 +53,7 @@ impl SignTrait for RefreshQrCodeSign {
         info!("用户[{}]预签到已请求。", session.get_stu_name());
         raw.analysis_after_presign(active_id, session, response_of_presign)
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         let enc = unsafe { self.enc.as_ref().unwrap_unchecked() };
         sign_unchecked::<RefreshQrCodeSign>(self, enc, &self.location, session)
     }
@@ -85,7 +84,7 @@ impl SignTrait for NormalQrCodeSign {
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         let enc = unsafe { self.enc.as_ref().unwrap_unchecked() };
         sign_unchecked::<NormalQrCodeSign>(self, enc, &self.location, session)
     }
@@ -129,14 +128,14 @@ impl SignTrait for QrCodeSign {
             QrCodeSign::NormalQrCodeSign(a) => a.as_inner_mut(),
         }
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, Error> {
+    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         println!("sessions len: {}", session.get_stu_name());
         match self {
             QrCodeSign::RefreshQrCodeSign(a) => a.pre_sign(session),
             QrCodeSign::NormalQrCodeSign(a) => a.pre_sign(session),
         }
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         unsafe {
             match self {
                 QrCodeSign::RefreshQrCodeSign(a) => a.sign_unchecked(session),

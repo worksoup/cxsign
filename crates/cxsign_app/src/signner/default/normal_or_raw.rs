@@ -17,7 +17,11 @@ impl SignnerTrait<NormalSign> for DefaultNormalOrRawSignner {
         self.sign(sign.as_inner_mut(), sessions)
     }
 
-    fn sign_single(sign: &mut NormalSign, session: &Session, _: ()) -> Result<SignResult, Error> {
+    fn sign_single(
+        sign: &mut NormalSign,
+        session: &Session,
+        _: Self::ExtData<'_>,
+    ) -> Result<SignResult, Error> {
         Self::sign_single(sign.as_inner_mut(), session, ())
     }
 }
@@ -38,7 +42,11 @@ impl SignnerTrait<RawSign> for DefaultNormalOrRawSignner {
         Ok(map)
     }
 
-    fn sign_single(sign: &mut RawSign, session: &Session, _: ()) -> Result<SignResult, Error> {
-        sign.pre_sign_and_sign(session).map_err(|e| e.into())
+    fn sign_single(
+        sign: &mut RawSign,
+        session: &Session,
+        _: Self::ExtData<'_>,
+    ) -> Result<SignResult, Error> {
+        Ok(sign.pre_sign_and_sign(session)?)
     }
 }

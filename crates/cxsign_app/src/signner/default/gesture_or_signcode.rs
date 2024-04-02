@@ -29,8 +29,12 @@ impl SignnerTrait<GestureSign> for DefaultGestureOrSigncodeSignner {
         Ok(map)
     }
 
-    fn sign_single(sign: &mut GestureSign, session: &Session, _: ()) -> Result<SignResult, Error> {
-        sign.pre_sign_and_sign(session).map_err(|e| e.into())
+    fn sign_single(
+        sign: &mut GestureSign,
+        session: &Session,
+        _: Self::ExtData<'_>,
+    ) -> Result<SignResult, Error> {
+        Ok(sign.pre_sign_and_sign(session)?)
     }
 }
 
@@ -51,7 +55,11 @@ impl SignnerTrait<SigncodeSign> for DefaultGestureOrSigncodeSignner {
         Ok(map)
     }
 
-    fn sign_single(sign: &mut SigncodeSign, session: &Session, _: ()) -> Result<SignResult, Error> {
-        sign.pre_sign_and_sign(session).map_err(|e| e.into())
+    fn sign_single(
+        sign: &mut SigncodeSign,
+        session: &Session,
+        _: Self::ExtData<'_>,
+    ) -> Result<SignResult, Error> {
+        Ok(sign.pre_sign_and_sign(session)?)
     }
 }

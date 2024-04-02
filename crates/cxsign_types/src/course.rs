@@ -26,14 +26,14 @@ impl Display for Course {
 }
 
 impl Course {
-    pub fn get_courses(session: &Session) -> Result<Vec<Course>, ureq::Error> {
+    pub fn get_courses(session: &Session) -> Result<Vec<Course>, Box<ureq::Error>> {
         let r = protocol::back_clazz_data(session.deref())?;
         let courses = Course::get_list_from_response(r)?;
         info!("用户[{}]已获取课程列表。", session.get_stu_name());
         Ok(courses)
     }
 
-    fn get_list_from_response(r: ureq::Response) -> Result<Vec<Course>, ureq::Error> {
+    fn get_list_from_response(r: ureq::Response) -> Result<Vec<Course>, Box<ureq::Error>> {
         let r: GetCoursesR = r.into_json().unwrap();
         let mut arr = Vec::new();
         for c in r.channel_list {

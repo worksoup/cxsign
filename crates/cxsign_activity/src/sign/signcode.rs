@@ -1,6 +1,5 @@
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_user::Session;
-use ureq::Error;
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
 pub struct SigncodeSign {
@@ -28,7 +27,7 @@ impl SignTrait for SigncodeSign {
         self.signcode.is_some()
     }
 
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Error> {
+    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
         self.as_inner().sign_with_signcode(session, unsafe {
             self.signcode.as_ref().unwrap_unchecked()
         })

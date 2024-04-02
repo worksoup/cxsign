@@ -5,7 +5,7 @@ pub enum Error {
     #[error("登录失败！")]
     LoginError(String),
     #[error(transparent)]
-    AgentError(#[from] ureq::Error),
+    AgentError(#[from] Box<ureq::Error>),
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error("`enc` 为空！")]

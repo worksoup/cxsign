@@ -31,7 +31,7 @@ impl Hash for Session {
 }
 
 impl Session {
-    pub fn load_json(dir: &Dir, account: &str) -> Result<Self, ureq::Error> {
+    pub fn load_json(dir: &Dir, account: &str) -> Result<Self, Box<ureq::Error>> {
         let client = cxsign_login::load_json(dir.get_json_file_path(account));
         let cookies = UserCookies::new(&client);
         let stu_name = Self::find_stu_name_in_html(&client)?;
@@ -69,7 +69,7 @@ impl Session {
     pub fn get_stu_name(&self) -> &str {
         &self.stu_name
     }
-    fn find_stu_name_in_html(client: &Agent) -> Result<String, ureq::Error> {
+    fn find_stu_name_in_html(client: &Agent) -> Result<String, Box<ureq::Error>> {
         let r = protocol::account_manage(client)?;
         let html_content = r.into_string().unwrap();
         debug!("{html_content}");
