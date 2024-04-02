@@ -30,12 +30,12 @@ use std::collections::HashMap;
 
 use self::arg::CliArgs;
 
-fn 区分签到类型并进行签到<'a>(
+fn 区分签到类型并进行签到(
     签到: RawSign,
     db: &DataBase,
-    签到会话列表: &Vec<Session>,
+    签到会话列表: &[Session],
     签到可能使用的信息: &CliArgs,
-) -> Result<(), cxsign::Error> {
+) -> Result<(), Box<cxsign::Error>> {
     let sign_name = 签到.name.clone();
     let mut 签到 = if 签到会话列表.is_empty() {
         warn!("无法判断签到[{sign_name}]的签到类型。");
@@ -53,11 +53,11 @@ fn 区分签到类型并进行签到<'a>(
         是否禁用随机偏移,
     } = 签到可能使用的信息;
     let mut 签到结果列表 = HashMap::new();
-    let sessions = 签到会话列表.into_iter();
+    let sessions = 签到会话列表.iter();
     match 签到 {
         Sign::Photo(ps) => {
             info!("签到[{sign_name}]为拍照签到。");
-            签到结果列表 = DefaultPhotoSignner::new(&pic).sign(ps, sessions)?;
+            签到结果列表 = DefaultPhotoSignner::new(pic).sign(ps, sessions)?;
         }
         Sign::Normal(ns) => {
             info!("签到[{sign_name}]为普通签到。");
@@ -66,9 +66,9 @@ fn 区分签到类型并进行签到<'a>(
         Sign::QrCode(qs) => {
             info!("签到[{sign_name}]为二维码签到。");
             签到结果列表 = DefaultQrCodeSignner::new(
-                &db,
-                &位置字符串,
-                &pic,
+                db,
+                位置字符串,
+                pic,
                 &None,
                 *是否精确识别二维码,
                 *是否禁用随机偏移,
@@ -78,8 +78,7 @@ fn 区分签到类型并进行签到<'a>(
         Sign::Gesture(gs) => {
             info!("签到[{sign_name}]为手势签到。");
             if let Some(signcode) = 签到码 {
-                签到结果列表 =
-                    DefaultGestureOrSigncodeSignner::new(&signcode).sign(gs, sessions)?;
+                签到结果列表 = DefaultGestureOrSigncodeSignner::new(signcode).sign(gs, sessions)?;
             } else {
                 warn!(
                     "所有用户在手势签到[{}]中签到失败！需要提供签到码！",
@@ -89,14 +88,13 @@ fn 区分签到类型并进行签到<'a>(
         }
         Sign::Location(ls) => {
             info!("签到[{sign_name}]为位置签到。");
-            签到结果列表 = DefaultLocationSignner::new(&db, &位置字符串, *是否禁用随机偏移)
+            签到结果列表 = DefaultLocationSignner::new(db, 位置字符串, *是否禁用随机偏移)
                 .sign(ls, sessions)?;
         }
         Sign::Signcode(ss) => {
             info!("签到[{sign_name}]为签到码签到。");
             if let Some(signcode) = 签到码 {
-                签到结果列表 =
-                    DefaultGestureOrSigncodeSignner::new(&signcode).sign(ss, sessions)?;
+                签到结果列表 = DefaultGestureOrSigncodeSignner::new(signcode).sign(ss, sessions)?;
             } else {
                 warn!(
                     "所有用户在手势签到[{}]中签到失败！需要提供签到码！",
@@ -131,7 +129,7 @@ pub fn 签到(
     active_id: Option<i64>,
     账号列表字符串: Option<String>,
     签到可能使用的信息: CliArgs,
-) -> Result<(), cxsign::Error> {
+) -> Result<(), Box<cxsign::Error>> {
     let account_table = AccountTable::from_ref(&db);
     let (sessions, 是否指定accounts参数) = if let Some(账号列表字符串) = &账号列表字符串
     {
@@ -142,12 +140,9 @@ pub fn 签到(
     } else {
         (account_table.get_sessions(), false)
     };
-    let (有效签到列表, 其他签到列表, _) = Activity::get_all_activities(
-        ExcludeTable::from_ref(&db),
-        sessions.values().into_iter(),
-        false,
-    )
-    .unwrap();
+    let (有效签到列表, 其他签到列表, _) =
+        Activity::get_all_activities(ExcludeTable::from_ref(&db), sessions.values(), false)
+            .unwrap();
     let signs = if let Some(active_id) = active_id {
         let (签到_需要处理的, 账号对象_签到所需的_vec) = {
             if let Some(s1) = 有效签到列表
@@ -160,12 +155,12 @@ pub fn 签到(
                 .find(|kv| kv.0.as_inner().active_id == active_id.to_string())
             {
                 s2
+            } else if 是否指定accounts参数 {
+                panic!(
+                    "没有该签到活动！请检查签到活动 ID 是否正确或所指定的账号是否存在该签到活动！"
+                );
             } else {
-                if 是否指定accounts参数 {
-                    panic!("没有该签到活动！请检查签到活动 ID 是否正确或所指定的账号是否存在该签到活动！");
-                } else {
-                    panic!("没有该签到活动！请检查签到活动 ID 是否正确！");
-                }
+                panic!("没有该签到活动！请检查签到活动 ID 是否正确！");
             }
         };
         let mut map = HashMap::new();

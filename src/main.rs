@@ -197,7 +197,7 @@ fn main() {
                     let (available_sign_activities, other_sign_activities, _) =
                         Activity::get_all_activities(
                             ExcludeTable::from_ref(&db),
-                            sessions.values().into_iter(),
+                            sessions.values(),
                             all,
                         )
                         .unwrap();

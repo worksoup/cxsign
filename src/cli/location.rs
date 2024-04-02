@@ -191,9 +191,9 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
             let mut aliases_contents = String::new();
             if !aliases.is_empty() {
                 aliases_contents.push_str(&aliases[0]);
-                for i in 1..aliases.len() {
+                for aliase in aliases.iter().skip(1) {
                     aliases_contents.push('/');
-                    aliases_contents.push_str(&aliases[i]);
+                    aliases_contents.push_str(aliase);
                 }
             }
             #[cfg(debug_assertions)]
@@ -250,17 +250,19 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
             eprintln!("选项`-c, --course` 和 `-g, --global` 不会同时起效，将解释为前者。")
         }
         let 待操作位置列表: Vec<_> = if let Some(course_id) = course {
-            location_table.get_location_map_by_course(course_id)
+            location_table
+                .get_location_map_by_course(course_id)
                 .keys()
-                .map(|id| *id)
+                .copied()
                 .collect()
         } else if global {
-            location_table.get_locations()
+            location_table
+                .get_locations()
                 .keys()
                 .filter_map(|id| if (*id) == -1 { Some(*id) } else { None })
                 .collect()
         } else {
-            location_table.get_locations().keys().map(|id| *id).collect()
+            location_table.get_locations().keys().copied().collect()
         };
         if !yes {
             let ans = confirm("警告：是否删除？");
@@ -268,12 +270,10 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
                 return;
             }
         }
-        if 待操作位置列表.len() > 1 {
-            if !yes {
-                let ans = confirm("警告：删除数目大于 1, 请再次确认，是否删除？");
-                if !ans {
-                    return;
-                }
+        if 待操作位置列表.len() > 1 && !yes {
+            let ans = confirm("警告：删除数目大于 1, 请再次确认，是否删除？");
+            if !ans {
+                return;
             }
         }
         // 删除指定位置。
