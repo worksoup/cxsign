@@ -3,9 +3,9 @@ use std::f64::consts::PI;
 use std::str::FromStr;
 
 use crate::Course;
+use cxsign_user::Session;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use cxsign_user::Session;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 pub struct Location {
@@ -128,7 +128,7 @@ impl LocationWithRange {
         } = self;
         let lat: f64 = lat.parse().unwrap();
         let lon: f64 = lon.parse().unwrap();
-        let mut r = rand::thread_rng().gen_range(0..range * 3) as f64 / (*range as f64) / 3.0;
+        let mut r = rand::thread_rng().gen_range(0..range * 3) as f64 / (*range as f64) / 60.0;
         let theta = rand::thread_rng().gen_range(0..360) as f64 * PI / 180.0;
         r = (*range as f64)
             / R
@@ -223,3 +223,18 @@ impl std::fmt::Display for Location {
 //     }
 //     位置id
 // }
+#[cfg(test)]
+mod tests {
+    use crate::LocationWithRange;
+
+    #[test]
+    fn a() {
+        let l = LocationWithRange {
+            addr: "addr".into(),
+            lon: "108.840053".into(),
+            lat: "34.129522".into(),
+            range: 100,
+        };
+        println!("{}", l.to_shifted_location())
+    }
+}
