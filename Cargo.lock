@@ -567,7 +567,7 @@ dependencies = [
 
 [[package]]
 name = "cxsign"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "clap",
  "cxsign 0.1.1",
