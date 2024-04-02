@@ -58,15 +58,12 @@ impl<'a> SignnerTrait<LocationSign> for DefaultLocationSignner<'a> {
                         全局位置列表.push(location)
                     }
                     全局位置列表
+                } else if let Some(mut location) = 预设位置 {
+                    location.set_addr(&位置字符串);
+                    sign.set_has_range(true);
+                    vec![location]
                 } else {
-                    let 预设位置 = 预设位置
-                        .map(|l| Location::new(&位置字符串, l.get_lon(), l.get_lat(), l.get_alt()));
-                    if let Some(location) = 预设位置 {
-                        sign.set_has_range(true);
-                        vec![location]
-                    } else {
-                        vec![]
-                    }
+                    vec![]
                 };
                 locations
             }

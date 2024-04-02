@@ -187,17 +187,33 @@ impl Location {
     pub fn get_addr(&self) -> &str {
         &self.addr
     }
-    /// 纬度。
-    pub fn get_lat(&self) -> &str {
-        &self.lat
-    }
     /// 经度。
     pub fn get_lon(&self) -> &str {
         &self.lon
     }
+    /// 纬度。
+    pub fn get_lat(&self) -> &str {
+        &self.lat
+    }
     /// 海拔。
     pub fn get_alt(&self) -> &str {
         &self.alt
+    }
+    /// 地址。
+    pub fn set_addr(&mut self, addr: &str) {
+        addr.clone_into(&mut self.addr)
+    }
+    /// 经度。
+    pub fn set_lon(&mut self, lon: &str) {
+        lon.clone_into(&mut self.lon)
+    }
+    /// 纬度。
+    pub fn set_lat(&mut self, lat: &str) {
+        lat.clone_into(&mut self.lat)
+    }
+    /// 海拔。
+    pub fn set_alt(&mut self, alt: &str) {
+        alt.clone_into(&mut self.alt)
     }
 }
 

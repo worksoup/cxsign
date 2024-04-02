@@ -43,18 +43,12 @@ trait GetLocationAndEncTraitInternal: SignTrait {
                         全局位置列表.push(location)
                     } else if 全局位置列表.is_empty() {
                         // 必须保证有一个地址。否则下面循环无法进入。
-                        全局位置列表.push(cxsign_types::Location::new("", "", "", ""))
+                        全局位置列表.push(Location::new("", "", "", ""))
                     }
                     全局位置列表
                 } else {
-                    let 预设位置 = 预设位置.map(|l| {
-                        cxsign_types::Location::new(
-                            &位置字符串,
-                            l.get_lon(),
-                            l.get_lat(),
-                            l.get_alt(),
-                        )
-                    });
+                    let 预设位置 = 预设位置
+                        .map(|l| Location::new(&位置字符串, l.get_lon(), l.get_lat(), l.get_alt()));
                     if let Some(location) = 预设位置 {
                         vec![location]
                     } else {
