@@ -1,4 +1,4 @@
-#[cfg(feature = "xcap")]
+#[cfg(not(mobile))]
 use crate::utils::pic_dir_or_path_to_pic_path;
 use crate::{default::location_or_qrcode_signner_sign_single, SignnerTrait};
 use cxsign_activity::sign::{
@@ -60,15 +60,15 @@ trait GetLocationAndEncTraitInternal: SignTrait {
             }
         }
     }
-    #[cfg(feature = "xcap")]
+    #[cfg(not(mobile))]
     fn is_refresh(&self) -> bool;
     fn get_enc(
         &mut self,
         path: &Option<PathBuf>,
         enc: &Option<String>,
-        #[cfg(feature = "xcap")] precisely: bool,
+        #[cfg(not(mobile))] precisely: bool,
     ) -> Result<String, Error> {
-        #[cfg(feature = "xcap")]
+        #[cfg(not(mobile))]
         let enc = if let Some(enc) = enc {
             enc.clone()
         } else if let Some(pic) = path {
@@ -96,7 +96,7 @@ trait GetLocationAndEncTraitInternal: SignTrait {
             return Err(Error::EncError("截屏时未获取到 `enc` 参数！".to_owned()));
         };
 
-        #[cfg(not(feature = "xcap"))]
+        #[cfg(mobile)]
         let enc = if let Some(enc) = enc {
             enc.clone()
         } else if let Some(pic) = path {
@@ -124,20 +124,20 @@ trait GetLocationAndEncTraitInternal: SignTrait {
     }
 }
 impl GetLocationAndEncTraitInternal for RefreshQrCodeSign {
-    #[cfg(feature = "xcap")]
+    #[cfg(not(mobile))]
     fn is_refresh(&self) -> bool {
         true
     }
 }
 
 impl GetLocationAndEncTraitInternal for NormalQrCodeSign {
-    #[cfg(feature = "xcap")]
+    #[cfg(not(mobile))]
     fn is_refresh(&self) -> bool {
         false
     }
 }
 impl GetLocationAndEncTraitInternal for QrCodeSign {
-    #[cfg(feature = "xcap")]
+    #[cfg(not(mobile))]
     fn is_refresh(&self) -> bool {
         match self {
             QrCodeSign::RefreshQrCodeSign(_) => true,
@@ -150,7 +150,7 @@ pub struct DefaultQrCodeSignner<'a> {
     location_str: &'a Option<String>,
     path: &'a Option<PathBuf>,
     enc: &'a Option<String>,
-    #[cfg(feature = "xcap")]
+    #[cfg(not(mobile))]
     precisely: bool,
     no_rand_shift: bool,
 }
@@ -160,7 +160,7 @@ impl<'a> DefaultQrCodeSignner<'a> {
         location_str: &'a Option<String>,
         path: &'a Option<PathBuf>,
         enc: &'a Option<String>,
-        #[cfg(feature = "xcap")] precisely: bool,
+        #[cfg(not(mobile))] precisely: bool,
         no_rand_shift: bool,
     ) -> Self {
         Self {
@@ -168,7 +168,7 @@ impl<'a> DefaultQrCodeSignner<'a> {
             location_str,
             path,
             enc,
-            #[cfg(feature = "xcap")]
+            #[cfg(not(mobile))]
             precisely,
             no_rand_shift,
         }
@@ -211,9 +211,9 @@ impl<'l> SignnerTrait<NormalQrCodeSign> for DefaultQrCodeSignner<'l> {
             self.no_rand_shift,
             sessions.clone(),
         )?;
-        #[cfg(feature = "xcap")]
+        #[cfg(not(mobile))]
         let enc = sign.get_enc(self.path, self.enc, self.precisely)?;
-        #[cfg(not(feature = "xcap"))]
+        #[cfg(mobile)]
         let enc = sign.get_enc(self.path, self.enc)?;
         sign.set_enc(enc);
         let mut map = HashMap::new();
@@ -247,9 +247,9 @@ impl<'l> SignnerTrait<RefreshQrCodeSign> for DefaultQrCodeSignner<'l> {
             self.no_rand_shift,
             sessions.clone(),
         )?;
-        #[cfg(feature = "xcap")]
+        #[cfg(not(mobile))]
         let enc = sign.get_enc(self.path, self.enc, self.precisely)?;
-        #[cfg(not(feature = "xcap"))]
+        #[cfg(mobile)]
         let enc = sign.get_enc(self.path, self.enc)?;
         sign.set_enc(enc);
         let sessions = sessions.collect::<Vec<&'a Session>>();
