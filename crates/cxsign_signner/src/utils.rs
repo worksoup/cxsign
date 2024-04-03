@@ -1,10 +1,10 @@
 use log::warn;
-#[cfg(feature = "xcap")]
+#[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 use log::{error, info};
-#[cfg(feature = "xcap")]
+#[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 use rxing::Point;
 use rxing::PointU;
-#[cfg(feature = "xcap")]
+#[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -70,7 +70,7 @@ pub fn pic_path_to_qrcode_result(pic_path: &str) -> Option<String> {
     scan_result_to_enc(r.first()?.getText())
 }
 
-#[cfg(feature = "xcap")]
+#[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 fn get_rect_contains_vertex(vertex: &Vec<Point>) -> (PointU, PointU) {
     // let scale_factor = display.scale_factor();
     // println!("屏幕缩放：{scale_factor}");
@@ -106,7 +106,7 @@ fn get_rect_contains_vertex(vertex: &Vec<Point>) -> (PointU, PointU) {
     (PointU::from(lt), PointU::from(wh))
 }
 
-#[cfg(feature = "xcap")]
+#[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 fn scan_qrcode(
     image: image::DynamicImage,
     hints: &mut rxing::DecodingHintDictionary,
@@ -127,7 +127,7 @@ fn scan_qrcode(
 pub fn cut_picture(picture: image::RgbaImage, top_left: PointU, wh: PointU) -> image::DynamicImage {
     image::DynamicImage::from(picture).crop(top_left.x, top_left.y, wh.x, wh.y)
 }
-#[cfg(feature = "xcap")]
+#[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 pub fn capture_screen_for_enc(is_refresh: bool, precise: bool) -> Option<String> {
     let screens = xcap::Monitor::all().unwrap_or_else(|e| panic!("{e:?}"));
     // 在所有屏幕中寻找。

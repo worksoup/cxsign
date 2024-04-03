@@ -14,5 +14,5 @@ cxsign_utils = { path = "../cxsign_utils" }
 log.workspace = true
 rxing = "0.5"
 image = "0.25"
-[target.'cfg(not(mobile))'.dependencies]
+[target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
 xcap = { version = "0.0.8", optional = true }
