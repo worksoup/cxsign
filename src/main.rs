@@ -22,7 +22,8 @@
 
 mod cli;
 mod tools;
-
+// #[global_allocator]
+// static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::{
     arg::{AccCmds, Args, MainCmds},
     location::Struct位置操作使用的信息,
