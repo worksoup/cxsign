@@ -5,6 +5,10 @@ use cxsign_signner as signner;
 pub use cxsign_types::{Course, Location, LocationWithRange, Photo};
 pub use cxsign_user::{Session, UserCookies};
 pub use sign::*;
+pub use signner::{
+    DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
+    DefaultPhotoSignner, DefaultQrCodeSignner, SignnerTrait,
+};
 
 pub mod protocol {
     pub use cxsign_activity::protocol::*;
