@@ -1,5 +1,4 @@
-use crate::signner::default::location_or_qrcode_signner_sign_single;
-use crate::SignnerTrait;
+use crate::{default::location_or_qrcode_signner_sign_single, SignnerTrait};
 use cxsign_activity::sign::{LocationSign, SignResult, SignTrait};
 use cxsign_error::Error;
 use cxsign_store::{DataBase, DataBaseTableTrait};

@@ -237,3 +237,18 @@ pub struct SignDetail {
     is_refresh_qrcode: bool,
     c: String,
 }
+pub trait GestureOrSigncodeSignTrait: SignTrait {
+    fn set_signcode(&mut self, signcode: String);
+}
+
+impl GestureOrSigncodeSignTrait for GestureSign {
+    fn set_signcode(&mut self, signcode: String) {
+        self.set_gesture(signcode)
+    }
+}
+
+impl GestureOrSigncodeSignTrait for SigncodeSign {
+    fn set_signcode(&mut self, signcode: String) {
+        SigncodeSign::set_signcode(self, signcode)
+    }
+}

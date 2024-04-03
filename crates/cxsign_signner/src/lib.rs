@@ -1,11 +1,16 @@
+#![allow(incomplete_features)]
+#![feature(specialization)]
+#![feature(let_chains)]
+
 mod default;
+pub mod utils;
 
 use cxsign_error::Error;
 use cxsign_user::Session;
 pub use default::*;
 use std::collections::HashMap;
 
-use crate::sign::{SignResult, SignTrait};
+use cxsign_activity::sign::{SignResult, SignTrait};
 
 pub trait SignnerTrait<T: SignTrait> {
     type ExtData<'e>;

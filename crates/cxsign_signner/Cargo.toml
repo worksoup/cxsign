@@ -1,0 +1,16 @@
+[package]
+name = "cxsign_signner"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+cxsign_activity = { path = "../cxsign_activity" }
+cxsign_error = { path = "../cxsign_error" }
+cxsign_store = { path = "../cxsign_store" }
+cxsign_types = { path = "../cxsign_types" }
+cxsign_user = { path = "../cxsign_user" }
+cxsign_utils = { path = "../cxsign_utils" }
+log.workspace = true
+rxing = "0.5"
+xcap = "0.0.8"

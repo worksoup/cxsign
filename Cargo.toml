@@ -28,7 +28,7 @@ thiserror = "1.0"
 ureq = "2.9"
 
 [dependencies]
-cxsign_app = { path = "crates/cxsign_app" }
+cxsign_internal = { path = "crates/cxsign_internal" }
 
 #chrono = "0.4"
 #clap = { version = "4.5", features = ["derive"] }

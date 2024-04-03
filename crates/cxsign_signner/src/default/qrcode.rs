@@ -1,6 +1,7 @@
-use crate::signner::default::location_or_qrcode_signner_sign_single;
-use crate::utils::pic_dir_or_path_to_pic_path;
-use crate::SignnerTrait;
+use crate::{
+    default::location_or_qrcode_signner_sign_single, utils::pic_dir_or_path_to_pic_path,
+    SignnerTrait,
+};
 use cxsign_activity::sign::{
     NormalQrCodeSign, QrCodeSign, RefreshQrCodeSign, SignResult, SignTrait,
 };

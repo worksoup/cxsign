@@ -3,11 +3,9 @@ use rxing::{Point, PointU};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-pub use cxsign_dir::*;
-pub use cxsign_login::{des_enc, load_json, login_enc};
 use cxsign_store::{DataBase, DataBaseTableTrait};
 use cxsign_types::{Location, LocationTable};
-pub use cxsign_utils::*;
+use cxsign_utils::*;
 pub fn pic_dir_or_path_to_pic_path(pic_dir: &PathBuf) -> Result<Option<PathBuf>, std::io::Error> {
     loop {
         let yes = inquire_confirm("二维码图片是否就绪？", "本程序会读取 `--pic` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。");
@@ -157,7 +155,7 @@ pub fn capture_screen_for_enc(is_refresh: bool, precise: bool) -> Option<String>
         for r in &results {
             let url = r.getText();
             // 如果符合要求的二维码。
-            if !(url.contains(crate::protocol::QRCODE_PAT) && url.contains("&enc=")) {
+            if !(url.contains(cxsign_types::protocol::QRCODE_PAT) && url.contains("&enc=")) {
                 warn!("{url:?}不是有效的签到二维码！");
                 continue;
             }
