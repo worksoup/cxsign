@@ -176,7 +176,7 @@ pub fn 签到(
     if signs.is_empty() {
         warn!("签到列表为空。");
     }
-    for (sign, sessions) in signs.into_iter() {
+    for (sign, sessions) in signs {
         区分签到类型并进行签到(sign, &db, &sessions, &签到可能使用的信息)
             .unwrap_or_else(|e| warn!("{e}"));
     }

@@ -38,8 +38,8 @@ pub fn 添加账号(db: &DataBase, uname: String, pwd: Option<String>) {
     let name = session.get_stu_name();
     table.add_account_or(&uname, &enc_pwd, name, AccountTable::update_account);
     let courses = Course::get_courses(&session).unwrap();
+    let table = CourseTable::from_ref(db);
     for c in courses {
-        let table = CourseTable::from_ref(db);
         table.add_course_or(&c, |_, _| {});
     }
 }
