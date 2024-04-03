@@ -1,7 +1,6 @@
-use crate::{
-    default::location_or_qrcode_signner_sign_single, utils::pic_dir_or_path_to_pic_path,
-    SignnerTrait,
-};
+#[cfg(feature = "xcap")]
+use crate::utils::pic_dir_or_path_to_pic_path;
+use crate::{default::location_or_qrcode_signner_sign_single, SignnerTrait};
 use cxsign_activity::sign::{
     NormalQrCodeSign, QrCodeSign, RefreshQrCodeSign, SignResult, SignTrait,
 };
@@ -61,13 +60,15 @@ trait GetLocationAndEncTraitInternal: SignTrait {
             }
         }
     }
+    #[cfg(feature = "xcap")]
     fn is_refresh(&self) -> bool;
     fn get_enc(
         &mut self,
         path: &Option<PathBuf>,
         enc: &Option<String>,
-        precisely: bool,
+        #[cfg(feature = "xcap")] precisely: bool,
     ) -> Result<String, Error> {
+        #[cfg(feature = "xcap")]
         let enc = if let Some(enc) = enc {
             enc.clone()
         } else if let Some(pic) = path {
@@ -94,21 +95,49 @@ trait GetLocationAndEncTraitInternal: SignTrait {
         } else {
             return Err(Error::EncError("截屏时未获取到 `enc` 参数！".to_owned()));
         };
+
+        #[cfg(not(feature = "xcap"))]
+        let enc = if let Some(enc) = enc {
+            enc.clone()
+        } else if let Some(pic) = path {
+            if std::fs::metadata(pic).unwrap().is_dir() {
+                if let Some(pic) = crate::utils::pic_dir_or_path_to_pic_path(pic)?
+                    && let Some(enc) =
+                        crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
+                {
+                    enc
+                } else {
+                    return Err(Error::EncError(
+                        "图片文件夹下没有图片（`png` 或 `jpg` 文件）！".to_owned(),
+                    ));
+                }
+            } else if let Some(enc) = crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
+            {
+                enc
+            } else {
+                return Err(Error::EncError("二维码中没有 `enc` 参数！".to_owned()));
+            }
+        } else {
+            return Err(Error::EncError("未获取到 `enc` 参数！".to_owned()));
+        };
         Ok(enc)
     }
 }
 impl GetLocationAndEncTraitInternal for RefreshQrCodeSign {
+    #[cfg(feature = "xcap")]
     fn is_refresh(&self) -> bool {
         true
     }
 }
 
 impl GetLocationAndEncTraitInternal for NormalQrCodeSign {
+    #[cfg(feature = "xcap")]
     fn is_refresh(&self) -> bool {
         false
     }
 }
 impl GetLocationAndEncTraitInternal for QrCodeSign {
+    #[cfg(feature = "xcap")]
     fn is_refresh(&self) -> bool {
         match self {
             QrCodeSign::RefreshQrCodeSign(_) => true,
@@ -121,6 +150,7 @@ pub struct DefaultQrCodeSignner<'a> {
     location_str: &'a Option<String>,
     path: &'a Option<PathBuf>,
     enc: &'a Option<String>,
+    #[cfg(feature = "xcap")]
     precisely: bool,
     no_rand_shift: bool,
 }
@@ -130,7 +160,7 @@ impl<'a> DefaultQrCodeSignner<'a> {
         location_str: &'a Option<String>,
         path: &'a Option<PathBuf>,
         enc: &'a Option<String>,
-        precisely: bool,
+        #[cfg(feature = "xcap")] precisely: bool,
         no_rand_shift: bool,
     ) -> Self {
         Self {
@@ -138,6 +168,7 @@ impl<'a> DefaultQrCodeSignner<'a> {
             location_str,
             path,
             enc,
+            #[cfg(feature = "xcap")]
             precisely,
             no_rand_shift,
         }
@@ -180,7 +211,10 @@ impl<'l> SignnerTrait<NormalQrCodeSign> for DefaultQrCodeSignner<'l> {
             self.no_rand_shift,
             sessions.clone(),
         )?;
+        #[cfg(feature = "xcap")]
         let enc = sign.get_enc(self.path, self.enc, self.precisely)?;
+        #[cfg(not(feature = "xcap"))]
+        let enc = sign.get_enc(self.path, self.enc)?;
         sign.set_enc(enc);
         let mut map = HashMap::new();
         for session in sessions {
@@ -213,7 +247,10 @@ impl<'l> SignnerTrait<RefreshQrCodeSign> for DefaultQrCodeSignner<'l> {
             self.no_rand_shift,
             sessions.clone(),
         )?;
+        #[cfg(feature = "xcap")]
         let enc = sign.get_enc(self.path, self.enc, self.precisely)?;
+        #[cfg(not(feature = "xcap"))]
+        let enc = sign.get_enc(self.path, self.enc)?;
         sign.set_enc(enc);
         let sessions = sessions.collect::<Vec<&'a Session>>();
         let mut map = HashMap::new();
