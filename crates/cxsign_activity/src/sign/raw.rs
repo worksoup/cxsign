@@ -7,10 +7,10 @@ use cxsign_types::Course;
 use cxsign_user::Session;
 use cxsign_utils::get_width_str_should_be;
 use log::{debug, error, info};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize)]
 pub struct RawSign {
     pub start_timestamp: i64,
     pub active_id: String,
