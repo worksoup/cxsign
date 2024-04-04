@@ -6,7 +6,7 @@ use std::fmt::Display;
 use std::ops::Deref;
 use ureq::serde_json;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Course {
     id: i64,
     class_id: i64,
