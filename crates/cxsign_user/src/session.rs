@@ -69,6 +69,9 @@ impl Session {
     pub fn get_stu_name(&self) -> &str {
         &self.stu_name
     }
+    pub fn get_avatar_url(&self, size: usize) -> String {
+        format!("https://photo.chaoxing.com/p/{}_{}", self.get_uid(), size)
+    }
     fn find_stu_name_in_html(client: &Agent) -> Result<String, Box<ureq::Error>> {
         let r = protocol::account_manage(client)?;
         let html_content = r.into_string().unwrap();
