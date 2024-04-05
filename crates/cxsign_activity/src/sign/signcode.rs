@@ -1,7 +1,8 @@
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_user::Session;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Serialize, Deserialize)]
 pub struct SigncodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) signcode: Option<String>,

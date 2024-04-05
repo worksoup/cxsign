@@ -2,8 +2,9 @@ use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Location;
 use cxsign_user::Session;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct LocationSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) location: Option<Location>,

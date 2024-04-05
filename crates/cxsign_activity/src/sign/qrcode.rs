@@ -3,6 +3,8 @@ use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Location;
 use cxsign_user::Session;
 use log::info;
+use serde::{Deserialize, Serialize};
+
 fn sign_unchecked<T: SignTrait>(
     sign: &T,
     enc: &str,
@@ -12,7 +14,7 @@ fn sign_unchecked<T: SignTrait>(
     let r = protocol::qrcode_sign(session, enc, sign.as_inner().active_id.as_str(), location)?;
     Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
 }
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct RefreshQrCodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) enc: Option<String>,
@@ -59,7 +61,7 @@ impl SignTrait for RefreshQrCodeSign {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
 pub struct NormalQrCodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) enc: Option<String>,
@@ -90,7 +92,7 @@ impl SignTrait for NormalQrCodeSign {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
 pub enum QrCodeSign {
     RefreshQrCodeSign(RefreshQrCodeSign),
     NormalQrCodeSign(NormalQrCodeSign),

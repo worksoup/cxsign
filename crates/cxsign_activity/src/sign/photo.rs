@@ -2,8 +2,9 @@ use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Photo;
 use cxsign_user::Session;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
 pub struct PhotoSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) photo: Option<Photo>,
