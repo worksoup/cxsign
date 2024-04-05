@@ -10,6 +10,7 @@ use ureq::Agent;
 #[derive(Debug, Clone)]
 pub struct Session {
     agent: Agent,
+    uname: String,
     stu_name: String,
     cookies: UserCookies,
 }
@@ -31,30 +32,28 @@ impl Hash for Session {
 }
 
 impl Session {
-    pub fn load_json(dir: &Dir, account: &str) -> Result<Self, Box<ureq::Error>> {
-        let client = cxsign_login::load_json(dir.get_json_file_path(account));
+    pub fn load_json(dir: &Dir, uname: &str) -> Result<Self, Box<ureq::Error>> {
+        let client = cxsign_login::load_json(dir.get_json_file_path(uname));
         let cookies = UserCookies::new(&client);
         let stu_name = Self::find_stu_name_in_html(&client)?;
         info!("用户[{}]加载 Cookies 成功！", stu_name);
         Ok(Session {
             agent: client,
+            uname: uname.to_string(),
             stu_name,
             cookies,
         })
     }
 
-    pub fn login(
-        dir: &Dir,
-        account: &str,
-        enc_passwd: &str,
-    ) -> Result<Session, cxsign_error::Error> {
+    pub fn login(dir: &Dir, uname: &str, enc_passwd: &str) -> Result<Session, cxsign_error::Error> {
         let client =
-            cxsign_login::login_enc(account, enc_passwd, Some(dir.get_json_file_path(account)))?;
+            cxsign_login::login_enc(uname, enc_passwd, Some(dir.get_json_file_path(uname)))?;
         let cookies = UserCookies::new(&client);
         let stu_name = Self::find_stu_name_in_html(&client)?;
         info!("用户[{}]登录成功！", stu_name);
         Ok(Session {
             agent: client,
+            uname: uname.to_string(),
             stu_name,
             cookies,
         })
@@ -68,6 +67,9 @@ impl Session {
 
     pub fn get_stu_name(&self) -> &str {
         &self.stu_name
+    }
+    pub fn get_uname(&self) -> &str {
+        &self.uname
     }
     pub fn get_avatar_url(&self, size: usize) -> String {
         format!("https://photo.chaoxing.com/p/{}_{}", self.get_uid(), size)
