@@ -91,7 +91,7 @@ pub trait SignTrait: Ord {
         }
     }
 }
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone)]
 pub enum Sign {
     // 拍照签到
     Photo(PhotoSign),

@@ -53,7 +53,7 @@ trait GetLocationAndEncTraitInternal: SignTrait {
                         vec![location]
                     } else {
                         // 必须保证有一个地址。否则下面循环无法进入。
-                        vec![cxsign_types::Location::new("", "", "", "")]
+                        vec![Location::new("", "", "", "")]
                     }
                 };
                 Ok(locations)
