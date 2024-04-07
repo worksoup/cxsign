@@ -162,6 +162,14 @@ impl FromStr for Location {
     }
 }
 impl Location {
+    pub fn get_none_location() -> Self {
+        Location {
+            addr: "".to_string(),
+            lon: "".to_string(),
+            lat: "".to_string(),
+            alt: "".to_string(),
+        }
+    }
     pub fn parse(location_str: &str) -> Result<Self, String> {
         let location_str: Vec<&str> = location_str.split(',').map(|item| item.trim()).collect();
         if location_str.len() == 4 {
