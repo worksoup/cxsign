@@ -106,8 +106,7 @@ fn get_rect_contains_vertex(vertex: &Vec<Point>) -> (PointU, PointU) {
     (PointU::from(lt), PointU::from(wh))
 }
 
-#[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
-fn scan_qrcode(
+pub fn scan_qrcode(
     image: image::DynamicImage,
     hints: &mut rxing::DecodingHintDictionary,
 ) -> rxing::common::Result<Vec<rxing::RXingResult>> {
