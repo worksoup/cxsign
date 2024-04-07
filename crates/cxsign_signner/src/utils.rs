@@ -49,7 +49,7 @@ pub fn pic_dir_or_path_to_pic_path(pic_dir: &PathBuf) -> Result<Option<PathBuf>,
     Ok(pic_path)
 }
 
-fn scan_result_to_enc(url: &str) -> Option<String> {
+pub fn scan_result_to_enc(url: &str) -> Option<String> {
     // 在二维码图片中会有一个参数 `c`, 二维码预签到时需要。
     // 但是该参数似乎暂时可以从 `signDetail` 接口获取到。所以此处先注释掉。
     // let beg = r.find("&c=").unwrap();
