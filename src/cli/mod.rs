@@ -177,6 +177,12 @@ pub fn 签到(
         warn!("签到列表为空。");
     }
     for (sign, sessions) in signs {
+        info!("即将处理签到：{sign}");
+        let mut names = Vec::new();
+        for s in sessions.iter() {
+            names.push(s.get_stu_name().to_string())
+        }
+        info!("签到者：{names:?}");
         区分签到类型并进行签到(sign, &db, &sessions, &签到可能使用的信息)
             .unwrap_or_else(|e| warn!("{e}"));
     }
