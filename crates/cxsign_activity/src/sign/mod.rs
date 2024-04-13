@@ -53,14 +53,18 @@ pub trait SignTrait: Ord {
     fn guess_sign_result_by_text(&self, text: &str) -> SignResult {
         match text {
             "success" => SignResult::Susses,
-            msg => SignResult::Fail {
-                msg: if msg.is_empty() {
-                    "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。"
+            msg => {
+                if msg.is_empty() {
+                    SignResult::Fail { msg:
+                    "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。".into() }
                 } else {
-                    msg
+                    if msg == "您已签到过了" {
+                        SignResult::Susses
+                    } else {
+                        SignResult::Fail { msg: msg.into() }
+                    }
                 }
-                .into(),
-            },
+            }
         }
     }
     fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {

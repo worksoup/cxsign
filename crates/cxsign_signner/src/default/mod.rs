@@ -58,22 +58,18 @@ fn location_or_qrcode_signner_sign_single<R: SignTrait + SetLocationTrait>(
                         break;
                     }
                     SignResult::Fail { msg } => {
-                        if msg == *"您已签到过了" {
-                            state = SignResult::Susses;
-                            info!(
-                                "用户[{}]: 您已经签过[{}]了！",
-                                session.get_stu_name(),
-                                sign.as_inner().name,
-                            );
+                        warn!(
+                            "用户[{}]在二维码签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
+                            session.get_stu_name(),
+                            sign.as_inner().name,
+                            location,
+                            msg
+                        );
+                        if msg == *"签到失败，请重新扫描。" {
+                            state = SignResult::Fail {
+                                msg: "签到失败，请重新扫描。".to_string(),
+                            };
                             break;
-                        } else {
-                            warn!(
-                                "用户[{}]在二维码签到[{}]中尝试位置[{}]时失败！失败信息：[{:?}]",
-                                session.get_stu_name(),
-                                sign.as_inner().name,
-                                location,
-                                msg
-                            );
                         }
                     }
                 };
