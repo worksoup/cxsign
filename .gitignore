@@ -15,14 +15,17 @@ dist-ssr
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea/
+src-tauri/.cargo/
+src-tauri/target/
+.idea
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-src-tauri/gen/
-Cargo.lock
 target/
+.svelte-kit/
+build/
+src-tauri/icons/
+src/lib/commands/constants.ts

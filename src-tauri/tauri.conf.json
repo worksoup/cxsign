@@ -1,14 +1,15 @@
 {
   "productName": "cxsign",
   "version": "0.0.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "rt.lea.cxsign",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
+    "frontendDist": "../build"
   },
-  "app": {"windows": [
+  "app": {
+    "windows": [
       {
         "title": "cxsign",
         "width": 800,

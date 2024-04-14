@@ -1,5 +1,6 @@
+import { sveltekit } from "@sveltejs/kit/vite";
+import { vite as vidstack } from "vidstack/plugins";
 import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { internalIpV4 } from "internal-ip";
 
 // @ts-expect-error process is a nodejs global
@@ -7,7 +8,7 @@ const mobile = !!/android|ios/.exec(process.env.TAURI_ENV_PLATFORM);
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [svelte()],
+  plugins: [vidstack({ include: /player\// }), sveltekit()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
@@ -15,7 +16,7 @@ export default defineConfig(async () => ({
   clearScreen: false,
   // 2. tauri expects a fixed port, fail if that port is not available
   server: {
-    port: 1420,
+    port: 5173,
     strictPort: true,
     host: mobile ? "0.0.0.0" : false,
     hmr: mobile
