@@ -68,12 +68,12 @@
 
    ```
    callback_name(
-   {
-   "error":0,
-   "msg":"ok",
-   "result":true,
-   "extraData":validate_str
-   }
+     {
+       "error":0,
+       "msg":"ok",
+       "result":true,
+       "extraData":validate_str
+     }
    )
    ```
 
@@ -92,7 +92,7 @@
    ```
 
    其中 `validate` 与 `"validate_" + captcha_id +"_" + token` 一致。
-   目前不知到滑块验证成功的判定条件是什么。
+   目前不知到滑块验证成功的判定条件是什么（~~但应该不是只有滑块位置正确这一个条件~~看样子需要设置 `referer`）。
 
 ## 注
 
