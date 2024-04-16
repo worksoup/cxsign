@@ -2,7 +2,7 @@ use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Location;
 use cxsign_user::Session;
-use log::info;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
 fn sign_unchecked<T: SignTrait>(
@@ -11,8 +11,31 @@ fn sign_unchecked<T: SignTrait>(
     location: &Option<Location>,
     session: &Session,
 ) -> Result<SignResult, Box<ureq::Error>> {
-    let r = protocol::qrcode_sign(session, enc, sign.as_inner().active_id.as_str(), location)?;
-    Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
+    let url = protocol::qrcode_sign_url(session, enc, sign.as_inner().active_id.as_str(), location);
+    let r = protocol::ureq_get(session, &url)?;
+    let result = match sign.guess_sign_result_by_text(&r.into_string().unwrap()) {
+        SignResult::Susses => SignResult::Susses,
+        SignResult::Fail { msg } => {
+            if msg.starts_with("validate_") {
+                let enc2 = &msg[9..msg.len()];
+                debug!("enc2: {enc2:?}");
+                let url = url + "&enc2=" + enc2;
+                // captcha validate.
+                todo!();
+                // get token.
+                let token = todo!();
+                // validate 参数有三个部分，通过 `_` 连接，第一部分是固定的 `validate`;
+                // 第二部分是 `captchaId`, 是固定的 `Qt9FIw9o4pwRjOyqM6yizZBh682qN2TU`;
+                // 第三部分是 `captchaToken` 需要滑块验证获取。
+                let url = url + "&validate=validate_Qt9FIw9o4pwRjOyqM6yizZBh682qN2TU_" + token;
+                let r = protocol::ureq_get(session, &url)?;
+                sign.guess_sign_result_by_text(&r.into_string().unwrap())
+            } else {
+                SignResult::Fail { msg }
+            }
+        }
+    };
+    Ok(result)
 }
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct RefreshQrCodeSign {

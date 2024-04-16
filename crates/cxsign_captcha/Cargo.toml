@@ -1,0 +1,9 @@
+[package]
+name = "cxsign_captcha"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+percent-encoding.workspace = true
+ureq = { workspace = true, features = ["cookies", "json"] }

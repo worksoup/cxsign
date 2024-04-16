@@ -24,17 +24,17 @@ pub fn photo_sign(
     session.get(&format!("{PPT_SIGN}?activeId={active_id}&uid={uid}&clientip=&useragent=&latitude=-1&longitude=-1&appType=15&fid={fid}&objectId={object_id}&name={}", percent_encoding::utf8_percent_encode(stu_name, percent_encoding::NON_ALPHANUMERIC))).call().map_err(|e| e.into())
 }
 
-pub fn qrcode_sign(
+pub fn qrcode_sign_url(
     session: &Session,
     enc: &str,
     active_id: &str,
     location: &Option<Location>,
-) -> Result<Response, Box<ureq::Error>> {
+) -> String {
     let uid = session.get_uid();
     let fid = session.get_fid();
     let stu_name = session.get_stu_name();
     // TODO: 存疑。
-    let url = if let Some(location) = location {
+    if let Some(location) = location {
         let (addr, lat, lon, alt) = (
             location.get_addr(),
             location.get_lat(),
@@ -56,8 +56,21 @@ pub fn qrcode_sign(
         format!(
             r#"{PPT_SIGN}?enc={enc}&name={stu_name}&activeId={active_id}&uid={uid}&clientip=&location=&latitude=-1&longitude=-1&fid={fid}&appType=15"#
         )
-    };
+    }
+}
+
+pub fn qrcode_sign(
+    session: &Session,
+    enc: &str,
+    active_id: &str,
+    location: &Option<Location>,
+) -> Result<Response, Box<ureq::Error>> {
+    let url = qrcode_sign_url(session, enc, active_id, location);
     Ok(session.get(&url).call()?)
+}
+
+pub fn ureq_get(agent: &ureq::Agent, url: &str) -> Result<Response, Box<ureq::Error>> {
+    Ok(agent.get(&url).call()?)
 }
 
 pub fn location_sign(
