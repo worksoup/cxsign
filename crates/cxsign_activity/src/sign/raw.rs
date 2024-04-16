@@ -6,7 +6,7 @@ use crate::sign::{
 use cxsign_types::Course;
 use cxsign_user::Session;
 use cxsign_utils::get_width_str_should_be;
-use log::{debug, error, info};
+use log::{debug, error, info, trace};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
@@ -194,12 +194,13 @@ impl RawSign {
         );
         let pre_sign_status = {
             let html = response_of_presign.into_string().unwrap();
-            debug!("预签到请求结果：{html}");
+            trace!("预签到请求结果：{html}");
             if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
                 let html = &html[start_of_statuscontent_h1 + 19..html.len()];
-                let end_of_statuscontent_h1 = html.find('<').unwrap();
+                let end_of_statuscontent_h1 = html.find("</").unwrap();
                 let content_of_statuscontent_h1 = html[0..end_of_statuscontent_h1].trim();
-                if content_of_statuscontent_h1 == "签到成功" {
+                debug!("content_of_statuscontent_h1: {content_of_statuscontent_h1:?}.");
+                if content_of_statuscontent_h1.contains("签到成功") {
                     SignResult::Susses
                 } else {
                     SignResult::Fail {
