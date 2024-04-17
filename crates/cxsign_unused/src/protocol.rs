@@ -72,3 +72,10 @@ pub fn chat_group_signcode_sign(
         format!("{CHAT_GROUP_SIGN}?activeId={active_id}&uid={uid}&clientip=&signCode={signcode}");
     Ok(client.get(&url).call()?)
 }
+
+static AUTO_REFRESH_SIGN_LIST: &str =
+    "https://mobilelearn.chaoxing.com/pptSign/autoRefeashSignList4Json2";
+pub fn get_signed_list(client: &Agent, active_id: &str) -> Result<Response, Box<ureq::Error>> {
+    let url = format!("{AUTO_REFRESH_SIGN_LIST}?activeId={active_id}");
+    Ok(client.get(&url).call()?)
+}

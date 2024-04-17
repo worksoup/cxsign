@@ -12,7 +12,7 @@ use cxsign_types::Location;
 use cxsign_user::Session;
 pub use gesture_or_signcode::*;
 pub use location::*;
-use log::{info, warn};
+use log::warn;
 pub use normal_or_raw::*;
 pub use photo::*;
 pub use qrcode::*;
