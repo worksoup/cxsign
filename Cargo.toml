@@ -18,6 +18,7 @@ authors = ["worksoup"]
 #anyhow = "1.0"
 chrono = "0.4"
 cookie_store = "0.21"
+image = "0.25"
 log = { version = "0.4", features = ["release_max_level_info"] }
 percent-encoding = "2.3"
 rand = "0.8"

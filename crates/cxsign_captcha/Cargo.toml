@@ -5,9 +5,12 @@ version.workspace = true
 authors.workspace = true
 
 [dependencies]
-chrono.workspace = true
+cxsign_imageproc = { path = "../cxsign_imageproc" }
 cxsign_obfuscate = { path = "../cxsign_obfuscate" }
 hex = "0.4"
-percent-encoding.workspace = true
+image.workspace = true
+imageproc = "0.24"
+log.workspace = true
 rand.workspace = true
 ureq = { workspace = true, features = ["cookies", "json"] }
+serde = { workspace = true, features = ["derive"] }

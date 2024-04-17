@@ -21,15 +21,20 @@ fn sign_unchecked<T: SignTrait>(
                 debug!("enc2: {enc2:?}");
                 let url = url + "&enc2=" + enc2;
                 // captcha validate.
-                todo!();
                 // get token.
-                let token = todo!();
+                let url_param = cxsign_captcha::utils::tmp_solver(session)?.get_validate_info();
                 // validate 参数有三个部分，通过 `_` 连接，第一部分是固定的 `validate`;
                 // 第二部分是 `captchaId`, 是固定的 `Qt9FIw9o4pwRjOyqM6yizZBh682qN2TU`;
                 // 第三部分是 `captchaToken` 需要滑块验证获取。
-                let url = url + "&validate=validate_Qt9FIw9o4pwRjOyqM6yizZBh682qN2TU_" + token;
-                let r = protocol::ureq_get(session, &url)?;
-                sign.guess_sign_result_by_text(&r.into_string().unwrap())
+                if let Some(url_param) = url_param {
+                    let url = url + &url_param;
+                    let r = protocol::ureq_get(session, &url)?;
+                    sign.guess_sign_result_by_text(&r.into_string().unwrap())
+                } else {
+                    SignResult::Fail {
+                        msg: "滑块验证失败，请重试。".to_string(),
+                    }
+                }
             } else {
                 SignResult::Fail { msg }
             }

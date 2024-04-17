@@ -1,0 +1,10 @@
+[package]
+name = "cxsign_imageproc"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+image.workspace = true
+imageproc = "0.24"
+num-traits = "0.2"

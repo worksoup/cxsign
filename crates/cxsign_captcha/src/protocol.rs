@@ -2,14 +2,15 @@ use std::fmt::Display;
 
 pub static CAPTCHA_ID: &str = "Qt9FIw9o4pwRjOyqM6yizZBh682qN2TU";
 // 获取滑块。
-static GET_CAPTCHA: &str = "https://captcha.chaoxing.com/captcha/get/verification/image";
+pub(crate) static GET_CAPTCHA: &str = "https://captcha.chaoxing.com/captcha/get/verification/image";
 // 滑块验证。
-static CHECK_CAPTCHA: &str = "https://captcha.chaoxing.com/captcha/check/verification/result";
+pub(crate) static CHECK_CAPTCHA: &str =
+    "https://captcha.chaoxing.com/captcha/check/verification/result";
 // 获取服务器时间。
-static GET_SERVER_TIME: &str = "https://captcha.chaoxing.com/captcha/get/conf";
+pub(crate) static GET_SERVER_TIME: &str = "https://captcha.chaoxing.com/captcha/get/conf";
 
 // Doesn't matter.
-static CALLBACK_NAME: &str = "jQuery_114514_1919810";
+pub(crate) static CALLBACK_NAME: &str = "jQuery_114514_1919810";
 pub fn get_server_time(
     agent: &ureq::Agent,
     captcha_id: &str,
@@ -43,7 +44,7 @@ pub fn get_captcha(
 pub fn check_captcha(
     agent: &ureq::Agent,
     captcha_id: &str,
-    x: i32,
+    x: impl Display + Copy,
     token: &str,
     time_stamp_mills: impl Display + Copy,
 ) -> Result<ureq::Response, Box<ureq::Error>> {
