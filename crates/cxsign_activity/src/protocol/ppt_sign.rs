@@ -5,6 +5,10 @@ use ureq::Response;
 // 签到
 static PPT_SIGN: &str = "https://mobilelearn.chaoxing.com/pptSign/stuSignajax";
 
+pub fn ureq_get(agent: &ureq::Agent, url: &str) -> Result<Response, Box<ureq::Error>> {
+    Ok(agent.get(&url).call()?)
+}
+
 pub fn general_sign(session: &Session, active_id: &str) -> Result<Response, Box<ureq::Error>> {
     let uid = session.get_uid();
     let fid = session.get_fid();
@@ -28,7 +32,7 @@ pub fn qrcode_sign_url(
     session: &Session,
     enc: &str,
     active_id: &str,
-    location: &Option<Location>,
+    location: Option<&Location>,
 ) -> String {
     let uid = session.get_uid();
     let fid = session.get_fid();
@@ -63,22 +67,17 @@ pub fn qrcode_sign(
     session: &Session,
     enc: &str,
     active_id: &str,
-    location: &Option<Location>,
+    location: Option<&Location>,
 ) -> Result<Response, Box<ureq::Error>> {
     let url = qrcode_sign_url(session, enc, active_id, location);
     Ok(session.get(&url).call()?)
 }
-
-pub fn ureq_get(agent: &ureq::Agent, url: &str) -> Result<Response, Box<ureq::Error>> {
-    Ok(agent.get(&url).call()?)
-}
-
-pub fn location_sign(
+pub fn location_sign_url(
     session: &Session,
     location: &Location,
     active_id: &str,
     is_auto_location: bool,
-) -> Result<Response, Box<ureq::Error>> {
+) -> String {
     let uid = session.get_uid();
     let fid = session.get_fid();
     let stu_name = session.get_stu_name();
@@ -86,8 +85,22 @@ pub fn location_sign(
     let lat = location.get_lat();
     let lon = location.get_lon();
     let if_tijiao = if is_auto_location { 1 } else { 0 };
-    let url = format!("{PPT_SIGN}?name={stu_name}&address={address}&activeId={active_id}&uid={uid}&clientip=&latitude={lat}&longitude={lon}&fid={fid}&appType=15&ifTiJiao={if_tijiao}&validate=");
-    Ok(session.get(&url).call()?)
+    format!("{PPT_SIGN}?name={stu_name}&address={address}&activeId={active_id}&uid={uid}&clientip=&latitude={lat}&longitude={lon}&fid={fid}&appType=15&ifTiJiao={if_tijiao}")
+}
+pub fn location_sign(
+    session: &Session,
+    location: &Location,
+    active_id: &str,
+    is_auto_location: bool,
+) -> Result<Response, Box<ureq::Error>> {
+    Ok(session
+        .get(&location_sign_url(
+            session,
+            location,
+            active_id,
+            is_auto_location,
+        ))
+        .call()?)
 }
 
 pub fn signcode_sign(

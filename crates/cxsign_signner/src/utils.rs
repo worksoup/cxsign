@@ -1,3 +1,5 @@
+use cxsign_activity::sign::{LocationSign, QrCodeSign, SignTrait};
+use cxsign_error::Error;
 use cxsign_imageproc::cut_picture;
 use log::warn;
 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
@@ -11,6 +13,93 @@ use std::path::PathBuf;
 use cxsign_store::{DataBase, DataBaseTableTrait};
 use cxsign_types::{Location, LocationTable};
 use cxsign_utils::*;
+
+pub fn get_locations(
+    sign: &LocationSign,
+    db: &DataBase,
+    location_str: &Option<String>,
+) -> Location {
+    match location_str_to_location(db, location_str) {
+        Ok(位置) => 位置,
+        Err(位置字符串) => {
+            if !位置字符串.is_empty() {
+                if let Some(location) = sign.get_preset_location(Some(&位置字符串)) {
+                    return location;
+                }
+            } else {
+                if let Some(location) = sign.get_preset_location(None) {
+                    return location;
+                }
+            }
+            let table = LocationTable::from_ref(db);
+            if let Some(location) = table
+                .get_location_list_by_course(sign.as_inner().course.get_id())
+                .first()
+            {
+                location.clone()
+            } else if let Some(location) = table.get_location_list_by_course(-1).first() {
+                location.clone()
+            } else {
+                Location::get_none_location()
+            }
+        }
+    }
+}
+pub fn enc_gen(
+    sign: &QrCodeSign,
+    path: &Option<PathBuf>,
+    enc: &Option<String>,
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))] precisely: bool,
+) -> Result<String, Error> {
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+    let enc = if let Some(enc) = enc {
+        enc.clone()
+    } else if let Some(pic) = path {
+        if std::fs::metadata(pic).unwrap().is_dir() {
+            if let Some(pic) = pic_dir_or_path_to_pic_path(pic)?
+                && let Some(enc) = crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
+            {
+                enc
+            } else {
+                return Err(Error::EncError(
+                    "图片文件夹下没有图片（`png` 或 `jpg` 文件）！".to_owned(),
+                ));
+            }
+        } else if let Some(enc) = crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap()) {
+            enc
+        } else {
+            return Err(Error::EncError("二维码中没有 `enc` 参数！".to_owned()));
+        }
+    } else if let Some(enc) = crate::utils::capture_screen_for_enc(sign.is_refresh(), precisely) {
+        enc
+    } else {
+        return Err(Error::EncError("截屏时未获取到 `enc` 参数！".to_owned()));
+    };
+
+    #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
+    let enc = if let Some(enc) = enc {
+        enc.clone()
+    } else if let Some(pic) = path {
+        if std::fs::metadata(pic).unwrap().is_dir() {
+            if let Some(pic) = crate::utils::pic_dir_or_path_to_pic_path(pic)?
+                && let Some(enc) = crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap())
+            {
+                enc
+            } else {
+                return Err(Error::EncError(
+                    "图片文件夹下没有图片（`png` 或 `jpg` 文件）！".to_owned(),
+                ));
+            }
+        } else if let Some(enc) = crate::utils::pic_path_to_qrcode_result(pic.to_str().unwrap()) {
+            enc
+        } else {
+            return Err(Error::EncError("二维码中没有 `enc` 参数！".to_owned()));
+        }
+    } else {
+        return Err(Error::EncError("未获取到 `enc` 参数！".to_owned()));
+    };
+    Ok(enc)
+}
 pub fn pic_dir_or_path_to_pic_path(pic_dir: &PathBuf) -> Result<Option<PathBuf>, std::io::Error> {
     loop {
         let yes = inquire_confirm("二维码图片是否就绪？", "本程序会读取 `--pic` 参数所指定的路径下最新修改的图片。你可以趁现在获取这张图片，然后按下回车进行签到。");

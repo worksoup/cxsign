@@ -15,7 +15,7 @@ pub struct Location {
     alt: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct LocationWithRange {
     #[serde(rename = "address")]
     addr: String,

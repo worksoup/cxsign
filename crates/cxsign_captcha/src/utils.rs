@@ -7,7 +7,7 @@ use serde::Deserialize;
 use cxsign_imageproc::{image_mean, image_sum};
 
 use crate::hash::{encode, hash, uuid};
-use crate::protocol::{check_captcha, get_captcha, get_server_time, CALLBACK_NAME, CAPTCHA_ID};
+use crate::protocol::{check_captcha, get_captcha, get_server_time, CALLBACK_NAME};
 
 pub fn trim_response_to_json<'a, T>(text: &'a str) -> Result<T, ureq::serde_json::Error>
 where
@@ -128,18 +128,21 @@ pub fn auto_solve_captcha(
     debug!("滑块结果：{v:?}");
     Ok(v)
 }
-pub fn tmp_solver(agent: &ureq::Agent) -> Result<ValidateResult, Box<ureq::Error>> {
+pub fn captcha_solver(
+    agent: &ureq::Agent,
+    captcha_id: &str,
+) -> Result<ValidateResult, Box<ureq::Error>> {
     let time = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_millis();
-    let r = get_server_time(agent, CAPTCHA_ID, time)?;
+    let r = get_server_time(agent, captcha_id, time)?;
     #[derive(Deserialize)]
     struct Tmp {
         t: u128,
     }
     let Tmp { t } = trim_response_to_json(r.into_string().unwrap().as_str()).unwrap();
-    auto_solve_captcha(&agent, CAPTCHA_ID, t)
+    auto_solve_captcha(&agent, captcha_id, t)
 }
 #[derive(Deserialize, Debug)]
 pub struct ValidateResult {

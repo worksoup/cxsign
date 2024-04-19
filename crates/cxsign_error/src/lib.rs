@@ -10,4 +10,6 @@ pub enum Error {
     IoError(#[from] std::io::Error),
     #[error("`enc` 为空！")]
     EncError(String),
+    #[error("无法获取位置信息！")]
+    LocationError,
 }
