@@ -1,3 +1,5 @@
+use std::ptr;
+
 pub enum Dioption<T1, T2> {
     None,
     First(T1),
@@ -86,7 +88,7 @@ impl<T1, T2> Dioption<T1, T2> {
             }
             Dioption::Second(s) => {
                 unsafe {
-                    *self = Dioption::Both(value, std::mem::replace(s, std::mem::zeroed()));
+                    *self = Dioption::Both(value, ptr::read(s));
                 }
                 true
             }
@@ -101,7 +103,7 @@ impl<T1, T2> Dioption<T1, T2> {
             }
             Dioption::First(f) => {
                 unsafe {
-                    *self = Dioption::Both(std::mem::replace(f, std::mem::zeroed()), value);
+                    *self = Dioption::Both(ptr::read(f), value);
                 }
                 true
             }
@@ -114,7 +116,7 @@ impl<T1, T2> Dioption<T1, T2> {
                 *self = Dioption::First(value);
             }
             Dioption::Second(s) | Dioption::Both(_, s) => unsafe {
-                *self = Dioption::Both(value, std::mem::replace(s, std::mem::zeroed()));
+                *self = Dioption::Both(value, ptr::read(s));
             },
         }
     }
@@ -124,7 +126,7 @@ impl<T1, T2> Dioption<T1, T2> {
                 *self = Dioption::Second(value);
             }
             Dioption::First(f) | Dioption::Both(f, _) => unsafe {
-                *self = Dioption::Both(std::mem::replace(f, std::mem::zeroed()), value);
+                *self = Dioption::Both(ptr::read(f), value);
             },
         }
     }

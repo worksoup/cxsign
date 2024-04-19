@@ -22,22 +22,25 @@ pub fn get_locations(
     match location_str_to_location(db, location_str) {
         Ok(位置) => 位置,
         Err(位置字符串) => {
-            if !位置字符串.is_empty()
-                && let Some(location) = sign.get_preset_location(Some(&位置字符串))
-            {
-                location
-            } else {
-                let table = LocationTable::from_ref(db);
-                if let Some(location) = table
-                    .get_location_list_by_course(sign.as_inner().course.get_id())
-                    .first()
-                {
-                    location.clone()
-                } else if let Some(location) = table.get_location_list_by_course(-1).first() {
-                    location.clone()
-                } else {
-                    Location::get_none_location()
+            if !位置字符串.is_empty() {
+                if let Some(location) = sign.get_preset_location(Some(&位置字符串)) {
+                    return location;
                 }
+            } else {
+                if let Some(location) = sign.get_preset_location(None) {
+                    return location;
+                }
+            }
+            let table = LocationTable::from_ref(db);
+            if let Some(location) = table
+                .get_location_list_by_course(sign.as_inner().course.get_id())
+                .first()
+            {
+                location.clone()
+            } else if let Some(location) = table.get_location_list_by_course(-1).first() {
+                location.clone()
+            } else {
+                Location::get_none_location()
             }
         }
     }
