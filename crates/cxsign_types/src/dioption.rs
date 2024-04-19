@@ -4,10 +4,9 @@ pub enum Dioption<T1, T2> {
     Second(T2),
     Both(T1, T2),
 }
-fn steal<T>(src: *const T) -> T {
-    let r = unsafe { std::ptr::read(src) };
-    std::mem::forget(src);
-    r
+fn steal<T>(dest: &mut T) -> T {
+    let zeroed = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
+    std::mem::replace(dest, zeroed)
 }
 impl<T1, T2> Dioption<T1, T2> {
     pub fn into_first(self) -> Option<T1> {
@@ -90,10 +89,7 @@ impl<T1, T2> Dioption<T1, T2> {
                 true
             }
             Dioption::Second(s) => {
-                unsafe {
-                    *self = Dioption::Both(value, steal(s));
-                    std::mem::forget(s)
-                }
+                *self = Dioption::Both(value, steal(s));
                 true
             }
             _ => false,
@@ -106,10 +102,7 @@ impl<T1, T2> Dioption<T1, T2> {
                 true
             }
             Dioption::First(f) => {
-                unsafe {
-                    *self = Dioption::Both(steal(f), value);
-                    std::mem::forget(f)
-                }
+                *self = Dioption::Both(steal(f), value);
                 true
             }
             _ => false,
@@ -120,10 +113,9 @@ impl<T1, T2> Dioption<T1, T2> {
             Dioption::None | Dioption::First(_) => {
                 *self = Dioption::First(value);
             }
-            Dioption::Second(s) | Dioption::Both(_, s) => unsafe {
+            Dioption::Second(s) | Dioption::Both(_, s) => {
                 *self = Dioption::Both(value, steal(s));
-                std::mem::forget(s)
-            },
+            }
         }
     }
     pub fn set_second(&mut self, value: T2) {
@@ -131,9 +123,9 @@ impl<T1, T2> Dioption<T1, T2> {
             Dioption::None | Dioption::Second(_) => {
                 *self = Dioption::Second(value);
             }
-            Dioption::First(f) | Dioption::Both(f, _) => unsafe {
-                std::mem::forget(f) * self = Dioption::Both(steal(f), value);
-            },
+            Dioption::First(f) | Dioption::Both(f, _) => {
+                *self = Dioption::Both(steal(f), value);
+            }
         }
     }
 }
