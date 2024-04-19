@@ -24,9 +24,6 @@ impl SignTrait for RawSign {
     fn as_inner(&self) -> &RawSign {
         self
     }
-    fn as_inner_mut(&mut self) -> &mut RawSign {
-        self
-    }
     fn pre_sign(&self, session: &Session) -> Result<PreSignResult, Box<ureq::Error>> {
         let active_id = self.active_id.as_str();
         let uid = session.get_uid();

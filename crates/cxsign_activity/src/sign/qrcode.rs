@@ -50,9 +50,6 @@ impl SignTrait for QrCodeSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign.as_inner()
     }
-    fn as_inner_mut(&mut self) -> &mut RawSign {
-        self.raw_sign.as_inner_mut()
-    }
     fn is_ready_for_sign(&self) -> bool {
         self.enc.is_some()
     }
