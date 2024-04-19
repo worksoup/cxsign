@@ -8,7 +8,6 @@ mod signcode;
 
 pub use gesture::*;
 pub use location::*;
-use log::warn;
 pub use normal::*;
 pub use photo::*;
 pub use qrcode::*;
