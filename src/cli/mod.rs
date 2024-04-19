@@ -50,7 +50,6 @@ fn 区分签到类型并进行签到(
         图片或图片路径: pic,
         签到码,
         是否精确识别二维码,
-        是否禁用随机偏移,
     } = 签到可能使用的信息;
     let mut 签到结果列表 = HashMap::new();
     let sessions = 签到会话列表.iter();
@@ -65,15 +64,9 @@ fn 区分签到类型并进行签到(
         }
         Sign::QrCode(qs) => {
             info!("签到[{sign_name}]为二维码签到。");
-            签到结果列表 = DefaultQrCodeSignner::new(
-                db,
-                位置字符串,
-                pic,
-                &None,
-                *是否精确识别二维码,
-                *是否禁用随机偏移,
-            )
-            .sign(qs, sessions)?;
+            签到结果列表 =
+                DefaultQrCodeSignner::new(db, 位置字符串, pic, &None, *是否精确识别二维码)
+                    .sign(qs, sessions)?;
         }
         Sign::Gesture(gs) => {
             info!("签到[{sign_name}]为手势签到。");
@@ -88,8 +81,7 @@ fn 区分签到类型并进行签到(
         }
         Sign::Location(ls) => {
             info!("签到[{sign_name}]为位置签到。");
-            签到结果列表 = DefaultLocationSignner::new(db, 位置字符串, *是否禁用随机偏移)
-                .sign(ls, sessions)?;
+            签到结果列表 = DefaultLocationSignner::new(db, 位置字符串).sign(ls, sessions)?;
         }
         Sign::Signcode(ss) => {
             info!("签到[{sign_name}]为签到码签到。");
