@@ -8,6 +8,7 @@ mod signcode;
 
 pub use gesture::*;
 pub use location::*;
+use log::warn;
 pub use normal::*;
 pub use photo::*;
 pub use qrcode::*;
@@ -55,8 +56,10 @@ pub trait SignTrait: Ord {
             "success" => SignResult::Susses,
             msg => {
                 if msg.is_empty() {
-                    SignResult::Fail { msg:
-                    "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。".into() }
+                    warn!("错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。");
+                    SignResult::Fail {
+                        msg: "错误信息为空。".into(),
+                    }
                 } else {
                     if msg == "您已签到过了" {
                         SignResult::Susses
