@@ -560,7 +560,7 @@ checksum = "ef8ae57c4978a2acd8b869ce6b9ca1dfe817bff704c220209fdef2c0b75a01b9"
 [[package]]
 name = "cxsign"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "cxsign_internal",
 ]
@@ -579,9 +579,10 @@ dependencies = [
 [[package]]
 name = "cxsign_activity"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "chrono",
+ "cxsign_captcha",
  "cxsign_store",
  "cxsign_types",
  "cxsign_user",
@@ -594,9 +595,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "cxsign_captcha"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
+dependencies = [
+ "cxsign_imageproc",
+ "cxsign_obfuscate",
+ "hex",
+ "image",
+ "imageproc",
+ "log",
+ "rand",
+ "serde",
+ "ureq",
+]
+
+[[package]]
 name = "cxsign_dir"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "directories",
  "lazy_static",
@@ -605,16 +622,26 @@ dependencies = [
 [[package]]
 name = "cxsign_error"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "thiserror",
  "ureq",
 ]
 
 [[package]]
+name = "cxsign_imageproc"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
+dependencies = [
+ "image",
+ "imageproc",
+ "num-traits",
+]
+
+[[package]]
 name = "cxsign_internal"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "cxsign_activity",
  "cxsign_dir",
@@ -631,7 +658,7 @@ dependencies = [
 [[package]]
 name = "cxsign_login"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "cookie_store",
  "cxsign_error",
@@ -644,9 +671,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cxsign_obfuscate"
+version = "0.1.1"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
+dependencies = [
+ "flate2",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "cxsign_pan"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "log",
  "mime_guess",
@@ -657,10 +695,11 @@ dependencies = [
 [[package]]
 name = "cxsign_signner"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "cxsign_activity",
  "cxsign_error",
+ "cxsign_imageproc",
  "cxsign_store",
  "cxsign_types",
  "cxsign_user",
@@ -674,7 +713,7 @@ dependencies = [
 [[package]]
 name = "cxsign_store"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "cxsign_dir",
  "cxsign_user",
@@ -685,7 +724,7 @@ dependencies = [
 [[package]]
 name = "cxsign_types"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "cxsign_dir",
  "cxsign_pan",
@@ -701,7 +740,7 @@ dependencies = [
 [[package]]
 name = "cxsign_user"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "cookie_store",
  "cxsign_dir",
@@ -716,7 +755,7 @@ dependencies = [
 [[package]]
 name = "cxsign_utils"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#35f2e7480f1e6f3aa3167f3cc0822fdb329435f2"
+source = "git+https://github.com/worksoup/cxsign.git?branch=newsign#8fd5d872638cee6572466c1cfb882191aa9f2934"
 dependencies = [
  "chrono",
  "inquire",
