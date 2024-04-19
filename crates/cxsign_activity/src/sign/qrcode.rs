@@ -2,7 +2,7 @@ use crate::protocol;
 use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_types::Location;
 use cxsign_user::Session;
-use log::info;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
 fn sign_unchecked<T: SignTrait>(
@@ -11,8 +11,33 @@ fn sign_unchecked<T: SignTrait>(
     location: &Option<Location>,
     session: &Session,
 ) -> Result<SignResult, Box<ureq::Error>> {
-    let r = protocol::qrcode_sign(session, enc, sign.as_inner().active_id.as_str(), location)?;
-    Ok(sign.guess_sign_result_by_text(&r.into_string().unwrap()))
+    let url = protocol::qrcode_sign_url(session, enc, sign.as_inner().active_id.as_str(), location);
+    let r = protocol::ureq_get(session, &url)?;
+    let result = match sign.guess_sign_result_by_text(&r.into_string().unwrap()) {
+        SignResult::Susses => SignResult::Susses,
+        SignResult::Fail { msg } => {
+            if msg.starts_with("validate_") {
+                let enc2 = &msg[9..msg.len()];
+                debug!("enc2: {enc2:?}");
+                let url = url + "&enc2=" + enc2;
+                // captcha validate.
+                // get token.
+                let url_param = cxsign_captcha::utils::tmp_solver(session)?.get_validate_info();
+                if let Some(url_param) = url_param {
+                    let url = url + "&validate=" + &url_param;
+                    let r = protocol::ureq_get(session, &url)?;
+                    sign.guess_sign_result_by_text(&r.into_string().unwrap())
+                } else {
+                    SignResult::Fail {
+                        msg: "滑块验证失败，请重试。".to_string(),
+                    }
+                }
+            } else {
+                SignResult::Fail { msg }
+            }
+        }
+    };
+    Ok(result)
 }
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct RefreshQrCodeSign {

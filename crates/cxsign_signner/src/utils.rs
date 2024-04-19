@@ -1,9 +1,9 @@
+use cxsign_imageproc::cut_picture;
 use log::warn;
 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 use log::{error, info};
 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 use rxing::Point;
-use rxing::PointU;
 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -71,39 +71,20 @@ pub fn pic_path_to_qrcode_result(pic_path: &str) -> Option<String> {
 }
 
 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
-fn get_rect_contains_vertex(vertex: &Vec<Point>) -> (PointU, PointU) {
-    // let scale_factor = display.scale_factor();
-    // println!("屏幕缩放：{scale_factor}");
-    let mut x_max = vertex[0].x;
-    let mut x_min = x_max;
-    let mut y_max = vertex[0].y;
-    let mut y_min = y_max;
-    for p in vertex {
-        if p.x > x_max {
-            x_max = p.x
+fn get_rect_contains_vertex(
+    vertex: &Vec<Point>,
+) -> (cxsign_imageproc::Point<u32>, cxsign_imageproc::Point<u32>) {
+    let (lt, rb) = cxsign_imageproc::get_rect_contains_vertex(vertex.iter().map(|vertex| {
+        cxsign_imageproc::Point {
+            x: vertex.x as _,
+            y: vertex.y as _,
         }
-        if p.y > y_max {
-            y_max = p.y
-        }
-        if p.x < x_min {
-            x_min = p.x
-        }
-        if p.y < y_min {
-            y_min = p.y
-        }
-    }
-    let lt = {
-        let x = x_min - 10.0;
-        let y = y_min - 10.0;
-        Point { x, y }
-    };
-    let rb = {
-        let x = x_max + 10.0;
-        let y = y_max + 10.0;
-        Point { x, y }
-    };
+    }));
     let wh = rb - lt;
-    (PointU::from(lt), PointU::from(wh))
+    (
+        lt - cxsign_imageproc::Point { x: 10, y: 10 },
+        wh + cxsign_imageproc::Point { x: 20, y: 20 },
+    )
 }
 
 pub fn scan_qrcode(
@@ -122,9 +103,6 @@ pub fn scan_qrcode(
         )),
         hints,
     )
-}
-pub fn cut_picture(picture: image::RgbaImage, top_left: PointU, wh: PointU) -> image::DynamicImage {
-    image::DynamicImage::from(picture).crop(top_left.x, top_left.y, wh.x, wh.y)
 }
 #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
 pub fn capture_screen_for_enc(is_refresh: bool, precise: bool) -> Option<String> {
@@ -169,7 +147,7 @@ pub fn capture_screen_for_enc(is_refresh: bool, precise: bool) -> Option<String>
                 let pic = screen
                     .capture_image()
                     .unwrap_or_else(|e| panic!("{e:?}"));
-                let cut_pic = cut_picture(pic, 二维码在屏幕上的位置.0, 二维码在屏幕上的位置.1);
+                let cut_pic = cut_picture(&image::DynamicImage::from(pic), 二维码在屏幕上的位置.0, 二维码在屏幕上的位置.1);
                 let r = scan_qrcode(cut_pic, &mut HashMap::new()).unwrap_or_else(|e| panic!("{e:?}"));
                 scan_result_to_enc(r[0].getText())
             } else {

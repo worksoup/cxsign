@@ -6,6 +6,7 @@ authors.workspace = true
 
 [dependencies]
 cxsign_activity = { path = "../cxsign_activity" }
+cxsign_imageproc = { path = "../cxsign_imageproc" }
 cxsign_error = { path = "../cxsign_error" }
 cxsign_store = { path = "../cxsign_store" }
 cxsign_types = { path = "../cxsign_types" }
@@ -13,6 +14,6 @@ cxsign_user = { path = "../cxsign_user" }
 cxsign_utils = { path = "../cxsign_utils" }
 log.workspace = true
 rxing = "0.5"
-image = "0.25"
+image.workspace = true
 [target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
 xcap = { version = "0.0.8" }
