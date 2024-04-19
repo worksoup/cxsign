@@ -4,6 +4,11 @@ pub enum Dioption<T1, T2> {
     Second(T2),
     Both(T1, T2),
 }
+fn steal<T>(src: *const T) -> T {
+    let r = unsafe { std::ptr::read(src) };
+    std::mem::forget(src);
+    r
+}
 impl<T1, T2> Dioption<T1, T2> {
     pub fn into_first(self) -> Option<T1> {
         match self {
@@ -86,7 +91,7 @@ impl<T1, T2> Dioption<T1, T2> {
             }
             Dioption::Second(s) => {
                 unsafe {
-                    *self = Dioption::Both(value, std::ptr::read(s));
+                    *self = Dioption::Both(value, steal(s));
                     std::mem::forget(s)
                 }
                 true
@@ -102,7 +107,7 @@ impl<T1, T2> Dioption<T1, T2> {
             }
             Dioption::First(f) => {
                 unsafe {
-                    *self = Dioption::Both(std::ptr::read(f), value);
+                    *self = Dioption::Both(steal(f), value);
                     std::mem::forget(f)
                 }
                 true
@@ -116,7 +121,7 @@ impl<T1, T2> Dioption<T1, T2> {
                 *self = Dioption::First(value);
             }
             Dioption::Second(s) | Dioption::Both(_, s) => unsafe {
-                *self = Dioption::Both(value, std::ptr::read(s));
+                *self = Dioption::Both(value, steal(s));
                 std::mem::forget(s)
             },
         }
@@ -127,8 +132,7 @@ impl<T1, T2> Dioption<T1, T2> {
                 *self = Dioption::Second(value);
             }
             Dioption::First(f) | Dioption::Both(f, _) => unsafe {
-                *self = Dioption::Both(std::ptr::read(f), value);
-                std::mem::forget(f)
+                std::mem::forget(f) * self = Dioption::Both(steal(f), value);
             },
         }
     }
