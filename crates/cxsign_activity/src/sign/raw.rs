@@ -1,13 +1,14 @@
 use crate::protocol;
 use crate::sign::{
-    GestureSign, LocationSign, NormalQrCodeSign, NormalSign, PhotoSign, QrCodeSign,
-    RefreshQrCodeSign, Sign, SignDetail, SignResult, SignTrait, SigncodeSign,
+    GestureSign, LocationSign, NormalSign, PhotoSign, PreSignResult, QrCodeSign, Sign,
+    SignDetail, SignResult, SignTrait, SigncodeSign,
 };
-use cxsign_types::Course;
+use cxsign_types::{Course, Dioption, Location, LocationWithRange};
 use cxsign_user::Session;
 use cxsign_utils::get_width_str_should_be;
 use log::{debug, error, info, trace};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
@@ -26,7 +27,7 @@ impl SignTrait for RawSign {
     fn as_inner_mut(&mut self) -> &mut RawSign {
         self
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
+    fn pre_sign(&self, session: &Session) -> Result<PreSignResult, Box<ureq::Error>> {
         let active_id = self.active_id.as_str();
         let uid = session.get_uid();
         let response_of_pre_sign =
@@ -34,9 +35,18 @@ impl SignTrait for RawSign {
         info!("用户[{}]预签到已请求。", session.get_stu_name());
         self.analysis_after_presign(active_id, session, response_of_pre_sign)
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
-        let r = protocol::general_sign(session, self.active_id.as_str())?;
-        Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
+    unsafe fn sign_unchecked(
+        &self,
+        session: &Session,
+        pre_sign_result: PreSignResult,
+    ) -> Result<SignResult, Box<ureq::Error>> {
+        match pre_sign_result {
+            PreSignResult::Susses => Ok(SignResult::Susses),
+            _ => {
+                let r = protocol::general_sign(session, self.active_id.as_str())?;
+                Ok(self.guess_sign_result_by_text(&r.into_string().unwrap()))
+            }
+        }
     }
 }
 impl Display for RawSign {
@@ -124,31 +134,47 @@ impl RawSign {
                 }
                 1 => Sign::Unknown(self),
                 2 => {
-                    if sign_detail.is_refresh_qrcode {
-                        Sign::QrCode(QrCodeSign::RefreshQrCodeSign(RefreshQrCodeSign {
-                            enc: None,
-                            c: sign_detail.c.clone(),
-                            raw_sign: self,
-                            location: None,
-                        }))
+                    let mut preset_locations = LocationWithRange::from_log(session, &self.course)
+                        .unwrap_or(HashMap::new());
+                    let preset_location = preset_locations.remove(&self.active_id);
+                    let raw_sign = self;
+                    let location = if let Some(preset_location) = preset_location.as_ref() {
+                        preset_location.to_location()
                     } else {
-                        Sign::QrCode(QrCodeSign::NormalQrCodeSign(NormalQrCodeSign {
-                            enc: None,
-                            c: sign_detail.c.clone(),
-                            raw_sign: self,
-                            location: None,
-                        }))
-                    }
+                        Location::get_none_location()
+                    };
+                    let raw_sign = LocationSign {
+                        raw_sign,
+                        location,
+                        preset_location,
+                    };
+                    let is_refresh = sign_detail.is_refresh_qrcode;
+                    Sign::QrCode(QrCodeSign {
+                        is_refresh,
+                        enc: None,
+                        c: sign_detail.c.clone(),
+                        raw_sign,
+                    })
                 }
                 3 => Sign::Gesture(GestureSign {
                     raw_sign: self,
                     gesture: None,
                 }),
-                4 => Sign::Location(LocationSign {
-                    raw_sign: self,
-                    location: None,
-                    has_range: false,
-                }),
+                4 => {
+                    let mut preset_locations = LocationWithRange::from_log(session, &self.course)
+                        .unwrap_or(HashMap::new());
+                    let preset_location = preset_locations.remove(&self.active_id);
+                    let location = if let Some(preset_location) = preset_location.as_ref() {
+                        preset_location.to_location()
+                    } else {
+                        Location::get_none_location()
+                    };
+                    Sign::Location(LocationSign {
+                        raw_sign: self,
+                        location,
+                        preset_location,
+                    })
+                }
                 5 => Sign::Signcode(SigncodeSign {
                     signcode: None,
                     raw_sign: self,
@@ -177,7 +203,26 @@ impl RawSign {
         active_id: &str,
         session: &Session,
         response_of_presign: ureq::Response,
-    ) -> Result<SignResult, Box<ureq::Error>> {
+    ) -> Result<PreSignResult, Box<ureq::Error>> {
+        let html = response_of_presign.into_string().unwrap();
+        trace!("预签到请求结果：{html}");
+        if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
+            let html = &html[start_of_statuscontent_h1 + 19..];
+            let end_of_statuscontent_h1 = html.find("</").unwrap();
+            let content_of_statuscontent_h1 = html[0..end_of_statuscontent_h1].trim();
+            debug!("content_of_statuscontent_h1: {content_of_statuscontent_h1:?}.");
+            if content_of_statuscontent_h1.contains("签到成功") {
+                return Ok(PreSignResult::Susses);
+            }
+        }
+        let mut captcha_id_and_location = Dioption::None;
+        if let Some(location) = LocationWithRange::find_in_html(&html) {
+            captcha_id_and_location.push_second(location);
+        }
+        if let Some(start_of_captcha_id) = html.find("captchaId: '") {
+            let id = &html[start_of_captcha_id + 13..start_of_captcha_id + 13 + 32];
+            captcha_id_and_location.push_first(id.to_string());
+        }
         let response_of_analysis = protocol::analysis(session, active_id)?;
         let data = response_of_analysis.into_string().unwrap();
         let code = {
@@ -192,27 +237,8 @@ impl RawSign {
             "analysis 结果：{}",
             _response_of_analysis2.into_string().unwrap()
         );
-        let pre_sign_status = {
-            let html = response_of_presign.into_string().unwrap();
-            trace!("预签到请求结果：{html}");
-            if let Some(start_of_statuscontent_h1) = html.find("id=\"statuscontent\"") {
-                let html = &html[start_of_statuscontent_h1 + 19..html.len()];
-                let end_of_statuscontent_h1 = html.find("</").unwrap();
-                let content_of_statuscontent_h1 = html[0..end_of_statuscontent_h1].trim();
-                debug!("content_of_statuscontent_h1: {content_of_statuscontent_h1:?}.");
-                if content_of_statuscontent_h1.contains("签到成功") {
-                    SignResult::Susses
-                } else {
-                    SignResult::Fail {
-                        msg: content_of_statuscontent_h1.into(),
-                    }
-                }
-            } else {
-                SignResult::Fail { msg: html }
-            }
-        };
         std::thread::sleep(std::time::Duration::from_millis(500));
-        Ok(pre_sign_status)
+        Ok(PreSignResult::Data(captcha_id_and_location))
     }
 }
 

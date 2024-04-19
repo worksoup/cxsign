@@ -5,6 +5,7 @@
 
 pub mod protocol;
 pub mod sign;
+pub mod utils;
 
 use crate::sign::{RawSign, SignTrait};
 use cxsign_store::ExcludeTable;

@@ -14,10 +14,32 @@ pub use qrcode::*;
 pub use raw::*;
 pub use signcode::*;
 
-use cxsign_types::Course;
+use cxsign_types::{Course, Dioption, LocationWithRange};
 use cxsign_user::Session;
 use serde::Deserialize;
 
+pub type CaptchaId = String;
+
+/// # [`PreSignResult`]
+/// 预签到结果，可能包含了一些签到时需要的信息。
+pub enum PreSignResult {
+    Susses,
+    Data(Dioption<CaptchaId, LocationWithRange>),
+}
+impl PreSignResult {
+    pub fn is_susses(&self) -> bool {
+        match self {
+            PreSignResult::Susses => true,
+            PreSignResult::Data(_) => false,
+        }
+    }
+    pub fn to_result(self) -> SignResult {
+        match self {
+            PreSignResult::Susses => SignResult::Susses,
+            PreSignResult::Data(_) => unreachable!(),
+        }
+    }
+}
 pub trait SignTrait: Ord {
     fn as_inner(&self) -> &RawSign;
     fn as_inner_mut(&mut self) -> &mut RawSign;
@@ -51,33 +73,27 @@ pub trait SignTrait: Ord {
         RawSign::get_sign_detail(&self.as_inner().active_id, session)
     }
     fn guess_sign_result_by_text(&self, text: &str) -> SignResult {
-        match text {
-            "success" => SignResult::Susses,
-            msg => {
-                if msg.is_empty() {
-                    SignResult::Fail { msg:
-                    "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。".into() }
-                } else {
-                    if msg == "您已签到过了" {
-                        SignResult::Susses
-                    } else {
-                        SignResult::Fail { msg: msg.into() }
-                    }
-                }
-            }
-        }
+        crate::utils::guess_sign_result_by_text(text)
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
+    fn pre_sign(&self, session: &Session) -> Result<PreSignResult, Box<ureq::Error>> {
         self.as_inner().pre_sign(session)
     }
     /// # Safety
     /// 签到类型中有一些 `Option` 枚举，而本函数会使用 `unwrap_unchecked`.
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
-        unsafe { self.as_inner().sign_unchecked(session) }
+    unsafe fn sign_unchecked(
+        &self,
+        session: &Session,
+        pre_sign_result: PreSignResult,
+    ) -> Result<SignResult, Box<ureq::Error>> {
+        unsafe { self.as_inner().sign_unchecked(session, pre_sign_result) }
     }
-    fn sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
+    fn sign(
+        &self,
+        session: &Session,
+        pre_sign_result: PreSignResult,
+    ) -> Result<SignResult, Box<ureq::Error>> {
         if self.is_ready_for_sign() {
-            unsafe { self.sign_unchecked(session) }
+            unsafe { self.sign_unchecked(session, pre_sign_result) }
         } else {
             Ok(SignResult::Fail {
                 msg: "签到未准备好！".to_string(),
@@ -85,14 +101,8 @@ pub trait SignTrait: Ord {
         }
     }
     fn pre_sign_and_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
-        let r = self.pre_sign(session);
-        if let Ok(a) = r.as_ref()
-            && !a.is_susses()
-        {
-            self.sign(session)
-        } else {
-            r
-        }
+        let r = self.pre_sign(session)?;
+        self.sign(session, r)
     }
 }
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone)]
@@ -169,7 +179,7 @@ impl SignTrait for Sign {
             Sign::Unknown(a) => a.get_sign_state(session),
         }
     }
-    fn pre_sign(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
+    fn pre_sign(&self, session: &Session) -> Result<PreSignResult, Box<ureq::Error>> {
         match self {
             Sign::Photo(a) => a.pre_sign(session),
             Sign::Normal(a) => a.pre_sign(session),
@@ -180,16 +190,20 @@ impl SignTrait for Sign {
             Sign::Unknown(a) => a.pre_sign(session),
         }
     }
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
+    unsafe fn sign_unchecked(
+        &self,
+        session: &Session,
+        pre_sign_result: PreSignResult,
+    ) -> Result<SignResult, Box<ureq::Error>> {
         unsafe {
             match self {
-                Sign::Photo(a) => a.sign_unchecked(session),
-                Sign::Normal(a) => a.sign_unchecked(session),
-                Sign::QrCode(a) => a.sign_unchecked(session),
-                Sign::Gesture(a) => a.sign_unchecked(session),
-                Sign::Location(a) => a.sign_unchecked(session),
-                Sign::Signcode(a) => a.sign_unchecked(session),
-                Sign::Unknown(a) => a.sign_unchecked(session),
+                Sign::Photo(a) => a.sign_unchecked(session, pre_sign_result),
+                Sign::Normal(a) => a.sign_unchecked(session, pre_sign_result),
+                Sign::QrCode(a) => a.sign_unchecked(session, pre_sign_result),
+                Sign::Gesture(a) => a.sign_unchecked(session, pre_sign_result),
+                Sign::Location(a) => a.sign_unchecked(session, pre_sign_result),
+                Sign::Signcode(a) => a.sign_unchecked(session, pre_sign_result),
+                Sign::Unknown(a) => a.sign_unchecked(session, pre_sign_result),
             }
         }
     }

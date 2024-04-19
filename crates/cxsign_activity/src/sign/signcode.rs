@@ -1,8 +1,8 @@
-use crate::sign::{RawSign, SignResult, SignTrait};
+use crate::sign::{PreSignResult, RawSign, SignResult, SignTrait};
 use cxsign_user::Session;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash,Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct SigncodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) signcode: Option<String>,
@@ -28,9 +28,16 @@ impl SignTrait for SigncodeSign {
         self.signcode.is_some()
     }
 
-    unsafe fn sign_unchecked(&self, session: &Session) -> Result<SignResult, Box<ureq::Error>> {
-        self.as_inner().sign_with_signcode(session, unsafe {
-            self.signcode.as_ref().unwrap_unchecked()
-        })
+    unsafe fn sign_unchecked(
+        &self,
+        session: &Session,
+        pre_sign_result: PreSignResult,
+    ) -> Result<SignResult, Box<ureq::Error>> {
+        match pre_sign_result {
+            PreSignResult::Susses => Ok(SignResult::Susses),
+            _ => self.as_inner().sign_with_signcode(session, unsafe {
+                self.signcode.as_ref().unwrap_unchecked()
+            }),
+        }
     }
 }
