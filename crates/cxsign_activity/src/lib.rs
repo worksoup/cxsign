@@ -11,7 +11,7 @@ use crate::sign::{RawSign, SignTrait};
 use cxsign_store::ExcludeTable;
 use cxsign_types::Course;
 use cxsign_user::Session;
-use log::{debug, info};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::OccupiedError;
 use std::collections::HashMap;
@@ -88,7 +88,7 @@ impl Activity {
             }];
             let mut handles = Vec::new();
             for course in courses {
-                info!("加载课程{course}的签到。");
+                debug!("加载课程{course}的签到。");
                 if let Some(session) = &course_sessions_map[course].first() {
                     let course = course.clone();
                     let session = (*session).clone();
