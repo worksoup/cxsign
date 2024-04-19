@@ -68,9 +68,6 @@ pub struct Args {
     /// 签到码签到时需要提供。
     #[arg(short, long)]
     pub signcode: Option<String>,
-    /// 禁用位置随机偏移。
-    #[arg(short, long)]
-    pub no_random_shift: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -171,5 +168,4 @@ pub struct CliArgs {
     // pub capture: bool,
     pub 是否精确识别二维码: bool,
     pub 签到码: Option<String>,
-    pub 是否禁用随机偏移: bool,
 }

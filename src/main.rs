@@ -68,7 +68,6 @@ fn main() {
         image,
         signcode,
         precisely,
-        no_random_shift,
     } = args;
     let db = DataBase::default();
     db.add_table::<AccountTable>();
@@ -226,7 +225,6 @@ fn main() {
             图片或图片路径: image,
             签到码: signcode,
             是否精确识别二维码: precisely,
-            是否禁用随机偏移: no_random_shift,
         };
         warn!("{NOTICE}");
         cli::签到(db, active_id, accounts, 签到可能使用的信息).unwrap();
