@@ -8,6 +8,7 @@ mod signcode;
 
 pub use gesture::*;
 pub use location::*;
+use log::warn;
 pub use normal::*;
 pub use photo::*;
 pub use qrcode::*;
@@ -55,8 +56,10 @@ pub trait SignTrait: Ord {
             "success" => SignResult::Susses,
             msg => {
                 if msg.is_empty() {
-                    SignResult::Fail { msg:
-                    "错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。".into() }
+                    warn!("错误信息为空，根据有限的经验，这通常意味着二维码签到的 `enc` 字段已经过期。");
+                    SignResult::Fail {
+                        msg: "错误信息为空。".into(),
+                    }
                 } else {
                     if msg == "您已签到过了" {
                         SignResult::Susses
@@ -122,17 +125,6 @@ impl SignTrait for Sign {
             Sign::Location(a) => a.as_inner(),
             Sign::Signcode(a) => a.as_inner(),
             Sign::Unknown(a) => a.as_inner(),
-        }
-    }
-    fn as_inner_mut(&mut self) -> &mut RawSign {
-        match self {
-            Sign::Photo(a) => a.as_inner_mut(),
-            Sign::Normal(a) => a.as_inner_mut(),
-            Sign::QrCode(a) => a.as_inner_mut(),
-            Sign::Gesture(a) => a.as_inner_mut(),
-            Sign::Location(a) => a.as_inner_mut(),
-            Sign::Signcode(a) => a.as_inner_mut(),
-            Sign::Unknown(a) => a.as_inner_mut(),
         }
     }
     fn is_ready_for_sign(&self) -> bool {

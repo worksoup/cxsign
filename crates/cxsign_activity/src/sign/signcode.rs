@@ -2,7 +2,7 @@ use crate::sign::{RawSign, SignResult, SignTrait};
 use cxsign_user::Session;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash,Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct SigncodeSign {
     pub(crate) raw_sign: RawSign,
     pub(crate) signcode: Option<String>,
@@ -20,9 +20,6 @@ impl SigncodeSign {
 impl SignTrait for SigncodeSign {
     fn as_inner(&self) -> &RawSign {
         &self.raw_sign
-    }
-    fn as_inner_mut(&mut self) -> &mut RawSign {
-        &mut self.raw_sign
     }
     fn is_ready_for_sign(&self) -> bool {
         self.signcode.is_some()
