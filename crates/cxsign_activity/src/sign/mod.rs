@@ -21,7 +21,6 @@ use serde::Deserialize;
 
 pub trait SignTrait: Ord {
     fn as_inner(&self) -> &RawSign;
-    fn as_inner_mut(&mut self) -> &mut RawSign;
     fn is_ready_for_sign(&self) -> bool {
         true
     }
@@ -29,9 +28,9 @@ pub trait SignTrait: Ord {
         let time = std::time::SystemTime::from(
             chrono::DateTime::from_timestamp(self.as_inner().start_timestamp, 0).unwrap(),
         );
-        let one_hour = std::time::Duration::from_secs(7200);
+        let two_hours = std::time::Duration::from_secs(7200);
         self.as_inner().status_code == 1
-            && std::time::SystemTime::now().duration_since(time).unwrap() < one_hour
+            && std::time::SystemTime::now().duration_since(time).unwrap() < two_hours
     }
     fn get_sign_state(&self, session: &Session) -> Result<SignState, Box<ureq::Error>> {
         let r = crate::protocol::get_attend_info(session, &self.as_inner().active_id)?;
