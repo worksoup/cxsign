@@ -19,10 +19,6 @@ impl SignTrait for PhotoSign {
         &self.raw_sign
     }
 
-    fn as_inner_mut(&mut self) -> &mut RawSign {
-        &mut self.raw_sign
-    }
-
     fn is_ready_for_sign(&self) -> bool {
         self.photo.is_some()
     }

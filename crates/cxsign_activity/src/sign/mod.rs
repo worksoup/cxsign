@@ -124,17 +124,6 @@ impl SignTrait for Sign {
             Sign::Unknown(a) => a.as_inner(),
         }
     }
-    fn as_inner_mut(&mut self) -> &mut RawSign {
-        match self {
-            Sign::Photo(a) => a.as_inner_mut(),
-            Sign::Normal(a) => a.as_inner_mut(),
-            Sign::QrCode(a) => a.as_inner_mut(),
-            Sign::Gesture(a) => a.as_inner_mut(),
-            Sign::Location(a) => a.as_inner_mut(),
-            Sign::Signcode(a) => a.as_inner_mut(),
-            Sign::Unknown(a) => a.as_inner_mut(),
-        }
-    }
     fn is_ready_for_sign(&self) -> bool {
         match self {
             Sign::Photo(a) => a.is_ready_for_sign(),
