@@ -40,7 +40,26 @@ impl PreSignResult {
         }
     }
 }
+/// # [`SignTrait`]
+/// 所有的签到均实现了该 trait, 方便统一签到的流程。
+///
+/// 目前的签到类型包括[手势签到](GestureSign)、
+/// [签到码签到](SigncodeSign)、[位置签到](LocationSign)、
+/// [普通签到](NormalSign)、[拍照签到](PhotoSign)、
+/// [二维码签到](QrCodeSign)
+/// （作为枚举包含了[二维码不变签到](NormalQrCodeSign)
+/// 和[二维码可变签到](RefreshQrCodeSign)）
+/// 以及[原始签到类型](RawSign)。
+///
+/// 其中原始签到类型是还未区分签到类型的签到。
+///
+/// 签到类型的划分依据主要是签到所需信息。
+///
+/// 细节详见各签到的文档。
 pub trait SignTrait: Ord {
+    /// 获取各签到类型内部对原始签到类型的引用。
+    /// [`RawSign`] 的各字段均为 `pub`,
+    /// 故可以通过本函数获取一些签到通用的信息。
     fn as_inner(&self) -> &RawSign;
     fn is_ready_for_sign(&self) -> bool {
         true
