@@ -28,15 +28,15 @@ pub async fn add_account(
 ) -> Result<(), String> {
     let db = db_state.0.lock().unwrap();
     let enc_pwd = cxsign_internal::utils::des_enc(&pwd);
-    let session = Session::login(&dir_state, &uname, &enc_pwd).map_err(|e: cxsign_internal::Error| {
-        eprint!("添加账号错误！");
-        match e {
-            cxsign_internal::Error::LoginError(e) => e,
-            cxsign_internal::Error::AgentError(e) => e.to_string(),
-            cxsign_internal::Error::IoError(_) => unreachable!(),
-            cxsign_internal::Error::EncError(_) => unreachable!(),
-        }
-    })?;
+    let session =
+        Session::login(&dir_state, &uname, &enc_pwd).map_err(|e: cxsign_internal::Error| {
+            eprint!("添加账号错误！");
+            match e {
+                cxsign_internal::Error::LoginError(e) => e,
+                cxsign_internal::Error::AgentError(e) => e.to_string(),
+                _ => unreachable!(),
+            }
+        })?;
     let name = session.get_stu_name();
     let table = AccountTable::from_ref(&db);
     table.add_account_or(&uname, &enc_pwd, name, AccountTable::update_account);
@@ -45,6 +45,38 @@ pub async fn add_account(
         .lock()
         .map_err(|e| e.to_string())?
         .insert(uname, session);
+    Ok(())
+}
+#[tauri::command]
+pub async fn refresh_accounts(
+    unames: Vec<String>,
+    db_state: tauri::State<'_, DataBaseState>,
+    dir_state: tauri::State<'_, cxsign_internal::utils::Dir>,
+    sessions_state: tauri::State<'_, SessionsState>,
+) -> Result<(), String> {
+    let db = db_state.0.lock().unwrap();
+    let table = AccountTable::from_ref(&db);
+    for uname in unames {
+        if let Some((uname, (enc_pwd, _))) = table.get_account(&uname) {
+            table.delete_account(&uname);
+            sessions_state
+                .0
+                .lock()
+                .map_err(|e| e.to_string())?
+                .remove(&uname);
+            if let Ok(session) = Session::login(&dir_state, &uname, &enc_pwd) {
+                let name = session.get_stu_name();
+                table.add_account_or(&uname, &enc_pwd, name, AccountTable::update_account);
+                sessions_state
+                    .0
+                    .lock()
+                    .map_err(|e| e.to_string())?
+                    .insert(uname, session);
+            } else {
+                eprint!("添加账号错误！");
+            }
+        }
+    }
     Ok(())
 }
 #[tauri::command]

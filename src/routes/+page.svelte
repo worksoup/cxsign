@@ -4,6 +4,7 @@
     listAccounts,
     loadAccounts,
     type AccountPair,
+    refreshAccounts,
   } from "$lib/commands/account";
   import * as Tabs from "$lib/components/ui/tabs";
   import {
@@ -26,6 +27,9 @@
   let scanning: boolean = false;
   let unames = new Set<string>();
   let updateing = [true, true, true];
+  let coursesUpdating = true;
+  let signsUpdating = true;
+  let usersUpdating = true;
   window.history.replaceState({ state: Page.home }, "");
   window.onpopstate = (ev: { state: { state: Page } }) => {
     let s = ev.state.state;
@@ -47,26 +51,27 @@
     } else {
       await loadAccounts();
       signs = await listAllActivities();
-      updateing[1] = false;
+      signsUpdating = false;
     }
   });
   async function updateCourses() {
-    updateing[0] = true;
+    coursesUpdating = true;
     await loadCourses();
     coursesFirstClick = false;
     courses = (await listCourses()).sort((a, b) => {
       return a.course.name.localeCompare(b.course.name);
     });
-    updateing[0] = false;
+    coursesUpdating = false;
   }
   async function updateSigns() {
-    updateing[1] = true;
+    signsUpdating = true;
     signs = await listAllActivities();
-    updateing[1] = false;
+    signsUpdating = false;
   }
   async function updateAccounts() {
-    updateing[2] = true;
+    usersUpdating = true;
     await loadAccounts();
+    await refreshAccounts(unames);
     await listAccounts()
       .then((data) => {
         accounts = data;
@@ -74,7 +79,7 @@
       .catch((error) => {
         console.error(error);
       });
-    updateing[2] = false;
+    usersUpdating = false;
   }
 </script>
 
@@ -85,7 +90,7 @@
         <HomeCourses
           bind:state
           bind:scanning
-          bind:updating={updateing[0]}
+          bind:updating={coursesUpdating}
           {courses}
           on:updateCourses={updateCourses}
         />
@@ -94,7 +99,7 @@
         <HomeSigns
           bind:state
           bind:scanning
-          bind:updating={updateing[1]}
+          bind:updating={signsUpdating}
           {signs}
           on:updateSigns={updateSigns}
         />
@@ -104,7 +109,7 @@
           bind:state
           bind:accounts
           bind:unames
-          bind:updating={updateing[2]}
+          bind:updating={usersUpdating}
           on:updateAccounts={updateAccounts}
         />
       </Tabs.Content>
@@ -118,7 +123,7 @@
               if (coursesFirstClick) {
                 await loadCourses();
                 coursesFirstClick = false;
-                updateing[0] = false;
+                coursesUpdating = false;
               }
               courses = (await listCourses()).sort((a, b) => {
                 return a.course.name.localeCompare(b.course.name);
@@ -134,7 +139,7 @@
               await listAccounts()
                 .then((data) => {
                   accounts = data;
-                  updateing[2] = false;
+                  usersUpdating = false;
                 })
                 .catch((error) => {
                   console.error(error);

@@ -28,7 +28,6 @@ pub struct RawSignPair {
 #[derive(Deserialize)]
 pub struct LocationSignnerInfo {
     pub location_str: Option<String>,
-    pub no_random_shift: bool,
 }
 impl FromStr for LocationSignnerInfo {
     type Err = serde_json::Error;
@@ -205,20 +204,10 @@ pub async fn sign_single(
             }
             Sign::QrCode(sign) => {
                 info!("签到[{sign_name}]为二维码签到。");
-                match sign {
-                    cxsign_internal::QrCodeSign::RefreshQrCodeSign(sign) => {
-                        let mut sign = sign.clone();
-                        let sign = &mut sign;
-                        let _ = TauriQrCodeSignner::new(Arc::clone(&db), app_handle_.clone())
-                            .sign(sign, None.iter());
-                    }
-                    cxsign_internal::QrCodeSign::NormalQrCodeSign(sign) => {
-                        let mut sign = sign.clone();
-                        let sign = &mut sign;
-                        let _ = TauriQrCodeSignner::new(Arc::clone(&db), app_handle_.clone())
-                            .sign(sign, None.iter());
-                    }
-                }
+                let mut sign = sign.clone();
+                let sign = &mut sign;
+                let _ = TauriQrCodeSignner::new(Arc::clone(&db), app_handle_.clone())
+                    .sign(sign, None.iter());
             }
             Sign::Gesture(sign) => {
                 info!("签到[{sign_name}]为手势签到。");
@@ -255,21 +244,15 @@ pub async fn sign_single(
                     }
                     let mut sign = sign.clone();
                     let sign = &mut sign;
-                    let LocationSignnerInfo {
-                        location_str,
-                        no_random_shift,
-                    } = p.payload().parse().unwrap();
+                    let LocationSignnerInfo { location_str } = p.payload().parse().unwrap();
                     let unames = unames.lock().unwrap();
                     let sessions = sessions.lock().unwrap();
-                    if let Ok(results) = DefaultLocationSignner::new(
-                        &db.lock().unwrap(),
-                        &location_str,
-                        no_random_shift,
-                    )
-                    .sign(
-                        sign,
-                        sessions.iter().filter(|a| unames.contains(a.get_uname())),
-                    ) {
+                    if let Ok(results) =
+                        DefaultLocationSignner::new(&db.lock().unwrap(), &location_str).sign(
+                            sign,
+                            sessions.iter().filter(|a| unames.contains(a.get_uname())),
+                        )
+                    {
                         handle_results(results, &app_handle_)
                     }
                 });

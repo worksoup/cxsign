@@ -19,6 +19,14 @@ export async function hasAccounts(): Promise<boolean> {
     .catch((error) => console.error(error));
   return t;
 }
+export async function refreshAccounts(unames_: Set<string>) {
+  let unames = Array.from(unames_);
+  await invoke<AccountPair[]>("refresh_accounts", {
+    unames,
+  }).catch((error) => {
+    console.error(error);
+  });
+}
 export async function deleteAccounts(unames_: Set<string>) {
   let unames = Array.from(unames_);
   await invoke<AccountPair[]>("delete_accounts", {

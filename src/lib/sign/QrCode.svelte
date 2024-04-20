@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Input } from "$lib/components/ui/input/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
-  import { Switch } from "$lib/components/ui/switch/index.js";
   import { emit } from "@tauri-apps/api/event";
   import {
     canUseCam,
@@ -19,7 +18,6 @@
   export let scanning: boolean = false;
   export let state: Page = Page.sign;
   let locationStr: string = "";
-  let noRandomShift: boolean = false;
   const useCam = canUseCam();
   const useCap = canUseCap();
   const qrCodeGetterCount = getQrCodeTypeCount();
@@ -31,7 +29,6 @@
   }
   $: emit("sign:qrcode:location", {
     location_str: locationStr,
-    no_random_shift: noRandomShift,
   }).then();
   async function qrCodeSign() {
     if (getQrCodeType == "scan") {
@@ -66,11 +63,7 @@
 </script>
 
 <div class="flex-col space-y-2">
-  <div class="flex items-center space-x-2">
-    <Switch id="no-random-shift" bind:checked={noRandomShift} />
-    <Label for="no-random-shift">禁用位置偏移</Label>
-    <Input bind:value={locationStr} inputmode="text" placeholder="位置" />
-  </div>
+  <Input bind:value={locationStr} inputmode="text" placeholder="位置" />
   <div class="flex items-center space-x-2">
     {#if qrCodeGetterCount > 1}
       <RadioGroup.Root bind:value={getQrCodeType}>

@@ -72,8 +72,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             has_accounts,
             add_account,
-            get_config_dir,
+            refresh_accounts,
             delete_accounts,
+            get_config_dir,
             list_accounts,
             load_accounts,
             load_courses,
@@ -92,14 +93,4 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-#[cfg(test)]
-mod test {
-    #[test]
-    fn test() {
-        for i in 0..360 {
-            let (y, t, w) = crate::tools::date_count_to_year_term_week(2024, i);
-            println!("{y}, {t}, {w}");
-        }
-    }
 }

@@ -8,7 +8,7 @@ pub fn capture_screen_for_enc() -> Option<String> {
         // 如果成功识别到二维码。
         let results = cxsign_internal::utils::scan_qrcode(
             xcap::image::DynamicImage::from(pic),
-            &mut HashMap::new(),
+            &mut std::collections::HashMap::new(),
         );
         let results = if let Ok(results) = results {
             results
