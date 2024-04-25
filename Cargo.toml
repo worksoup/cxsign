@@ -14,7 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 [package]
-name = "cxsign-xde"
+name = "xdsign"
 version = "0.2.2"
 edition = "2021"
 
