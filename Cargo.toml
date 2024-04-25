@@ -14,7 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 [package]
-name = "cxsign"
+name = "cxsign-xde"
 version = "0.2.2"
 edition = "2021"
 
@@ -28,6 +28,10 @@ cxsign = { git = "https://github.com/worksoup/newsign.git" }
 env_logger = "0.11"
 inquire = "0.7"
 log = { version = "0.4", features = ["release_max_level_info"] }
+lazy_static = "1.4"
+serde = { version = "1.0", features = ["default"] }
+serde_json = "1.0"
+chrono = "0.4.38"
 
 [profile.release]
 panic = "abort"

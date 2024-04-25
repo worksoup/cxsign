@@ -22,6 +22,8 @@
 
 mod cli;
 mod tools;
+mod data;
+
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::{
@@ -37,6 +39,8 @@ use cxsign::{
     Activity, Course, SignTrait,
 };
 use log::warn;
+use crate::data::LocationPreprocessor;
+
 const NOTICE: &str = r#"
     
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -54,11 +58,13 @@ const NOTICE: &str = r#"
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 "#;
+
 fn main() {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
     builder.target(env_logger::Target::Stdout);
     builder.init();
+    cxsign::utils::set_boxed_location_preprocessor(Box::new(LocationPreprocessor));
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -110,7 +116,7 @@ fn main() {
                     // 列出所有账号。
                     let accounts = table.get_accounts();
                     for a in accounts {
-                        println!("{}, {}", a.0, a.1 .1);
+                        println!("{}, {}", a.0, a.1.1);
                     }
                 }
             }
@@ -171,10 +177,10 @@ fn main() {
                         CourseTable::from_ref(&db).get_courses().get(&course)
                         && let Some(session) = sessions.values().next()
                         && let Ok((a, n, _)) = Activity::get_course_activities(
-                            ExcludeTable::from_ref(&db),
-                            session,
-                            course,
-                        ) {
+                        ExcludeTable::from_ref(&db),
+                        session,
+                        course,
+                    ) {
                         (a, n)
                     } else {
                         (vec![], vec![])
@@ -200,7 +206,7 @@ fn main() {
                             sessions.values(),
                             all,
                         )
-                        .unwrap();
+                            .unwrap();
                     // 列出所有有效签到。
                     for a in available_sign_activities {
                         println!("{}", a.0.as_inner());

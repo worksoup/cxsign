@@ -109,7 +109,7 @@ fn 区分签到类型并进行签到(
                     msg
                 );
             } else {
-                println!("\t用户[{}]签到成功！", 用户真名.get_stu_name(),);
+                println!("\t用户[{}]签到成功！", 用户真名.get_stu_name(), );
             }
         }
     }
@@ -169,7 +169,13 @@ pub fn 签到(
         warn!("签到列表为空。");
     }
     for (sign, sessions) in signs {
-        info!("即将处理签到：{sign}");
+        info!("即将处理签到：[{}], id 为 {}, 开始时间为 {}, 课程为 {} / {} / {}",
+            sign.name,
+            sign.active_id,
+            chrono::DateTime::from_timestamp(sign.start_timestamp, 0).unwrap().format("%Y/%m/%d %H:%M"),
+            sign.course.get_class_id(),
+            sign.course.get_id(),
+            sign.course.get_name());
         let mut names = Vec::new();
         for s in sessions.iter() {
             names.push(s.get_stu_name().to_string())
