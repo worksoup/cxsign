@@ -22,7 +22,6 @@
 
 mod cli;
 mod tools;
-mod data;
 
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
@@ -39,7 +38,7 @@ use cxsign::{
     Activity, Course, SignTrait,
 };
 use log::warn;
-use crate::data::LocationPreprocessor;
+use xdsign_data::LocationPreprocessor;
 
 const NOTICE: &str = r#"
     

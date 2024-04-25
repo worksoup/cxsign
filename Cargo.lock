@@ -2933,8 +2933,17 @@ dependencies = [
  "cxsign",
  "env_logger",
  "inquire",
- "lazy_static",
  "log",
+ "xdsign_data",
+]
+
+[[package]]
+name = "xdsign_data"
+version = "0.1.0"
+source = "git+https://github.com/learturely/xdsign_data.git#b703147dc983cdeb5203e521fe89d610a73d520f"
+dependencies = [
+ "cxsign",
+ "lazy_static",
  "serde",
  "serde_json",
 ]
