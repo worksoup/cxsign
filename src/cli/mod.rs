@@ -167,7 +167,15 @@ pub fn do_sign(
         warn!("签到列表为空。");
     }
     for (sign, sessions) in signs {
-        info!("即将处理签到：{sign}");
+        info!(
+            "即将处理签到：[{}], id 为 {}, 开始时间为 {}, 课程为 {} / {} / {}",
+            sign.name,
+            sign.active_id,
+            cxsign::utils::time_string_from_mills(sign.start_time_mills),
+            sign.course.get_class_id(),
+            sign.course.get_id(),
+            sign.course.get_name()
+        );
         let mut names = Vec::new();
         for s in sessions.iter() {
             names.push(s.get_stu_name().to_string())
