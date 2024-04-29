@@ -99,7 +99,7 @@ fn match_signs(
         }
     }
     if !sign_results.is_empty() {
-        println!("签到活动[{}]签到结果：", sign.as_inner().name);
+        info!("签到活动[{}]签到结果：", sign.as_inner().name);
         for (session, sign_result) in sign_results {
             if let SignResult::Fail { msg } = sign_result {
                 warn!(
@@ -108,7 +108,7 @@ fn match_signs(
                     msg
                 );
             } else {
-                println!("\t用户[{}]签到成功！", session.get_stu_name(),);
+                info!("\t用户[{}]签到成功！", session.get_stu_name(),);
             }
         }
     }
