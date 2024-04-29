@@ -25,7 +25,7 @@ mod tools;
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::{
-    arg::{AccCmds, Args, MainCmds},
+    arg::{AccountSubCommand, Args, MainCommand},
     location::LocationCliArgs,
 };
 use cxsign::{
@@ -77,14 +77,14 @@ fn main() {
     db.add_table::<LocationTable>();
     if let Some(sub_cmd) = command {
         match sub_cmd {
-            MainCmds::Account { command, fresh } => {
+            MainCommand::Account { command, fresh } => {
                 if let Some(acc_sub_cmd) = command {
                     match acc_sub_cmd {
-                        AccCmds::Add { uname } => {
+                        AccountSubCommand::Add { uname, passwd } => {
                             // 添加账号。
-                            tools::inquire_pwd_and_add_account(&db, uname, None);
+                            tools::inquire_pwd_and_add_account(&db, uname, passwd);
                         }
-                        AccCmds::Remove { uname, yes } => {
+                        AccountSubCommand::Remove { uname, yes } => {
                             if !yes {
                                 let ans = inquire::Confirm::new("是否删除？")
                                     .with_default(false)
@@ -114,7 +114,7 @@ fn main() {
                     }
                 }
             }
-            MainCmds::Course { fresh } => {
+            MainCommand::Course { fresh } => {
                 let table = CourseTable::from_ref(&db);
                 if fresh {
                     // 重新获取课程信息并缓存。
@@ -134,7 +134,7 @@ fn main() {
                     info!("{}", c.1);
                 }
             }
-            MainCmds::Location {
+            MainCommand::Location {
                 location_id,
                 list,
                 new,
@@ -164,7 +164,7 @@ fn main() {
                 };
                 cli::location::location(&db, args)
             }
-            MainCmds::List { course, all } => {
+            MainCommand::List { course, all } => {
                 let sessions = AccountTable::from_ref(&db).get_sessions();
                 if let Some(course) = course {
                     let (a, n) = if let Some(course) =
@@ -215,7 +215,7 @@ fn main() {
                     }
                 }
             }
-            MainCmds::WhereIsConfig => {
+            MainCommand::WhereIsConfig => {
                 info!("{}", &DIR.get_config_dir().to_str().unwrap());
             }
         }

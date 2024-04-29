@@ -34,7 +34,7 @@ use std::path::PathBuf;
 )]
 pub struct Args {
     #[command(subcommand)]
-    pub command: Option<MainCmds>,
+    pub command: Option<MainCommand>,
     /// 签到 ID.
     /// 默认以最近起对所有有效签到顺序进行签到，且缺少参数时会跳过并继续。
     pub active_id: Option<i64>,
@@ -71,12 +71,12 @@ pub struct Args {
 }
 
 #[derive(Subcommand, Debug)]
-pub enum MainCmds {
+pub enum MainCommand {
     /// 账号相关操作（列出、添加、删除）。
     /// 默认列出所有账号。
     Account {
         #[command(subcommand)]
-        command: Option<AccCmds>,
+        command: Option<AccountSubCommand>,
         /// 重新获取账号信息并缓存。
         #[arg(short, long)]
         fresh: bool,
@@ -145,11 +145,14 @@ pub enum MainCmds {
 }
 
 #[derive(Subcommand, Debug)]
-pub enum AccCmds {
+pub enum AccountSubCommand {
     /// 添加账号。
     Add {
         /// 账号（手机号）。
         uname: String,
+        /// 密码（明文）。
+        /// 指定后将跳过询问密码阶段。
+        passwd: Option<String>,
     },
     /// 删除账号。
     Remove {
