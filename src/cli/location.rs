@@ -22,6 +22,7 @@ use cxsign::{
     },
     Location,
 };
+use log::{debug, error, info, warn};
 
 fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
     // 为指定课程添加位置。
@@ -87,15 +88,16 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                 || yes
         };
         if over_args() {
-            eprintln!("本行命令将被解释为添加新的位置。可使用选项有 `-c, --course`, `-a, --alias`, 可同时起效的选项有 `-l, --list`, 其余选项将不起效。")
+            warn!("本行命令将被解释为添加新的位置。可使用选项有 `-c, --course`, `-a, --alias`, 可同时起效的选项有 `-l, --list`, 其余选项将不起效。")
         }
         let mut course_id = -1_i64;
         if let Some(id) = course {
             if id < 0 {
                 if id == -1 {
-                    eprintln!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
+                    warn!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
                 } else {
-                    panic!("警告：课程号小于 0! 请检查是否正确！");
+                    error!("错误：课程号小于 0! 请检查是否正确！");
+                    panic!()
                 }
             } else {
                 course_id = id;
@@ -104,7 +106,10 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         let location_id = database_add_location(
             &location_table,
             course_id,
-            &Location::parse(&new).unwrap_or_else(|e| panic!("{}", e)),
+            &Location::parse(&new).unwrap_or_else(|e| {
+                error!("{}", e);
+                panic!()
+            }),
         );
         if let Some(alias) = alias {
             alias_table.add_alias_or(&alias, location_id, |alias_table, alias, location_id| {
@@ -124,9 +129,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                 || yes
         };
         if over_args() {
-            eprintln!(
-                "本行命令将被解释为导入位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-            )
+            warn!("本行命令将被解释为导入位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。")
         }
         let contents = std::fs::read_to_string(import).expect("文件读取失败，请检查路径是否正确！");
         let contents = contents.split('\n');
@@ -139,7 +142,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                     if let Ok(id) = data[0].trim().parse::<i64>() {
                         course_id = id;
                     } else {
-                        eprintln!(
+                        warn!(
                             "警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！"
                         );
                     }
@@ -157,10 +160,10 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                             }
                         }
                     } else {
-                        eprintln!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
+                        warn!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
                     }
                 } else {
-                    eprintln!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
+                    warn!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
                 }
             }
             line_count += 1;
@@ -177,9 +180,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                 || yes
         };
         if over_args() {
-            eprintln!(
-                "本行命令将被解释为导出位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-            )
+            warn!("本行命令将被解释为导出位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。")
         }
         let locations = location_table.get_locations();
         let mut contents = String::new();
@@ -193,8 +194,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                     aliases_contents.push_str(alias);
                 }
             }
-            #[cfg(debug_assertions)]
-            println!("{aliases:?}");
+            debug!("{aliases:?}");
             contents += format!("{}${}${}\n", course_id, location, aliases_contents).as_str()
         }
         std::fs::write(export, contents).expect("文件写入出错，请检查路径是否正确！");
@@ -204,7 +204,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         let over_args =
             || remove || remove_locations || remove_aliases || course.is_some() || global || yes;
         if over_args() {
-            eprintln!(
+            warn!(
                 "本行命令将被解释为设置别名。需要 `location_id` 参数。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
             )
         }
@@ -213,7 +213,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                 alias_table.update_alias(alias, location_id);
             });
         } else {
-            eprintln!("警告：不能为不存在的位置添加别名！将不做任何事。")
+            warn!("警告：不能为不存在的位置添加别名！将不做任何事。")
         }
     } else if remove {
         let over_args = || remove_locations || remove_aliases || course.is_some() || global;
@@ -225,18 +225,18 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         }
         if let Some(alias) = alias {
             if over_args() || location_id.is_some() {
-                eprintln!(
+                warn!(
                     "本行命令将被解释为删除别名。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                 )
             }
             if alias_table.has_alias(&alias) {
                 alias_table.delete_alias(&alias);
             } else {
-                eprintln!("警告：该别名并不存在，将不做任何事情。");
+                warn!("警告：该别名并不存在，将不做任何事情。");
             }
         } else if let Some(location_id) = location_id {
             if over_args() {
-                eprintln!(
+                warn!(
                     "本行命令将被解释为删除地址。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                 )
             }
@@ -244,7 +244,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         }
     } else if remove_aliases || remove_locations {
         if course.is_some() && global {
-            eprintln!("选项`-c, --course` 和 `-g, --global` 不会同时起效，将解释为前者。")
+            warn!("选项`-c, --course` 和 `-g, --global` 不会同时起效，将解释为前者。")
         }
         let locations_id: Vec<_> = if let Some(course_id) = course {
             location_table
@@ -277,11 +277,9 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         if remove_aliases {
             if remove_locations || alias.is_some() || location_id.is_some() {
                 if alias.is_none() && location_id.is_none() {
-                    eprintln!(
-                        "本行命令将被解释为删除一类位置的别名。`    --remove-all` 选项将不起效。"
-                    )
+                    warn!("本行命令将被解释为删除一类位置的别名。`    --remove-all` 选项将不起效。")
                 } else {
-                    eprintln!(
+                    warn!(
                         "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                     )
                 }
@@ -294,7 +292,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             }
         } else {
             if alias.is_some() || location_id.is_some() {
-                eprintln!(
+                warn!(
                     "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                 )
             }
@@ -309,7 +307,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             let locations = location_table.get_locations();
             for (location_id, (course_id, location)) in locations {
                 if course_id == -1 {
-                    println!(
+                    info!(
                         "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
                         location_id,
                         course_id,
@@ -322,7 +320,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             // 列出指定课程的位置。
             let locations = location_table.get_location_map_by_course(course_id);
             for (location_id, location) in locations {
-                println!(
+                info!(
                     "位置id: {}, 位置: {},\n\t别名: {:?}",
                     location_id,
                     location,
@@ -333,7 +331,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             // 列出所有位置。
             let locations = location_table.get_locations();
             for (location_id, (course_id, location)) in locations {
-                println!(
+                info!(
                     "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
                     location_id,
                     course_id,
