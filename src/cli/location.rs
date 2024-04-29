@@ -24,7 +24,7 @@ use cxsign::{
 use log::{debug, error, warn};
 use std::path::PathBuf;
 
-fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
+pub fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
     // 为指定课程添加位置。
     let mut lid = 0_i64;
     loop {
