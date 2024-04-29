@@ -14,16 +14,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use clap::Subcommand;
-use std::path::PathBuf;
-
 use cxsign::{
     store::{
-        tables::{AliasTable, LocationTable},
+        tables::{AccountTable, AliasTable, CourseTable, LocationTable},
         DataBase, DataBaseTableTrait,
     },
-    Location,
+    Location, LocationWithRange,
 };
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
+use std::path::PathBuf;
 
 fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
     // 为指定课程添加位置。
@@ -84,15 +83,23 @@ pub enum LocationSubCommand {
         /// 导入位置。
         /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
         /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
-        input: PathBuf,
+        #[arg(short, long)]
+        input: Option<PathBuf>,
+        /// 从班级历史签到中获取位置并导入。格式同上。
+        #[arg(short, long)]
+        course: Option<i64>,
     },
-    /// 导入位置。
+    /// 导出位置。
     Export {
         /// 导出位置。
         /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
         /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
         /// 无法解析的行将会被跳过。
-        output: PathBuf,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// 从班级历史签到中获取位置并导出。格式同上。
+        #[arg(short, long)]
+        course: Option<i64>,
     },
 }
 #[derive(Subcommand, Debug, Clone)]
@@ -234,12 +241,12 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 vec![]
             };
             let delete_locations = match reduce_type {
-                ReduceType::Locations => false,
+                ReduceType::Locations => true,
                 ReduceType::Aliases { location_id } => {
                     if let Some(location_id) = location_id {
                         locations = vec![location_id]
                     }
-                    true
+                    false
                 }
             };
 
@@ -277,64 +284,155 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 alias_table.delete_alias(&alias)
             }
         }
-        LocationSubCommand::Import { input } => {
-            let contents =
-                std::fs::read_to_string(input).expect("文件读取失败，请检查路径是否正确！");
-            let contents = contents.split('\n');
-            let mut line_count = 1_i64;
-            for line in contents {
-                if !line.is_empty() {
-                    let data: Vec<&str> = line.split('$').collect();
-                    if data.len() > 1 {
-                        let mut course_id = -1_i64;
-                        if let Ok(id) = data[0].trim().parse::<i64>() {
-                            course_id = id;
-                        } else {
-                            warn!(
-                            "警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！"
-                        );
-                        }
-                        if let Ok(location) = Location::parse(data[1]) {
-                            let location_id =
-                                database_add_location(&location_table, course_id, &location);
-                            if data.len() > 2 {
-                                let aliases: Vec<_> =
-                                    data[2].split('/').map(|s| s.trim()).collect();
-                                for alias in aliases {
-                                    if !alias.is_empty() {
-                                        alias_table.add_alias_or(alias, location_id, |t, a, l| {
-                                            t.update_alias(a, l);
-                                        })
+        LocationSubCommand::Import { input, course } => {
+            let mut do_something = false;
+            if let Some(input) = input {
+                let contents =
+                    std::fs::read_to_string(input).expect("文件读取失败，请检查路径是否正确！");
+                let contents = contents.split('\n');
+                let mut line_count = 1_i64;
+                for line in contents {
+                    if !line.is_empty() {
+                        let data: Vec<&str> = line.split('$').collect();
+                        if data.len() > 1 {
+                            let mut course_id = -1_i64;
+                            if let Ok(id) = data[0].trim().parse::<i64>() {
+                                course_id = id;
+                            } else {
+                                warn!("警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！");
+                            }
+                            if let Ok(location) = Location::parse(data[1]) {
+                                let location_id =
+                                    database_add_location(&location_table, course_id, &location);
+                                if data.len() > 2 {
+                                    let aliases: Vec<_> =
+                                        data[2].split('/').map(|s| s.trim()).collect();
+                                    for alias in aliases {
+                                        if !alias.is_empty() {
+                                            alias_table.add_alias_or(
+                                                alias,
+                                                location_id,
+                                                |t, a, l| {
+                                                    t.update_alias(a, l);
+                                                },
+                                            )
+                                        }
                                     }
                                 }
+                            } else {
+                                warn!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
                             }
                         } else {
-                            warn!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
+                            warn!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
                         }
-                    } else {
-                        warn!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
+                    }
+                    line_count += 1;
+                }
+                do_something = true;
+            }
+            if let Some(course_id) = course
+                && let Some(course) = {
+                    let course_table = CourseTable::from_ref(db);
+                    course_table.get_courses().get(&course_id)
+                }
+            {
+                let account_table = AccountTable::from_ref(db);
+                let sessions = account_table.get_sessions();
+                if let Some(session) = sessions.values().next() {
+                    match LocationWithRange::from_log(session, course) {
+                        Ok(locations) => {
+                            if locations.is_empty() {
+                                warn!("没有从该课程中获取到位置信息。");
+                            } else {
+                                for (_, l) in locations {
+                                    let _ = database_add_location(
+                                        &location_table,
+                                        course_id,
+                                        &l.to_shifted_location(),
+                                    );
+                                }
+                                do_something = true;
+                            }
+                        }
+                        Err(e) => {
+                            warn!("遇到了问题：{e}");
+                        }
                     }
                 }
-                line_count += 1;
+            }
+            if !do_something {
+                warn!("未指定任何参数，不做任何事情。")
             }
         }
-        LocationSubCommand::Export { output } => {
-            let locations = location_table.get_locations();
+        LocationSubCommand::Export { output, course } => {
             let mut contents = String::new();
-            for (location_id, (course_id, location)) in locations {
-                let aliases = alias_table.get_aliases(location_id);
-                let mut aliases_contents = String::new();
-                if !aliases.is_empty() {
-                    aliases_contents.push_str(&aliases[0]);
-                    for alias in aliases.iter().skip(1) {
-                        aliases_contents.push('/');
-                        aliases_contents.push_str(alias);
+            let locations = location_table.get_locations();
+            let mut len = 0;
+            for content in locations
+                .into_iter()
+                .map(|(k, (course_id, location))| {
+                    let aliases = alias_table.get_aliases(k);
+                    let mut aliases_contents = String::new();
+                    if !aliases.is_empty() {
+                        aliases_contents.push_str(&aliases[0]);
+                        for alias in aliases.iter().skip(1) {
+                            aliases_contents.push('/');
+                            aliases_contents.push_str(alias);
+                        }
                     }
-                }
-                debug!("{aliases:?}");
-                contents += format!("{}${}${}\n", course_id, location, aliases_contents).as_str()
+                    debug!("{aliases:?}");
+                    format!("{}${}${}\n", course_id, location, aliases_contents)
+                })
+                .chain(
+                    course
+                        .and_then(|course_id| {
+                            let course_table = CourseTable::from_ref(db);
+                            course_table
+                                .get_courses()
+                                .get(&course_id)
+                                .and_then(|course| {
+                                    let account_table = AccountTable::from_ref(db);
+                                    let sessions = account_table.get_sessions();
+                                    sessions.values().next().map(|session| {
+                                        let mut contents = Vec::new();
+                                        match LocationWithRange::from_log(session, course) {
+                                            Ok(locations) => {
+                                                if locations.is_empty() {
+                                                    warn!("没有从该课程中获取到位置信息。");
+                                                }
+                                                for (_, l) in locations {
+                                                    contents.push(format!(
+                                                        "{}${}${}\n",
+                                                        course_id,
+                                                        l.to_shifted_location(),
+                                                        ""
+                                                    ));
+                                                }
+                                            }
+                                            Err(e) => {
+                                                warn!("遇到了问题：{e}");
+                                            }
+                                        }
+                                        contents.into_iter()
+                                    })
+                                })
+                        })
+                        .into_iter()
+                        .flatten(),
+                )
+                .enumerate()
+            {
+                len = content.0;
+                contents += content.1.as_str()
             }
-            std::fs::write(output, contents).expect("文件写入出错，请检查路径是否正确！");
+            if len == 0 {
+                warn!("没有获取到位置，不做任何事情。")
+            } else if let Some(output) = output {
+                let _ = std::fs::write(output, contents)
+                    .map_err(|e| warn!("文件写入出错，请检查路径是否正确！错误信息：{e}"));
+            } else {
+                println!("{contents}")
+            }
         }
     }
 }
