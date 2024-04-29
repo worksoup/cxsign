@@ -27,7 +27,7 @@ mod tools;
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::{
     arg::{AccCmds, Args, MainCmds},
-    location::Struct位置操作使用的信息,
+    location::LocationCliArgs,
 };
 use cxsign::{
     store::{
@@ -37,7 +37,7 @@ use cxsign::{
     utils::DIR,
     Activity, Course, SignTrait,
 };
-use log::warn;
+use log::{info, warn};
 use xdsign_data::LocationPreprocessor;
 
 const NOTICE: &str = r#"
@@ -87,7 +87,7 @@ fn main() {
                     match acc_sub_cmd {
                         AccCmds::Add { uname } => {
                             // 添加账号。
-                            tools::添加账号(&db, uname, None);
+                            tools::inquire_pwd_and_add_account(&db, uname, None);
                         }
                         AccCmds::Remove { uname, yes } => {
                             if !yes {
@@ -109,13 +109,13 @@ fn main() {
                     if fresh {
                         for (uname, (ref enc_pwd, _)) in accounts {
                             table.delete_account(&uname);
-                            tools::添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(&db, uname, enc_pwd);
+                            tools::add_account_by_enc_pwd_when_fresh(&db, uname, enc_pwd);
                         }
                     }
                     // 列出所有账号。
                     let accounts = table.get_accounts();
                     for a in accounts {
-                        println!("{}, {}", a.0, a.1.1);
+                        info!("{}, {}", a.0, a.1 .1);
                     }
                 }
             }
@@ -136,11 +136,11 @@ fn main() {
                 // 列出所有课程。
                 let courses = table.get_courses();
                 for c in courses {
-                    println!("{}", c.1);
+                    info!("{}", c.1);
                 }
             }
             MainCmds::Location {
-                lication_id,
+                location_id,
                 list,
                 new,
                 import,
@@ -153,8 +153,8 @@ fn main() {
                 global,
                 yes,
             } => {
-                let args = Struct位置操作使用的信息 {
-                    location_id: lication_id,
+                let args = LocationCliArgs {
+                    location_id,
                     list,
                     new,
                     import,
@@ -176,10 +176,10 @@ fn main() {
                         CourseTable::from_ref(&db).get_courses().get(&course)
                         && let Some(session) = sessions.values().next()
                         && let Ok((a, n, _)) = Activity::get_course_activities(
-                        ExcludeTable::from_ref(&db),
-                        session,
-                        course,
-                    ) {
+                            ExcludeTable::from_ref(&db),
+                            session,
+                            course,
+                        ) {
                         (a, n)
                     } else {
                         (vec![], vec![])
@@ -187,14 +187,14 @@ fn main() {
                     // 列出指定课程的有效签到。
                     for a in a {
                         if a.course.get_id() == course {
-                            println!("{}", a.fmt_without_course_info());
+                            info!("{}", a.fmt_without_course_info());
                         }
                     }
                     if all {
                         // 列出指定课程的所有签到。
                         for a in n {
                             if a.course.get_id() == course {
-                                println!("{}", a.fmt_without_course_info());
+                                info!("{}", a.fmt_without_course_info());
                             }
                         }
                     }
@@ -205,15 +205,15 @@ fn main() {
                             sessions.values(),
                             all,
                         )
-                            .unwrap();
+                        .unwrap();
                     // 列出所有有效签到。
                     for a in available_sign_activities {
-                        println!("{}", a.0.as_inner());
+                        info!("{}", a.0.as_inner());
                     }
                     if all {
                         // 列出所有签到。
                         for a in other_sign_activities {
-                            println!("{}", a.0.as_inner());
+                            info!("{}", a.0.as_inner());
                         }
                     } else {
                         warn!("{NOTICE}");
@@ -221,17 +221,17 @@ fn main() {
                 }
             }
             MainCmds::WhereIsConfig => {
-                println!("{}", &DIR.get_config_dir().to_str().unwrap());
+                info!("{}", &DIR.get_config_dir().to_str().unwrap());
             }
         }
     } else {
-        let 签到可能使用的信息 = cli::arg::CliArgs {
-            位置字符串: location,
-            图片或图片路径: image,
-            签到码: signcode,
-            是否精确识别二维码: precisely,
+        let cli_args = cli::arg::CliArgs {
+            location_str: location,
+            image,
+            signcode,
+            precisely,
         };
         warn!("{NOTICE}");
-        cli::签到(db, active_id, accounts, 签到可能使用的信息).unwrap();
+        cli::do_sign(db, active_id, accounts, cli_args).unwrap();
     }
 }
