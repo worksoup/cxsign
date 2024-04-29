@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use clap::Subcommand;
 use std::path::PathBuf;
 
 use cxsign::{
@@ -22,7 +23,7 @@ use cxsign::{
     },
     Location,
 };
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 
 fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
     // 为指定课程添加位置。
@@ -38,22 +39,89 @@ fn database_add_location(table: &LocationTable, course_id: i64, location: &Locat
     lid
 }
 
-pub struct LocationCliArgs {
-    pub location_id: Option<i64>,
-    pub list: bool,
-    pub new: Option<String>,
-    pub import: Option<PathBuf>,
-    pub export: Option<PathBuf>,
-    pub alias: Option<String>,
-    pub remove: bool,
-    pub remove_locations: bool,
-    pub remove_aliases: bool,
-    pub course: Option<i64>,
-    pub global: bool,
-    pub yes: bool,
+#[derive(Subcommand, Debug)]
+pub enum LocationSubCommand {
+    /// 添加位置或别名。
+    Add {
+        /// 地址名称、经纬度与海拔。
+        /// 格式为：`addr,lon,lat,alt`.
+        /// 格式为：`地址,经度,纬度,海拔`.
+        location_str: String,
+        /// 为位置添加别名。
+        alias: Option<String>,
+        /// 绑定该位置到指定课程。
+        /// 默认添加为全局位置。
+        #[arg(short, long)]
+        course: Option<i64>,
+    },
+    /// 删除位置。
+    Remove {
+        #[command(subcommand)]
+        command: Remove,
+        /// 无需确认直接删除。
+        #[arg(short, long)]
+        yes: bool,
+    },
+    /// 批量删除位置。
+    Reduce {
+        #[command(subcommand)]
+        reduce_type: ReduceType,
+        /// 无需确认直接删除。
+        #[arg(short, long)]
+        yes: bool,
+        /// 指定全部。
+        #[arg(short, long)]
+        all: bool,
+        /// 指定课程号。
+        #[arg(short, long)]
+        course: Option<i64>,
+        /// 指定全局。
+        #[arg(short, long)]
+        global: bool,
+    },
+    /// 导入位置。
+    Import {
+        /// 导入位置。
+        /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
+        /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
+        input: PathBuf,
+    },
+    /// 导入位置。
+    Export {
+        /// 导出位置。
+        /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
+        /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
+        /// 无法解析的行将会被跳过。
+        output: PathBuf,
+    },
+}
+#[derive(Subcommand, Debug, Clone)]
+pub enum ReduceType {
+    /// 位置。
+    Locations,
+    /// 位置别名。
+    Aliases {
+        /// 位置 ID.
+        location_id: Option<i64>,
+    },
+}
+#[derive(Subcommand, Debug)]
+pub enum Remove {
+    Locations {
+        /// 位置 ID.
+        #[arg(short, long)]
+        location_id: Option<i64>,
+        /// 位置别名对应的位置。
+        #[arg(short, long)]
+        alias: Option<String>,
+    },
+    Aliases {
+        /// 位置别名。
+        alias: String,
+    },
 }
 
-pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
+pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand) {
     let location_table = LocationTable::from_ref(db);
     let alias_table = AliasTable::from_ref(db);
     fn confirm(msg: &str) -> bool {
@@ -62,283 +130,211 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             .prompt()
             .unwrap()
     }
-    let LocationCliArgs {
-        location_id,
-        list,
-        new,
-        import,
-        export,
-        alias,
-        remove,
-        remove_locations,
-        remove_aliases,
-        course,
-        global,
-        yes,
-    } = cli_args;
-    if let Some(new) = new {
-        let over_args = || {
-            location_id.is_some()
-                || import.is_some()
-                || export.is_some()
-                || remove
-                || remove_locations
-                || remove_aliases
-                || global
-                || yes
-        };
-        if over_args() {
-            warn!("本行命令将被解释为添加新的位置。可使用选项有 `-c, --course`, `-a, --alias`, 可同时起效的选项有 `-l, --list`, 其余选项将不起效。")
-        }
-        let mut course_id = -1_i64;
-        if let Some(id) = course {
-            if id < 0 {
-                if id == -1 {
-                    warn!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
+    match sub_command {
+        LocationSubCommand::Add {
+            location_str,
+            alias,
+            course,
+        } => {
+            let mut course_id = -1_i64;
+            if let Some(id) = course {
+                if id < 0 {
+                    if id == -1 {
+                        warn!("警告：为课程号为 -1 的课程设置的位置将被视为全局位置！");
+                    } else {
+                        error!("错误：课程号小于 0! 请检查是否正确！");
+                        panic!()
+                    }
                 } else {
-                    error!("错误：课程号小于 0! 请检查是否正确！");
-                    panic!()
+                    course_id = id;
                 }
+            }
+            let location = Location::parse(&location_str);
+            let location_id = if let Ok(location) = location {
+                database_add_location(&location_table, course_id, &location)
             } else {
-                course_id = id;
+                if alias.is_none() {
+                    warn!("无法确定所要操作的位置对象！");
+                    return;
+                }
+                let location_id = location_str.trim().parse::<i64>();
+                if let Ok(location_id) = location_id
+                    && location_table.has_location(location_id)
+                {
+                    location_id
+                } else if alias_table.has_alias(location_str.trim())
+                    && let Some(location_id) = alias_table.get_location_id(location_str.trim())
+                {
+                    location_id
+                } else {
+                    warn!("无法确定所要操作的位置对象！");
+                    return;
+                }
+            };
+            if let Some(alias) = alias {
+                alias_table.add_alias_or(&alias, location_id, |alias_table, alias, location_id| {
+                    alias_table.update_alias(alias, location_id);
+                })
             }
         }
-        let location_id = database_add_location(
-            &location_table,
-            course_id,
-            &Location::parse(&new).unwrap_or_else(|e| {
-                error!("{}", e);
-                panic!()
-            }),
-        );
-        if let Some(alias) = alias {
-            alias_table.add_alias_or(&alias, location_id, |alias_table, alias, location_id| {
-                alias_table.update_alias(alias, location_id);
-            })
-        }
-    } else if let Some(import) = import {
-        let over_args = || {
-            location_id.is_some()
-                || export.is_some()
-                || alias.is_some()
-                || remove
-                || remove_locations
-                || remove_aliases
-                || course.is_some()
-                || global
-                || yes
-        };
-        if over_args() {
-            warn!("本行命令将被解释为导入位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。")
-        }
-        let contents = std::fs::read_to_string(import).expect("文件读取失败，请检查路径是否正确！");
-        let contents = contents.split('\n');
-        let mut line_count = 1_i64;
-        for line in contents {
-            if !line.is_empty() {
-                let data: Vec<&str> = line.split('$').collect();
-                if data.len() > 1 {
-                    let mut course_id = -1_i64;
-                    if let Ok(id) = data[0].trim().parse::<i64>() {
-                        course_id = id;
-                    } else {
-                        warn!(
-                            "警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！"
-                        );
-                    }
-                    if let Ok(location) = Location::parse(data[1]) {
-                        let location_id =
-                            database_add_location(&location_table, course_id, &location);
-                        if data.len() > 2 {
-                            let aliases: Vec<_> = data[2].split('/').map(|s| s.trim()).collect();
-                            for alias in aliases {
-                                if !alias.is_empty() {
-                                    alias_table.add_alias_or(alias, location_id, |t, a, l| {
-                                        t.update_alias(a, l);
-                                    })
-                                }
-                            }
+        LocationSubCommand::Remove { command, yes } => {
+            if !yes {
+                let ans = confirm("警告：是否删除？");
+                if !ans {
+                    return;
+                }
+            }
+            match command {
+                Remove::Locations { location_id, alias } => {
+                    let location_id = location_id
+                        .or_else(|| alias.and_then(|alias| alias_table.get_location_id(&alias)));
+                    if let Some(location_id) = location_id
+                        && location_table.has_location(location_id)
+                    {
+                        location_table.delete_location(location_id);
+                        let aliases = alias_table.get_aliases(location_id);
+                        for alias in aliases.iter() {
+                            alias_table.delete_alias(alias)
                         }
                     } else {
-                        warn!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
+                        warn!("警告：未指定有效的位置，将不做任何事情。");
                     }
-                } else {
-                    warn!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
+                }
+                Remove::Aliases { alias } => {
+                    if alias_table.has_alias(&alias) {
+                        alias_table.delete_alias(&alias);
+                    } else {
+                        warn!("警告：该别名并不存在，将不做任何事情。");
+                    }
                 }
             }
-            line_count += 1;
         }
-    } else if let Some(export) = export {
-        let over_args = || {
-            location_id.is_some()
-                || alias.is_some()
-                || remove
-                || remove_locations
-                || remove_aliases
-                || course.is_some()
-                || global
-                || yes
-        };
-        if over_args() {
-            warn!("本行命令将被解释为导出位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。")
-        }
-        let locations = location_table.get_locations();
-        let mut contents = String::new();
-        for (location_id, (course_id, location)) in locations {
-            let aliases = alias_table.get_aliases(location_id);
-            let mut aliases_contents = String::new();
-            if !aliases.is_empty() {
-                aliases_contents.push_str(&aliases[0]);
-                for alias in aliases.iter().skip(1) {
-                    aliases_contents.push('/');
-                    aliases_contents.push_str(alias);
+        LocationSubCommand::Reduce {
+            reduce_type,
+            yes,
+            all,
+            course,
+            global,
+        } => {
+            if !yes {
+                let ans = confirm("警告：是否删除？");
+                if !ans {
+                    return;
                 }
             }
-            debug!("{aliases:?}");
-            contents += format!("{}${}${}\n", course_id, location, aliases_contents).as_str()
-        }
-        std::fs::write(export, contents).expect("文件写入出错，请检查路径是否正确！");
-    } else if let Some(ref alias) = alias
-        && let Some(location_id) = location_id
-    {
-        let over_args =
-            || remove || remove_locations || remove_aliases || course.is_some() || global || yes;
-        if over_args() {
-            warn!(
-                "本行命令将被解释为设置别名。需要 `location_id` 参数。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-            )
-        }
-        if location_id < 0 || location_table.has_location(location_id) {
-            alias_table.add_alias_or(alias, location_id, |alias_table, alias, location_id| {
-                alias_table.update_alias(alias, location_id);
-            });
-        } else {
-            warn!("警告：不能为不存在的位置添加别名！将不做任何事。")
-        }
-    } else if remove {
-        let over_args = || remove_locations || remove_aliases || course.is_some() || global;
-        if !yes {
-            let ans = confirm("警告：是否删除？");
-            if !ans {
-                return;
-            }
-        }
-        if let Some(alias) = alias {
-            if over_args() || location_id.is_some() {
-                warn!(
-                    "本行命令将被解释为删除别名。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-                )
-            }
-            if alias_table.has_alias(&alias) {
-                alias_table.delete_alias(&alias);
+            let course_id = course.or(if global { Some(-1) } else { None });
+            let mut locations: Vec<i64> = if let Some(course_id) = course_id {
+                location_table
+                    .get_location_map_by_course(course_id)
+                    .into_keys()
+                    .collect()
+            } else if all {
+                location_table.get_locations().into_keys().collect()
             } else {
-                warn!("警告：该别名并不存在，将不做任何事情。");
-            }
-        } else if let Some(location_id) = location_id {
-            if over_args() {
-                warn!(
-                    "本行命令将被解释为删除地址。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-                )
-            }
-            location_table.delete_location(location_id);
-        }
-    } else if remove_aliases || remove_locations {
-        if course.is_some() && global {
-            warn!("选项`-c, --course` 和 `-g, --global` 不会同时起效，将解释为前者。")
-        }
-        let locations_id: Vec<_> = if let Some(course_id) = course {
-            location_table
-                .get_location_map_by_course(course_id)
-                .keys()
-                .copied()
-                .collect()
-        } else if global {
-            location_table
-                .get_locations()
-                .keys()
-                .filter_map(|id| if (*id) == -1 { Some(*id) } else { None })
-                .collect()
-        } else {
-            location_table.get_locations().keys().copied().collect()
-        };
-        if !yes {
-            let ans = confirm("警告：是否删除？");
-            if !ans {
-                return;
-            }
-        }
-        if locations_id.len() > 1 && !yes {
-            let ans = confirm("警告：删除数目大于 1, 请再次确认，是否删除？");
-            if !ans {
-                return;
-            }
-        }
-        // 删除指定位置。
-        if remove_aliases {
-            if remove_locations || alias.is_some() || location_id.is_some() {
-                if alias.is_none() && location_id.is_none() {
-                    warn!("本行命令将被解释为删除一类位置的别名。`    --remove-all` 选项将不起效。")
+                vec![]
+            };
+            let delete_locations = match reduce_type {
+                ReduceType::Locations => false,
+                ReduceType::Aliases { location_id } => {
+                    if let Some(location_id) = location_id {
+                        locations = vec![location_id]
+                    }
+                    true
+                }
+            };
+
+            if locations.is_empty() {
+                if delete_locations {
+                    warn!("警告：未指定任何有效的位置，将不做任何事情。");
                 } else {
-                    warn!(
-                        "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-                    )
+                    warn!("警告：未指定任何有效的别名，将不做任何事情。");
+                }
+                return;
+            }
+            let mut aliases = Vec::new();
+            for location_id in locations.iter() {
+                let aliases_ = alias_table.get_aliases(*location_id);
+                for alias in aliases_ {
+                    aliases.push(alias)
                 }
             }
-            for location_id in locations_id {
-                let aliases = alias_table.get_aliases(location_id);
-                for alias in aliases {
-                    alias_table.delete_alias(&alias);
+            if !delete_locations && aliases.is_empty() {
+                warn!("警告：未指定任何有效的别名，将不做任何事情。");
+                return;
+            }
+            if !yes {
+                let ans = confirm("再次警告：是否删除？");
+                if !ans {
+                    return;
                 }
             }
-        } else {
-            if alias.is_some() || location_id.is_some() {
-                warn!(
-                    "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-                )
+            if delete_locations {
+                for location_id in locations {
+                    location_table.delete_location(location_id);
+                }
             }
-            for location_id in locations_id {
-                location_table.delete_location(location_id);
+            for alias in aliases {
+                alias_table.delete_alias(&alias)
             }
         }
-    }
-    if list {
-        if global {
-            // 列出所有全局位置。
-            let locations = location_table.get_locations();
-            for (location_id, (course_id, location)) in locations {
-                if course_id == -1 {
-                    info!(
-                        "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                        location_id,
-                        course_id,
-                        location,
-                        alias_table.get_aliases(location_id)
-                    )
+        LocationSubCommand::Import { input } => {
+            let contents =
+                std::fs::read_to_string(input).expect("文件读取失败，请检查路径是否正确！");
+            let contents = contents.split('\n');
+            let mut line_count = 1_i64;
+            for line in contents {
+                if !line.is_empty() {
+                    let data: Vec<&str> = line.split('$').collect();
+                    if data.len() > 1 {
+                        let mut course_id = -1_i64;
+                        if let Ok(id) = data[0].trim().parse::<i64>() {
+                            course_id = id;
+                        } else {
+                            warn!(
+                            "警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！"
+                        );
+                        }
+                        if let Ok(location) = Location::parse(data[1]) {
+                            let location_id =
+                                database_add_location(&location_table, course_id, &location);
+                            if data.len() > 2 {
+                                let aliases: Vec<_> =
+                                    data[2].split('/').map(|s| s.trim()).collect();
+                                for alias in aliases {
+                                    if !alias.is_empty() {
+                                        alias_table.add_alias_or(alias, location_id, |t, a, l| {
+                                            t.update_alias(a, l);
+                                        })
+                                    }
+                                }
+                            }
+                        } else {
+                            warn!("错误：第 {line_count} 行位置解析出错, 该行将被跳过！格式应为 `地址,经度,纬度,海拔`");
+                        }
+                    } else {
+                        warn!("错误：第 {line_count} 行解析出错, 该行将被跳过！格式应为 `course_id$addr,lon,lat,alt`");
+                    }
                 }
+                line_count += 1;
             }
-        } else if let Some(course_id) = course {
-            // 列出指定课程的位置。
-            let locations = location_table.get_location_map_by_course(course_id);
-            for (location_id, location) in locations {
-                info!(
-                    "位置id: {}, 位置: {},\n\t别名: {:?}",
-                    location_id,
-                    location,
-                    alias_table.get_aliases(location_id)
-                )
-            }
-        } else {
-            // 列出所有位置。
+        }
+        LocationSubCommand::Export { output } => {
             let locations = location_table.get_locations();
+            let mut contents = String::new();
             for (location_id, (course_id, location)) in locations {
-                info!(
-                    "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                    location_id,
-                    course_id,
-                    location,
-                    alias_table.get_aliases(location_id)
-                )
+                let aliases = alias_table.get_aliases(location_id);
+                let mut aliases_contents = String::new();
+                if !aliases.is_empty() {
+                    aliases_contents.push_str(&aliases[0]);
+                    for alias in aliases.iter().skip(1) {
+                        aliases_contents.push('/');
+                        aliases_contents.push_str(alias);
+                    }
+                }
+                debug!("{aliases:?}");
+                contents += format!("{}${}${}\n", course_id, location, aliases_contents).as_str()
             }
+            std::fs::write(output, contents).expect("文件写入出错，请检查路径是否正确！");
         }
     }
 }

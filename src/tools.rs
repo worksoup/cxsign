@@ -22,7 +22,7 @@ use cxsign::{
     Course, Session,
 };
 
-// 添加账号。TODO: 跳过输入密码阶段
+// 添加账号。
 pub fn inquire_pwd_and_add_account(db: &DataBase, uname: String, pwd: Option<String>) {
     let pwd = if let Some(pwd) = pwd {
         pwd
