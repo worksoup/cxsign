@@ -21,7 +21,7 @@ use cxsign::{
     },
     Location, LocationWithRange,
 };
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 use std::path::PathBuf;
 
 fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
