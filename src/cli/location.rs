@@ -234,12 +234,12 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 vec![]
             };
             let delete_locations = match reduce_type {
-                ReduceType::Locations => false,
+                ReduceType::Locations => true,
                 ReduceType::Aliases { location_id } => {
                     if let Some(location_id) = location_id {
                         locations = vec![location_id]
                     }
-                    true
+                    false
                 }
             };
 
