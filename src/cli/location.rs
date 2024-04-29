@@ -62,7 +62,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             .unwrap()
     }
     let LocationCliArgs {
-        location_id: lication_id,
+        location_id,
         list,
         new,
         import,
@@ -77,7 +77,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
     } = cli_args;
     if let Some(new) = new {
         let over_args = || {
-            lication_id.is_some()
+            location_id.is_some()
                 || import.is_some()
                 || export.is_some()
                 || remove
@@ -113,7 +113,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         }
     } else if let Some(import) = import {
         let over_args = || {
-            lication_id.is_some()
+            location_id.is_some()
                 || export.is_some()
                 || alias.is_some()
                 || remove
@@ -167,7 +167,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         }
     } else if let Some(export) = export {
         let over_args = || {
-            lication_id.is_some()
+            location_id.is_some()
                 || alias.is_some()
                 || remove
                 || remove_locations
@@ -199,7 +199,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         }
         std::fs::write(export, contents).expect("文件写入出错，请检查路径是否正确！");
     } else if let Some(ref alias) = alias
-        && let Some(location_id) = lication_id
+        && let Some(location_id) = location_id
     {
         let over_args =
             || remove || remove_locations || remove_aliases || course.is_some() || global || yes;
@@ -224,7 +224,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             }
         }
         if let Some(alias) = alias {
-            if over_args() || lication_id.is_some() {
+            if over_args() || location_id.is_some() {
                 eprintln!(
                     "本行命令将被解释为删除别名。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                 )
@@ -234,7 +234,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
             } else {
                 eprintln!("警告：该别名并不存在，将不做任何事情。");
             }
-        } else if let Some(location_id) = lication_id {
+        } else if let Some(location_id) = location_id {
             if over_args() {
                 eprintln!(
                     "本行命令将被解释为删除地址。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
@@ -275,8 +275,8 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
         }
         // 删除指定位置。
         if remove_aliases {
-            if remove_locations || alias.is_some() || lication_id.is_some() {
-                if alias.is_none() && lication_id.is_none() {
+            if remove_locations || alias.is_some() || location_id.is_some() {
+                if alias.is_none() && location_id.is_none() {
                     eprintln!(
                         "本行命令将被解释为删除一类位置的别名。`    --remove-all` 选项将不起效。"
                     )
@@ -293,7 +293,7 @@ pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
                 }
             }
         } else {
-            if alias.is_some() || lication_id.is_some() {
+            if alias.is_some() || location_id.is_some() {
                 eprintln!(
                     "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                 )
