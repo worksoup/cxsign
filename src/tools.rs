@@ -23,7 +23,7 @@ use cxsign::{
 };
 
 // 添加账号。TODO: 跳过输入密码阶段
-pub fn 添加账号(db: &DataBase, uname: String, pwd: Option<String>) {
+pub fn inquire_pwd_and_add_account(db: &DataBase, uname: String, pwd: Option<String>) {
     let pwd = if let Some(pwd) = pwd {
         pwd
     } else {
@@ -43,15 +43,11 @@ pub fn 添加账号(db: &DataBase, uname: String, pwd: Option<String>) {
         table.add_course_or(&c, |_, _| {});
     }
 }
-pub fn 添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(
-    db: &DataBase,
-    uname: String,
-    加密过的密码: &str,
-) {
-    let session = Session::login(&DIR, &uname, 加密过的密码).unwrap();
+pub fn add_account_by_enc_pwd_when_fresh(db: &DataBase, uname: String, enc_pwd: &str) {
+    let session = Session::login(&DIR, &uname, enc_pwd).unwrap();
     let name = session.get_stu_name();
     let table = AccountTable::from_ref(db);
-    table.add_account_or(&uname, 加密过的密码, name, AccountTable::update_account);
+    table.add_account_or(&uname, enc_pwd, name, AccountTable::update_account);
     let courses = Course::get_courses(&session).unwrap();
     for c in courses {
         let table = CourseTable::from_ref(db);

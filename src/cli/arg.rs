@@ -163,9 +163,9 @@ pub enum AccCmds {
 
 #[derive(Clone)]
 pub struct CliArgs {
-    pub 位置字符串: Option<String>,
-    pub 图片或图片路径: Option<std::path::PathBuf>,
+    pub location_str: Option<String>,
+    pub image: Option<PathBuf>,
     // pub capture: bool,
-    pub 是否精确识别二维码: bool,
-    pub 签到码: Option<String>,
+    pub precisely: bool,
+    pub signcode: Option<String>,
 }

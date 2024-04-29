@@ -26,7 +26,7 @@ mod tools;
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::{
     arg::{AccCmds, Args, MainCmds},
-    location::Struct位置操作使用的信息,
+    location::LocationCliArgs,
 };
 use cxsign::{
     store::{
@@ -82,7 +82,7 @@ fn main() {
                     match acc_sub_cmd {
                         AccCmds::Add { uname } => {
                             // 添加账号。
-                            tools::添加账号(&db, uname, None);
+                            tools::inquire_pwd_and_add_account(&db, uname, None);
                         }
                         AccCmds::Remove { uname, yes } => {
                             if !yes {
@@ -104,7 +104,7 @@ fn main() {
                     if fresh {
                         for (uname, (ref enc_pwd, _)) in accounts {
                             table.delete_account(&uname);
-                            tools::添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(&db, uname, enc_pwd);
+                            tools::add_account_by_enc_pwd_when_fresh(&db, uname, enc_pwd);
                         }
                     }
                     // 列出所有账号。
@@ -148,7 +148,7 @@ fn main() {
                 global,
                 yes,
             } => {
-                let args = Struct位置操作使用的信息 {
+                let args = LocationCliArgs {
                     location_id: lication_id,
                     list,
                     new,
@@ -220,13 +220,13 @@ fn main() {
             }
         }
     } else {
-        let 签到可能使用的信息 = cli::arg::CliArgs {
-            位置字符串: location,
-            图片或图片路径: image,
-            签到码: signcode,
-            是否精确识别二维码: precisely,
+        let cli_args = cli::arg::CliArgs {
+            location_str: location,
+            image,
+            signcode,
+            precisely,
         };
         warn!("{NOTICE}");
-        cli::签到(db, active_id, accounts, 签到可能使用的信息).unwrap();
+        cli::do_sign(db, active_id, accounts, cli_args).unwrap();
     }
 }

@@ -23,21 +23,21 @@ use cxsign::{
     Location,
 };
 
-fn 为数据库添加位置(table: &LocationTable, course_id: i64, 位置: &Location) -> i64 {
+fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
     // 为指定课程添加位置。
-    let mut 位置id = 0_i64;
+    let mut lid = 0_i64;
     loop {
-        if table.has_location(位置id) {
-            位置id += 1;
+        if table.has_location(lid) {
+            lid += 1;
             continue;
         }
-        table.add_location_or(位置id, course_id, 位置, |_, _, _, _| {});
+        table.add_location_or(lid, course_id, location, |_, _, _, _| {});
         break;
     }
-    位置id
+    lid
 }
 
-pub struct Struct位置操作使用的信息 {
+pub struct LocationCliArgs {
     pub location_id: Option<i64>,
     pub list: bool,
     pub new: Option<String>,
@@ -52,7 +52,7 @@ pub struct Struct位置操作使用的信息 {
     pub yes: bool,
 }
 
-pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作使用的信息) {
+pub fn location(db: &DataBase, cli_args: LocationCliArgs) {
     let location_table = LocationTable::from_ref(db);
     let alias_table = AliasTable::from_ref(db);
     fn confirm(msg: &str) -> bool {
@@ -61,7 +61,7 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
             .prompt()
             .unwrap()
     }
-    let Struct位置操作使用的信息 {
+    let LocationCliArgs {
         location_id: lication_id,
         list,
         new,
@@ -74,7 +74,7 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
         course,
         global,
         yes,
-    } = 位置操作使用的信息;
+    } = cli_args;
     if let Some(new) = new {
         let over_args = || {
             lication_id.is_some()
@@ -101,14 +101,14 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
                 course_id = id;
             }
         }
-        let 位置id = 为数据库添加位置(
+        let location_id = database_add_location(
             &location_table,
             course_id,
             &Location::parse(&new).unwrap_or_else(|e| panic!("{}", e)),
         );
         if let Some(alias) = alias {
-            alias_table.add_alias_or(&alias, 位置id, |alias_table, alias, 位置id| {
-                alias_table.update_alias(alias, 位置id);
+            alias_table.add_alias_or(&alias, location_id, |alias_table, alias, location_id| {
+                alias_table.update_alias(alias, location_id);
             })
         }
     } else if let Some(import) = import {
@@ -143,19 +143,16 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
                             "警告：第 {line_count} 行课程号解析出错，该位置将尝试添加为全局位置！"
                         );
                     }
-                    if let Ok(位置) = Location::parse(data[1]) {
-                        let 位置id = 为数据库添加位置(&location_table, course_id, &位置);
+                    if let Ok(location) = Location::parse(data[1]) {
+                        let location_id =
+                            database_add_location(&location_table, course_id, &location);
                         if data.len() > 2 {
-                            let 别名列表: Vec<_> = data[2].split('/').map(|s| s.trim()).collect();
-                            for 别名 in 别名列表 {
-                                if !别名.is_empty() {
-                                    alias_table.add_alias_or(
-                                        别名,
-                                        位置id,
-                                        |alias_table, 别名, 位置id| {
-                                            alias_table.update_alias(别名, 位置id);
-                                        },
-                                    )
+                            let aliases: Vec<_> = data[2].split('/').map(|s| s.trim()).collect();
+                            for alias in aliases {
+                                if !alias.is_empty() {
+                                    alias_table.add_alias_or(alias, location_id, |t, a, l| {
+                                        t.update_alias(a, l);
+                                    })
                                 }
                             }
                         }
@@ -184,25 +181,25 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
                 "本行命令将被解释为导出位置。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
             )
         }
-        let 位置列表 = location_table.get_locations();
+        let locations = location_table.get_locations();
         let mut contents = String::new();
-        for (位置id, 位置) in 位置列表 {
-            let aliases = alias_table.get_aliases(位置id);
+        for (location_id, (course_id, location)) in locations {
+            let aliases = alias_table.get_aliases(location_id);
             let mut aliases_contents = String::new();
             if !aliases.is_empty() {
                 aliases_contents.push_str(&aliases[0]);
-                for aliase in aliases.iter().skip(1) {
+                for alias in aliases.iter().skip(1) {
                     aliases_contents.push('/');
-                    aliases_contents.push_str(aliase);
+                    aliases_contents.push_str(alias);
                 }
             }
             #[cfg(debug_assertions)]
             println!("{aliases:?}");
-            contents += format!("{}${}${}\n", 位置.0, 位置.1, aliases_contents).as_str()
+            contents += format!("{}${}${}\n", course_id, location, aliases_contents).as_str()
         }
         std::fs::write(export, contents).expect("文件写入出错，请检查路径是否正确！");
     } else if let Some(ref alias) = alias
-        && let Some(位置id) = lication_id
+        && let Some(location_id) = lication_id
     {
         let over_args =
             || remove || remove_locations || remove_aliases || course.is_some() || global || yes;
@@ -211,9 +208,9 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
                 "本行命令将被解释为设置别名。需要 `location_id` 参数。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
             )
         }
-        if 位置id < 0 || location_table.has_location(位置id) {
-            alias_table.add_alias_or(alias, 位置id, |alias_table, alias, 位置id| {
-                alias_table.update_alias(alias, 位置id);
+        if location_id < 0 || location_table.has_location(location_id) {
+            alias_table.add_alias_or(alias, location_id, |alias_table, alias, location_id| {
+                alias_table.update_alias(alias, location_id);
             });
         } else {
             eprintln!("警告：不能为不存在的位置添加别名！将不做任何事。")
@@ -237,19 +234,19 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
             } else {
                 eprintln!("警告：该别名并不存在，将不做任何事情。");
             }
-        } else if let Some(位置id) = lication_id {
+        } else if let Some(location_id) = lication_id {
             if over_args() {
                 eprintln!(
                     "本行命令将被解释为删除地址。可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
                 )
             }
-            location_table.delete_location(位置id);
+            location_table.delete_location(location_id);
         }
     } else if remove_aliases || remove_locations {
         if course.is_some() && global {
             eprintln!("选项`-c, --course` 和 `-g, --global` 不会同时起效，将解释为前者。")
         }
-        let 待操作位置列表: Vec<_> = if let Some(course_id) = course {
+        let locations_id: Vec<_> = if let Some(course_id) = course {
             location_table
                 .get_location_map_by_course(course_id)
                 .keys()
@@ -270,7 +267,7 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
                 return;
             }
         }
-        if 待操作位置列表.len() > 1 && !yes {
+        if locations_id.len() > 1 && !yes {
             let ans = confirm("警告：删除数目大于 1, 请再次确认，是否删除？");
             if !ans {
                 return;
@@ -289,8 +286,8 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
                     )
                 }
             }
-            for 位置id in 待操作位置列表 {
-                let aliases = alias_table.get_aliases(位置id);
+            for location_id in locations_id {
+                let aliases = alias_table.get_aliases(location_id);
                 for alias in aliases {
                     alias_table.delete_alias(&alias);
                 }
@@ -298,50 +295,50 @@ pub fn location(db: &DataBase, 位置操作使用的信息: Struct位置操作�
         } else {
             if alias.is_some() || lication_id.is_some() {
                 eprintln!(
-                        "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
-                    )
+                    "本行命令将被解释为删除一类位置的别名。可使用的选项有`-c, --course`, `-g, --global`, `-y, --yes`. 可同时起效的选项有 `-l, --list`, 其余选项将不起效。"
+                )
             }
-            for 位置id in 待操作位置列表 {
-                location_table.delete_location(位置id);
+            for location_id in locations_id {
+                location_table.delete_location(location_id);
             }
         }
     }
     if list {
         if global {
             // 列出所有全局位置。
-            let 位置列表 = location_table.get_locations();
-            for 位置 in 位置列表 {
-                if 位置.1 .0 == -1 {
+            let locations = location_table.get_locations();
+            for (location_id, (course_id, location)) in locations {
+                if course_id == -1 {
                     println!(
                         "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                        位置.0,
-                        位置.1 .0,
-                        位置.1 .1,
-                        alias_table.get_aliases(位置.0)
+                        location_id,
+                        course_id,
+                        location,
+                        alias_table.get_aliases(location_id)
                     )
                 }
             }
         } else if let Some(course_id) = course {
             // 列出指定课程的位置。
-            let 位置列表 = location_table.get_location_map_by_course(course_id);
-            for 位置 in 位置列表 {
+            let locations = location_table.get_location_map_by_course(course_id);
+            for (location_id, location) in locations {
                 println!(
                     "位置id: {}, 位置: {},\n\t别名: {:?}",
-                    位置.0,
-                    位置.1,
-                    alias_table.get_aliases(位置.0)
+                    location_id,
+                    location,
+                    alias_table.get_aliases(location_id)
                 )
             }
         } else {
             // 列出所有位置。
-            let 位置列表 = location_table.get_locations();
-            for 位置 in 位置列表 {
+            let locations = location_table.get_locations();
+            for (location_id, (course_id, location)) in locations {
                 println!(
                     "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                    位置.0,
-                    位置.1 .0,
-                    位置.1 .1,
-                    alias_table.get_aliases(位置.0)
+                    location_id,
+                    course_id,
+                    location,
+                    alias_table.get_aliases(location_id)
                 )
             }
         }
