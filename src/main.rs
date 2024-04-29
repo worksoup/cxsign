@@ -36,7 +36,7 @@ use cxsign::{
     utils::DIR,
     Activity, Course, SignTrait,
 };
-use log::warn;
+use log::{info, warn};
 const NOTICE: &str = r#"
     
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -110,7 +110,7 @@ fn main() {
                     // 列出所有账号。
                     let accounts = table.get_accounts();
                     for a in accounts {
-                        println!("{}, {}", a.0, a.1 .1);
+                        info!("{}, {}", a.0, a.1 .1);
                     }
                 }
             }
@@ -131,11 +131,11 @@ fn main() {
                 // 列出所有课程。
                 let courses = table.get_courses();
                 for c in courses {
-                    println!("{}", c.1);
+                    info!("{}", c.1);
                 }
             }
             MainCmds::Location {
-                lication_id,
+                location_id,
                 list,
                 new,
                 import,
@@ -149,7 +149,7 @@ fn main() {
                 yes,
             } => {
                 let args = LocationCliArgs {
-                    location_id: lication_id,
+                    location_id,
                     list,
                     new,
                     import,
@@ -182,14 +182,14 @@ fn main() {
                     // 列出指定课程的有效签到。
                     for a in a {
                         if a.course.get_id() == course {
-                            println!("{}", a.fmt_without_course_info());
+                            info!("{}", a.fmt_without_course_info());
                         }
                     }
                     if all {
                         // 列出指定课程的所有签到。
                         for a in n {
                             if a.course.get_id() == course {
-                                println!("{}", a.fmt_without_course_info());
+                                info!("{}", a.fmt_without_course_info());
                             }
                         }
                     }
@@ -203,12 +203,12 @@ fn main() {
                         .unwrap();
                     // 列出所有有效签到。
                     for a in available_sign_activities {
-                        println!("{}", a.0.as_inner());
+                        info!("{}", a.0.as_inner());
                     }
                     if all {
                         // 列出所有签到。
                         for a in other_sign_activities {
-                            println!("{}", a.0.as_inner());
+                            info!("{}", a.0.as_inner());
                         }
                     } else {
                         warn!("{NOTICE}");
@@ -216,7 +216,7 @@ fn main() {
                 }
             }
             MainCmds::WhereIsConfig => {
-                println!("{}", &DIR.get_config_dir().to_str().unwrap());
+                info!("{}", &DIR.get_config_dir().to_str().unwrap());
             }
         }
     } else {

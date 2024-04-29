@@ -100,7 +100,7 @@ pub enum MainCmds {
     /// 默认列出所有位置。
     Location {
         /// 指定位置id.
-        lication_id: Option<i64>,
+        location_id: Option<i64>,
         /// 列出位置。
         #[arg(short, long)]
         list: bool,
