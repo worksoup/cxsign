@@ -13,8 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::cli::location::LocationSubCommand;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+
 #[derive(Parser, Debug)]
 #[command(
     author,
@@ -73,16 +75,18 @@ pub struct Args {
 #[derive(Subcommand, Debug)]
 pub enum MainCommand {
     /// 账号相关操作（列出、添加、删除）。
-    /// 默认列出所有账号。
     Account {
         #[command(subcommand)]
-        command: Option<AccountSubCommand>,
+        command: AccountSubCommand,
+    },
+    /// 列出所有账号。
+    Accounts {
         /// 重新获取账号信息并缓存。
         #[arg(short, long)]
         fresh: bool,
     },
     /// 列出所有课程。
-    Course {
+    Courses {
         /// 重新获取课程信息并缓存。
         #[arg(short, long)]
         fresh: bool,
@@ -99,46 +103,17 @@ pub enum MainCommand {
     /// 位置相关操作（列出、添加、删除）。
     /// 默认列出所有位置。
     Location {
-        /// 指定位置id.
-        location_id: Option<i64>,
-        /// 列出位置。
-        #[arg(short, long)]
-        list: bool,
-        /// 添加位置。
-        /// 格式为：`地址,经度,纬度,海拔`.
-        #[arg(short, long)]
-        new: Option<String>,
-        /// 导入位置。
-        /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
-        /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
-        #[arg(short, long)]
-        import: Option<PathBuf>,
-        /// 导出位置。
-        /// 每行一个位置。课程号在前，位置在后，最后是别名。它们由字符 `$` 隔开。
-        /// 其中位置的格式为 `地址,经度,纬度,海拔`, 别名的格式为以 `/` 分隔的字符串数组。
-        #[arg(short, long)]
-        export: Option<PathBuf>,
-        /// 为位置添加别名。须同时指定
-        #[arg(short, long)]
-        alias: Option<String>,
-        /// 删除位置。
-        #[arg(short, long)]
-        remove: bool,
-        /// 删除所有位置。
-        #[arg(long)]
-        remove_locations: bool,
-        /// 删除所有别名。
-        #[arg(long)]
-        remove_aliases: bool,
-        /// 指定课程号。
-        #[arg(short, long)]
-        course: Option<i64>,
-        /// 指定全局。
+        #[command(subcommand)]
+        command: LocationSubCommand,
+    },
+    /// 列出所有位置。
+    Locations {
+        /// 列出全局位置。
         #[arg(short, long)]
         global: bool,
-        /// 无需确认直接删除。
+        /// 列出指定课程的位置。
         #[arg(short, long)]
-        yes: bool,
+        course: Option<i64>,
     },
     /// 显示配置文件夹位置。
     WhereIsConfig,

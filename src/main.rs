@@ -24,10 +24,7 @@ mod cli;
 mod tools;
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
-use cli::{
-    arg::{AccountSubCommand, Args, MainCommand},
-    location::LocationCliArgs,
-};
+use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxsign::{
     store::{
         tables::{AccountTable, AliasTable, CourseTable, ExcludeTable, LocationTable},
@@ -77,44 +74,43 @@ fn main() {
     db.add_table::<LocationTable>();
     if let Some(sub_cmd) = command {
         match sub_cmd {
-            MainCommand::Account { command, fresh } => {
-                if let Some(acc_sub_cmd) = command {
-                    match acc_sub_cmd {
-                        AccountSubCommand::Add { uname, passwd } => {
-                            // 添加账号。
-                            tools::inquire_pwd_and_add_account(&db, uname, passwd);
-                        }
-                        AccountSubCommand::Remove { uname, yes } => {
-                            if !yes {
-                                let ans = inquire::Confirm::new("是否删除？")
-                                    .with_default(false)
-                                    .prompt()
-                                    .unwrap();
-                                if !ans {
-                                    return;
-                                }
+            MainCommand::Account { command } => {
+                match command {
+                    AccountSubCommand::Add { uname, passwd } => {
+                        // 添加账号。
+                        tools::inquire_pwd_and_add_account(&db, uname, passwd);
+                    }
+                    AccountSubCommand::Remove { uname, yes } => {
+                        if !yes {
+                            let ans = inquire::Confirm::new("是否删除？")
+                                .with_default(false)
+                                .prompt()
+                                .unwrap();
+                            if !ans {
+                                return;
                             }
-                            // 删除指定账号。
-                            AccountTable::from_ref(&db).delete_account(&uname);
                         }
-                    }
-                } else {
-                    let table = AccountTable::from_ref(&db);
-                    let accounts = table.get_accounts();
-                    if fresh {
-                        for (uname, (ref enc_pwd, _)) in accounts {
-                            table.delete_account(&uname);
-                            tools::add_account_by_enc_pwd_when_fresh(&db, uname, enc_pwd);
-                        }
-                    }
-                    // 列出所有账号。
-                    let accounts = table.get_accounts();
-                    for a in accounts {
-                        info!("{}, {}", a.0, a.1 .1);
+                        // 删除指定账号。
+                        AccountTable::from_ref(&db).delete_account(&uname);
                     }
                 }
             }
-            MainCommand::Course { fresh } => {
+            MainCommand::Accounts { fresh } => {
+                let table = AccountTable::from_ref(&db);
+                let accounts = table.get_accounts();
+                if fresh {
+                    for (uname, (ref enc_pwd, _)) in accounts {
+                        table.delete_account(&uname);
+                        tools::add_account_by_enc_pwd_when_fresh(&db, uname, enc_pwd);
+                    }
+                }
+                // 列出所有账号。
+                let accounts = table.get_accounts();
+                for a in accounts {
+                    info!("{}, {}", a.0, a.1 .1);
+                }
+            }
+            MainCommand::Courses { fresh } => {
                 let table = CourseTable::from_ref(&db);
                 if fresh {
                     // 重新获取课程信息并缓存。
@@ -134,35 +130,37 @@ fn main() {
                     info!("{}", c.1);
                 }
             }
-            MainCommand::Location {
-                location_id,
-                list,
-                new,
-                import,
-                export,
-                alias,
-                remove,
-                remove_locations,
-                remove_aliases,
-                course,
-                global,
-                yes,
-            } => {
-                let args = LocationCliArgs {
-                    location_id,
-                    list,
-                    new,
-                    import,
-                    export,
-                    alias,
-                    remove,
-                    remove_locations,
-                    remove_aliases,
-                    course,
-                    global,
-                    yes,
-                };
-                cli::location::location(&db, args)
+            MainCommand::Location { command } => {
+                cli::location::parse_location_sub_command(&db, command)
+            }
+            MainCommand::Locations { global, course } => {
+                let location_table = LocationTable::from_ref(&db);
+                let alias_table = AliasTable::from_ref(&db);
+                let course_id = course.or(if global { Some(-1) } else { None });
+                if let Some(course_id) = course_id {
+                    // 列出指定课程的位置。
+                    let locations = location_table.get_location_map_by_course(course_id);
+                    for (location_id, location) in locations {
+                        info!(
+                            "位置id: {}, 位置: {},\n\t别名: {:?}",
+                            location_id,
+                            location,
+                            alias_table.get_aliases(location_id)
+                        )
+                    }
+                } else {
+                    // 列出所有位置。
+                    let locations = location_table.get_locations();
+                    for (location_id, (course_id, location)) in locations {
+                        info!(
+                            "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
+                            location_id,
+                            course_id,
+                            location,
+                            alias_table.get_aliases(location_id)
+                        )
+                    }
+                }
             }
             MainCommand::List { course, all } => {
                 let sessions = AccountTable::from_ref(&db).get_sessions();
