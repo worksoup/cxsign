@@ -21,34 +21,65 @@ use cxsign::{
     utils::DIR,
     Course, Session,
 };
+use log::warn;
 
 // 添加账号。
 pub fn inquire_pwd_and_add_account(db: &DataBase, uname: String, pwd: Option<String>) {
     let pwd = if let Some(pwd) = pwd {
         pwd
     } else {
-        inquire::Password::new("密码：")
+        match inquire::Password::new("密码：")
             .without_confirmation()
             .prompt()
-            .unwrap()
+        {
+            Ok(pwd) => pwd,
+            Err(e) => {
+                warn!("输入的密码无法解析：{e}.");
+                return;
+            }
+        }
     };
     let enc_pwd = cxsign::utils::des_enc(&pwd);
-    let session = Session::login(&DIR, &uname, &enc_pwd).unwrap();
+    let session = match Session::login(&DIR, &uname, &enc_pwd) {
+        Ok(s) => s,
+        Err(e) => {
+            warn!("账号[{uname}]登录失败：{e}.");
+            return;
+        }
+    };
     let table = AccountTable::from_ref(db);
     let name = session.get_stu_name();
     table.add_account_or(&uname, &enc_pwd, name, AccountTable::update_account);
-    let courses = Course::get_courses(&session).unwrap();
+    let courses = Course::get_courses(&session).unwrap_or_else(|e| {
+        warn!(
+            "用户[{}]获取课程列表失败，错误信息：{e}.",
+            session.get_stu_name()
+        );
+        Default::default()
+    });
     let table = CourseTable::from_ref(db);
     for c in courses {
         table.add_course_or(&c, |_, _| {});
     }
 }
 pub fn add_account_by_enc_pwd_when_fresh(db: &DataBase, uname: String, enc_pwd: &str) {
-    let session = Session::login(&DIR, &uname, enc_pwd).unwrap();
+    let session = match Session::login(&DIR, &uname, enc_pwd) {
+        Ok(s) => s,
+        Err(e) => {
+            warn!("账号[{uname}]登录失败：{e}.");
+            return;
+        }
+    };
     let name = session.get_stu_name();
     let table = AccountTable::from_ref(db);
     table.add_account_or(&uname, enc_pwd, name, AccountTable::update_account);
-    let courses = Course::get_courses(&session).unwrap();
+    let courses = Course::get_courses(&session).unwrap_or_else(|e| {
+        warn!(
+            "用户[{}]获取课程列表失败，错误信息：{e}.",
+            session.get_stu_name()
+        );
+        Default::default()
+    });
     for c in courses {
         let table = CourseTable::from_ref(db);
         table.add_course_or(&c, |_, _| {});
