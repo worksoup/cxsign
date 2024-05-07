@@ -35,7 +35,7 @@ use cxsign::{
     utils::DIR,
     Activity, Course, SignTrait,
 };
-use log::{info, warn};
+use log::{error, info, warn};
 use xdsign_data::LocationPreprocessor;
 
 const NOTICE: &str = r#"
@@ -99,7 +99,10 @@ fn main() {
                             let ans = inquire::Confirm::new("是否删除？")
                                 .with_default(false)
                                 .prompt()
-                                .unwrap();
+                                .unwrap_or_else(|e| {
+                                    warn!("无法识别输入：{e}.");
+                                    false
+                                });
                             if !ans {
                                 return;
                             }
@@ -132,7 +135,13 @@ fn main() {
                     let sessions = account_table.get_sessions();
                     CourseTable::delete(&db);
                     for (_, session) in sessions {
-                        let courses = Course::get_courses(&session).unwrap();
+                        let courses = Course::get_courses(&session).unwrap_or_else(|e| {
+                            warn!(
+                                "未能获取到用户[{}]的课程，错误信息：{e}.",
+                                session.get_stu_name()
+                            );
+                            Vec::default()
+                        });
                         for c in courses {
                             table.add_course_or(&c, |_, _| {});
                         }
@@ -212,7 +221,10 @@ fn main() {
                             sessions.values(),
                             all,
                         )
-                        .unwrap();
+                        .unwrap_or_else(|e| {
+                            warn!("未能获取签到列表，错误信息：{e}.",);
+                            Default::default()
+                        });
                     // 列出所有有效签到。
                     for a in available_sign_activities {
                         info!("{}", a.0.as_inner());
@@ -228,7 +240,13 @@ fn main() {
                 }
             }
             MainCommand::WhereIsConfig => {
-                info!("{}", &DIR.get_config_dir().to_str().unwrap());
+                info!(
+                    "{}",
+                    &DIR.get_config_dir()
+                        .into_os_string()
+                        .to_string_lossy()
+                        .to_string()
+                );
             }
         }
     } else {
@@ -239,6 +257,7 @@ fn main() {
             precisely,
         };
         warn!("{NOTICE}");
-        cli::do_sign(db, active_id, accounts, cli_args).unwrap();
+        cli::do_sign(db, active_id, accounts, cli_args)
+            .unwrap_or_else(|e| error!("签到失败！错误信息：{e}."));
     }
 }

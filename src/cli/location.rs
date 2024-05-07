@@ -135,7 +135,10 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
         inquire::Confirm::new(msg)
             .with_default(false)
             .prompt()
-            .unwrap()
+            .unwrap_or_else(|e| {
+                warn!("无法识别输入：{e}.");
+                false
+            })
     }
     match sub_command {
         LocationSubCommand::Add {
