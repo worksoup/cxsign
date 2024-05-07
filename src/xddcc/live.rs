@@ -29,7 +29,7 @@ impl Live {
         week: i64,
         term_year: i32,
         term: i32,
-    ) -> Result<HashMap<String, i64>, ureq::Error> {
+    ) -> Result<HashMap<String, i64>, Box<ureq::Error>> {
         let vec =
             crate::xddcc::protocol::list_student_course_live_page(session, week, term_year, term)?
                 .into_json::<Vec<Live>>()
@@ -47,7 +47,7 @@ impl Live {
         week: i64,
         week_day: u32,
         jie: i32,
-    ) -> Result<Option<Live>, ureq::Error> {
+    ) -> Result<Option<Live>, Box<ureq::Error>> {
         let vec =
             crate::xddcc::protocol::list_student_course_live_page(session, week, term_year, term)?
                 .into_json::<Vec<Live>>()
@@ -56,7 +56,7 @@ impl Live {
             .into_iter()
             .filter(|live| (live.get_week_day() == week_day) && (live.get_jie() >= jie));
         let mut vec = iter.collect::<Vec<_>>();
-        vec.sort_by(|l1, l2| l1.get_jie().cmp(&l2.get_jie()));
+        vec.sort_by_key(|live| live.get_jie());
         Ok(vec.first().cloned())
     }
     pub fn get_lives_now<'a, Iter: Iterator<Item = &'a Session> + Clone>(
@@ -81,7 +81,7 @@ impl Live {
         pb.set_style(sty);
         for session in sessions.clone() {
             if first {
-                (term_year, term, week) = crate::xddcc::tools::term_year_detial(session);
+                (term_year, term, week) = crate::xddcc::tools::term_year_detail(session);
                 first = false;
             }
             let jie = crate::xddcc::tools::now_to_jie(this);
@@ -105,7 +105,7 @@ impl Live {
         let pb = multi.add(indicatif::ProgressBar::new(lives.len() as u64 * 2));
         pb.set_style(sty);
         pb.inc(0);
-        for session in sessions.clone() {
+        if let Some(session) = sessions.clone().into_iter().next() {
             for live in lives {
                 if let Some(room) = Room::get_rooms(session, &live).unwrap() {
                     pb.inc(1);
@@ -116,7 +116,6 @@ impl Live {
                     pb.inc(2);
                 }
             }
-            break;
         }
         pb.finish_with_message("已获取直播地址。");
         multi.remove(&pb);

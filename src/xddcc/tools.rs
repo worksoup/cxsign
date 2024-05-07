@@ -54,7 +54,7 @@ fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
     }
 }
 fn get_live_web_url(session: &Session, device_code: &str) -> WebUrl {
-    let url = crate::xddcc::protocol::get_live_url(&session, &device_code)
+    let url = crate::xddcc::protocol::get_live_url(session, device_code)
         .unwrap()
         .into_string()
         .unwrap();
@@ -121,8 +121,8 @@ pub fn map_sort_by_key<K: Ord + Hash, V>(map: HashMap<K, V>) -> Vec<(K, V)> {
     map.sort_by(|x, y| x.0.cmp(&y.0));
     map.into_iter().collect()
 }
-pub fn term_year_detial(session: &Session) -> (i32, i32, i64) {
-    let data_time = chrono::DateTime::<chrono::Local>::from(std::time::SystemTime::now());
+pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
+    let data_time = chrono::DateTime::<Local>::from(std::time::SystemTime::now());
     let year = chrono::Datelike::year(&data_time);
     let semester_id = year_to_semester_id(year - 1, 2);
 
@@ -130,11 +130,10 @@ pub fn term_year_detial(session: &Session) -> (i32, i32, i64) {
     struct WeekDetail {
         date1: String,
     }
-    let WeekDetail { date1, .. } =
-        crate::xddcc::protocol::get_week_detail(&session, 1, semester_id)
-            .unwrap()
-            .into_json()
-            .unwrap();
+    let WeekDetail { date1, .. } = crate::xddcc::protocol::get_week_detail(session, 1, semester_id)
+        .unwrap()
+        .into_json()
+        .unwrap();
     let date = date1.split('-').map(|s| s.trim()).collect::<Vec<_>>();
     let month = date[0].parse::<u32>().unwrap();
     let day = date[1].parse::<u32>().unwrap();
@@ -143,7 +142,7 @@ pub fn term_year_detial(session: &Session) -> (i32, i32, i64) {
     )
     .unwrap();
     let week = data_time
-        .signed_duration_since(&term_begin_data_time)
+        .signed_duration_since(term_begin_data_time)
         .num_weeks()
         + 1;
     let (term_year, term) = if chrono::Datelike::month(&data_time) * 100
