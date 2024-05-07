@@ -22,6 +22,7 @@
 
 mod cli;
 mod tools;
+mod xddcc;
 
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
@@ -60,7 +61,11 @@ fn main() {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
     builder.target(env_logger::Target::Stdout);
-    builder.init();
+    let logger = builder.build();
+    let multi = indicatif::MultiProgress::new();
+    indicatif_log_bridge::LogWrapper::new(multi.clone(), logger)
+        .try_init()
+        .unwrap();
     cxsign::utils::set_boxed_location_preprocessor(Box::new(LocationPreprocessor));
     let args = <Args as clap::Parser>::parse();
     let Args {
@@ -247,6 +252,16 @@ fn main() {
                         .to_string_lossy()
                         .to_string()
                 );
+            }
+            MainCommand::Xddcc {
+                accounts,
+                this,
+                device_code,
+                output,
+                list,
+            } => {
+                let table = AccountTable::from_ref(&db);
+                xddcc::xddcc(accounts, this, device_code, output, list, &table, &multi);
             }
         }
     } else {

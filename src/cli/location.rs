@@ -21,7 +21,7 @@ use cxsign::{
     },
     Location, LocationWithRange,
 };
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use std::path::PathBuf;
 
 pub fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
@@ -434,7 +434,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 let _ = std::fs::write(output, contents)
                     .map_err(|e| warn!("文件写入出错，请检查路径是否正确！错误信息：{e}"));
             } else {
-                println!("{contents}")
+                info!("{contents}")
             }
         }
     }

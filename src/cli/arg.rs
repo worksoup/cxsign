@@ -117,6 +117,26 @@ pub enum MainCommand {
     },
     /// 显示配置文件夹位置。
     WhereIsConfig,
+    Xddcc {
+        /// 获取特定账号下节课的直播信息，格式为以半角逗号隔开的字符串。
+        #[arg(short, long)]
+        accounts: Option<String>,
+        /// 覆盖默认行为至获取当前课的直播信息。
+        #[arg(short, long)]
+        this: bool,
+        /// 通过 `device_code` 获取直播信息。
+        #[arg(short, long)]
+        device_code: Option<String>,
+        /// 导出文件路径。可选提供。
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// 列出所有设备码。
+        #[arg(short, long)]
+        list: bool,
+        // /// 网页播放器地址。
+        // #[arg(short, long)]
+        // web: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
