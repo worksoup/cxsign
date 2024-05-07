@@ -22,7 +22,8 @@ pub struct Room {
 }
 impl Room {
     fn trim(mut self) -> Self {
-        self.name = self.name.trim().to_owned();
+        let name = self.name.trim().to_string();
+        let _ = std::mem::replace(&mut self.name, name);
         self
     }
     pub fn get_live_video_path(&self, session: &Session) -> VideoPath {
@@ -34,7 +35,7 @@ impl Room {
     // pub fn get_live_url(&self, session: &Session) -> WebUrl {
     //     crate::tools::get_live_web_url(session, &self.device_code)
     // }
-    pub fn get_rooms(session: &Session, live_id: &str) -> Result<Option<Room>, ureq::Error> {
+    pub fn get_rooms(session: &Session, live_id: &str) -> Result<Option<Room>, Box<ureq::Error>> {
         let rooms: Vec<Room> = crate::xddcc::protocol::list_single_course(session, live_id)?
             .into_json()
             .unwrap();
@@ -44,20 +45,23 @@ impl Room {
             .map(|r| r.trim()))
     }
     pub fn get_all_rooms<'a, Iter: Iterator<Item = &'a Session> + Clone>(
-        sessions: Iter,
+        mut sessions: Iter,
         multi: &MultiProgress,
     ) -> HashMap<String, String> {
         let map = Arc::new(Mutex::new(HashMap::new()));
-        Room::get_all_live_id(&sessions.clone().collect(), Arc::clone(&map), multi);
+        Room::get_all_live_id(
+            &sessions.clone().collect::<Vec<_>>(),
+            Arc::clone(&map),
+            multi,
+        );
         let rooms = Arc::new(Mutex::new(HashMap::new()));
-        for session in sessions {
+        if let Some(session) = sessions.next() {
             Room::id_to_rooms(map.clone(), (*session).clone(), rooms.clone(), multi);
-            break;
         }
         Arc::into_inner(rooms).unwrap().into_inner().unwrap()
     }
     pub fn get_all_live_id(
-        sessions: &Vec<&Session>,
+        sessions: &[&Session],
         id_map: Arc<Mutex<HashMap<String, i64>>>,
         multi: &MultiProgress,
     ) {
@@ -73,7 +77,7 @@ impl Room {
         pb.set_style(sty);
         let pb = Arc::new(Mutex::new(pb));
         let mut handles = Vec::new();
-        for session in sessions.into_iter() {
+        for session in sessions.iter() {
             let week_thread = week_total / (thread_count - 1) + 1;
             let thread_count = week_total / week_thread + 1;
             let week_rest = week_total % week_thread;
@@ -112,12 +116,7 @@ impl Room {
         rooms: Arc<Mutex<HashMap<String, String>>>,
         multi: &MultiProgress,
     ) {
-        let ids = id_map
-            .lock()
-            .unwrap()
-            .values()
-            .map(|a| *a)
-            .collect::<Vec<_>>();
+        let ids = id_map.lock().unwrap().values().copied().collect::<Vec<_>>();
         let len = ids.len() as i32;
         let total = len;
         let sty = indicatif::ProgressStyle::with_template(

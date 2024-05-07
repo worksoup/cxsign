@@ -7,8 +7,8 @@ use crate::xddcc::{live::Live, room::Room, tools::PairVec};
 use clap::Parser;
 use cxsign::store::tables::AccountTable;
 use indicatif::MultiProgress;
-use std::path::PathBuf;
 use log::warn;
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "获取直播信息。")]
@@ -56,7 +56,7 @@ pub fn xddcc(
         } else {
             table.get_sessions()
         };
-        if sessions.len() == 0 {
+        if sessions.is_empty() {
             warn!("请至少登录一个账号！");
         }
         let rooms = tools::map_sort_by_key(Room::get_all_rooms(sessions.values(), multi));
@@ -69,15 +69,14 @@ pub fn xddcc(
             warn!("多余的参数: `-t, --this`.")
         }
         let sessions = table.get_sessions();
-        if sessions.len() == 0 {
+        if sessions.is_empty() {
             warn!("未有登录的账号！");
         }
-        for session in sessions.values() {
+        if let Some(session) = sessions.values().next() {
             tools::out(
                 &tools::get_live_video_path(session, &device_code),
                 output.clone(),
             );
-            break;
         }
     } else {
         let sessions = if let Some(accounts) = accounts {
@@ -85,7 +84,7 @@ pub fn xddcc(
         } else {
             table.get_sessions()
         };
-        if sessions.len() == 0 {
+        if sessions.is_empty() {
             warn!("未有登录的账号！");
         }
         tools::out(
