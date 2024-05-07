@@ -120,7 +120,7 @@ pub fn do_sign(
     active_id: Option<i64>,
     accounts_str: Option<String>,
     cli_args: CliArgs,
-) -> Result<(), Box<cxsign::Error>> {
+) -> Result<(), cxsign::Error> {
     let account_table = AccountTable::from_ref(&db);
     let (sessions, has_accounts_arg) = if let Some(accounts_str) = &accounts_str {
         (
@@ -132,7 +132,7 @@ pub fn do_sign(
     };
     let (valid_signs, other_signs, _) =
         Activity::get_all_activities(ExcludeTable::from_ref(&db), sessions.values(), false)
-            .unwrap();
+            .map_err(cxsign::Error::from)?;
     let signs = if let Some(active_id) = active_id {
         let (sign, sessions) = {
             if let Some(s1) = valid_signs
