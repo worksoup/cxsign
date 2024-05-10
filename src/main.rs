@@ -21,18 +21,20 @@
 #![feature(let_chains)]
 
 mod cli;
+
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxsign::{
     store::{
-        tables::{AccountTable, AliasTable, CourseTable, ExcludeTable, LocationTable},
+        tables::{AccountTable, AliasTable, ExcludeTable, LocationTable},
         DataBase, DataBaseTableTrait,
     },
     utils::DIR,
     Activity, SignTrait,
 };
 use log::{error, info, warn};
+use std::collections::HashMap;
 const NOTICE: &str = r#"
     
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -67,7 +69,6 @@ fn main() {
     } = args;
     let db = DataBase::default();
     db.add_table::<AccountTable>();
-    db.add_table::<CourseTable>();
     db.add_table::<ExcludeTable>();
     db.add_table::<AliasTable>();
     db.add_table::<LocationTable>();
@@ -81,22 +82,10 @@ fn main() {
                         let session = table.login(uname.clone(), pwd);
                         // 添加账号。
                         match session {
-                            Ok(session) => {
-                                info!(
-                                    "添加账号 [{uname}]（用户名：{}）成功！",
-                                    session.get_stu_name()
-                                );
-                                let table = CourseTable::from_ref(&table);
-                                match table.refresh_courses(&session) {
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        warn!(
-                                            "未能刷新用户[{}]的课程，错误信息：{e}.",
-                                            session.get_stu_name()
-                                        );
-                                    }
-                                }
-                            }
+                            Ok(session) => info!(
+                                "添加账号 [{uname}]（用户名：{}）成功！",
+                                session.get_stu_name()
+                            ),
                             Err(e) => warn!("添加账号 [{uname}] 失败：{e}."),
                         };
                     }
@@ -125,22 +114,10 @@ fn main() {
                     for (uname, (ref enc_pwd, _)) in accounts {
                         let session = table.relogin(uname.clone(), enc_pwd);
                         match session {
-                            Ok(session) => {
-                                info!(
-                                    "刷新账号 [{uname}]（用户名：{}）成功！",
-                                    session.get_stu_name()
-                                );
-                                let table = CourseTable::from_ref(&table);
-                                match table.refresh_courses(&session) {
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        warn!(
-                                            "未能刷新用户[{}]的课程，错误信息：{e}.",
-                                            session.get_stu_name()
-                                        );
-                                    }
-                                }
-                            }
+                            Ok(session) => info!(
+                                "刷新账号 [{uname}]（用户名：{}）成功！",
+                                session.get_stu_name()
+                            ),
                             Err(e) => warn!("刷新账号 [{uname}] 失败：{e}."),
                         };
                     }
@@ -151,29 +128,36 @@ fn main() {
                     info!("{}, {}", a.0, a.1 .1);
                 }
             }
-            MainCommand::Courses { fresh } => {
-                let table = CourseTable::from_ref(&db);
-                if fresh {
-                    // 重新获取课程信息并缓存。
-                    let account_table = AccountTable::from_ref(&db);
-                    let sessions = account_table.get_sessions();
-                    CourseTable::delete(&db);
-                    for (_, session) in sessions {
-                        match table.refresh_courses(&session) {
-                            Ok(_) => {}
-                            Err(e) => {
-                                warn!(
-                                    "未能刷新用户[{}]的课程，错误信息：{e}.",
-                                    session.get_stu_name()
-                                );
+            MainCommand::Courses { accounts } => {
+                let account_table = AccountTable::from_ref(&db);
+                let (sessions, _) = if let Some(accounts_str) = &accounts {
+                    (
+                        account_table.get_sessions_by_accounts_str(accounts_str),
+                        true,
+                    )
+                } else {
+                    (account_table.get_sessions(), false)
+                };
+                // 获取课程信息。
+                let mut courses = HashMap::new();
+                for (_, session) in sessions {
+                    match cxsign::Course::get_courses(&session) {
+                        Ok(courses_) => {
+                            for c in courses_ {
+                                courses.insert(c.get_id(), c);
                             }
+                        }
+                        Err(e) => {
+                            warn!(
+                                "未能获取用户[{}]的课程，错误信息：{e}.",
+                                session.get_stu_name()
+                            );
                         }
                     }
                 }
                 // 列出所有课程。
-                let courses = table.get_courses();
-                for c in courses {
-                    info!("{}", c.1);
+                for (_, c) in courses {
+                    info!("{}", c);
                 }
             }
             MainCommand::Location { command } => {
@@ -210,9 +194,24 @@ fn main() {
             }
             MainCommand::List { course, all } => {
                 let sessions = AccountTable::from_ref(&db).get_sessions();
+                let mut courses = HashMap::new();
+                for session in sessions.values() {
+                    match cxsign::Course::get_courses(&session) {
+                        Ok(courses_) => {
+                            for c in courses_ {
+                                courses.insert(c.get_id(), c);
+                            }
+                        }
+                        Err(e) => {
+                            warn!(
+                                "未能获取用户[{}]的课程，错误信息：{e}.",
+                                session.get_stu_name()
+                            );
+                        }
+                    }
+                }
                 if let Some(course) = course {
-                    let (a, n) = if let Some(course) =
-                        CourseTable::from_ref(&db).get_courses().get(&course)
+                    let (a, n) = if let Some(course) = courses.get(&course)
                         && let Some(session) = sessions.values().next()
                         && let Ok((a, n, _)) = Activity::get_course_activities(
                             ExcludeTable::from_ref(&db),

@@ -85,11 +85,11 @@ pub enum MainCommand {
         #[arg(short, long)]
         fresh: bool,
     },
-    /// 列出所有课程。
+    /// 获取课程信息。
     Courses {
-        /// 重新获取课程信息并缓存。
+        /// 待操作账号，格式为以半角逗号隔开的字符串。
         #[arg(short, long)]
-        fresh: bool,
+        accounts: Option<String>,
     },
     /// 列出有效签到。
     List {

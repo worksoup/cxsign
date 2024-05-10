@@ -16,13 +16,13 @@
 use clap::Subcommand;
 use cxsign::{
     store::{
-        tables::{AccountTable, AliasTable, CourseTable, LocationTable},
+        tables::{AccountTable, AliasTable, LocationTable},
         DataBase, DataBaseTableTrait,
     },
     Location, LocationWithRange,
 };
 use log::{debug, error, warn};
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Subcommand, Debug)]
 pub enum LocationSubCommand {
@@ -321,14 +321,30 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             if let Some(course_id) = course
                 && let Some(course) = {
-                    let course_table = CourseTable::from_ref(db);
-                    course_table.get_courses().get(&course_id)
+                    let mut courses = HashMap::new();
+                    let table = AccountTable::from_ref(db);
+                    for session in table.get_sessions().values() {
+                        match cxsign::Course::get_courses(&session) {
+                            Ok(courses_) => {
+                                for c in courses_ {
+                                    courses.insert(c.get_id(), c);
+                                }
+                            }
+                            Err(e) => {
+                                warn!(
+                                    "未能获取用户[{}]的课程，错误信息：{e}.",
+                                    session.get_stu_name()
+                                );
+                            }
+                        }
+                    }
+                    courses.get(&course_id).cloned()
                 }
             {
                 let account_table = AccountTable::from_ref(db);
                 let sessions = account_table.get_sessions();
                 if let Some(session) = sessions.values().next() {
-                    match LocationWithRange::from_log(session, course) {
+                    match LocationWithRange::from_log(session, &course) {
                         Ok(locations) => {
                             if locations.is_empty() {
                                 warn!("没有从该课程中获取到位置信息。");
@@ -372,36 +388,49 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 .chain(
                     course
                         .and_then(|course_id| {
-                            let course_table = CourseTable::from_ref(db);
-                            course_table
-                                .get_courses()
-                                .get(&course_id)
-                                .and_then(|course| {
-                                    let account_table = AccountTable::from_ref(db);
-                                    let sessions = account_table.get_sessions();
-                                    sessions.values().next().map(|session| {
-                                        let mut contents = Vec::new();
-                                        match LocationWithRange::from_log(session, course) {
-                                            Ok(locations) => {
-                                                if locations.is_empty() {
-                                                    warn!("没有从该课程中获取到位置信息。");
-                                                }
-                                                for (_, l) in locations {
-                                                    contents.push(format!(
-                                                        "{}${}${}\n",
-                                                        course_id,
-                                                        l.to_shifted_location(),
-                                                        ""
-                                                    ));
-                                                }
+                            let mut courses = HashMap::new();
+                            let table = AccountTable::from_ref(db);
+                            for session in table.get_sessions().values() {
+                                match cxsign::Course::get_courses(&session) {
+                                    Ok(courses_) => {
+                                        for c in courses_ {
+                                            courses.insert(c.get_id(), c);
+                                        }
+                                    }
+                                    Err(e) => {
+                                        warn!(
+                                            "未能获取用户[{}]的课程，错误信息：{e}.",
+                                            session.get_stu_name()
+                                        );
+                                    }
+                                }
+                            }
+                            courses.get(&course_id).and_then(|course| {
+                                let account_table = AccountTable::from_ref(db);
+                                let sessions = account_table.get_sessions();
+                                sessions.values().next().map(|session| {
+                                    let mut contents = Vec::new();
+                                    match LocationWithRange::from_log(session, course) {
+                                        Ok(locations) => {
+                                            if locations.is_empty() {
+                                                warn!("没有从该课程中获取到位置信息。");
                                             }
-                                            Err(e) => {
-                                                warn!("遇到了问题：{e}");
+                                            for (_, l) in locations {
+                                                contents.push(format!(
+                                                    "{}${}${}\n",
+                                                    course_id,
+                                                    l.to_shifted_location(),
+                                                    ""
+                                                ));
                                             }
                                         }
-                                        contents.into_iter()
-                                    })
+                                        Err(e) => {
+                                            warn!("遇到了问题：{e}");
+                                        }
+                                    }
+                                    contents.into_iter()
                                 })
+                            })
                         })
                         .into_iter()
                         .flatten(),
