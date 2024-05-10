@@ -21,7 +21,7 @@ use cxsign::{
     },
     Location, LocationWithRange,
 };
-use log::{debug, error, warn};
+use log::{error, warn};
 use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Subcommand, Debug)]
@@ -367,80 +367,59 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
         }
         LocationSubCommand::Export { output, course } => {
-            let mut contents = String::new();
-            let locations = location_table.get_locations();
-            let mut len = 0;
-            for content in locations
-                .into_iter()
-                .map(|(k, (course_id, location))| {
-                    let aliases = alias_table.get_aliases(k);
-                    let mut aliases_contents = String::new();
-                    if !aliases.is_empty() {
-                        aliases_contents.push_str(&aliases[0]);
-                        for alias in aliases.iter().skip(1) {
-                            aliases_contents.push('/');
-                            aliases_contents.push_str(alias);
+            let mut contents = location_table.export();
+            for content in {
+                course
+                    .and_then(|course_id| {
+                        let account_table = AccountTable::from_ref(db);
+                        let sessions = account_table.get_sessions();
+                        let mut courses = HashMap::new();
+                        for session in sessions.values() {
+                            match cxsign::Course::get_courses(&session) {
+                                Ok(courses_) => {
+                                    for c in courses_ {
+                                        courses.insert(c.get_id(), c);
+                                    }
+                                }
+                                Err(e) => {
+                                    warn!(
+                                        "未能获取用户[{}]的课程，错误信息：{e}.",
+                                        session.get_stu_name()
+                                    );
+                                }
+                            }
                         }
-                    }
-                    debug!("{aliases:?}");
-                    format!("{}${}${}\n", course_id, location, aliases_contents)
-                })
-                .chain(
-                    course
-                        .and_then(|course_id| {
-                            let mut courses = HashMap::new();
-                            let table = AccountTable::from_ref(db);
-                            for session in table.get_sessions().values() {
-                                match cxsign::Course::get_courses(&session) {
-                                    Ok(courses_) => {
-                                        for c in courses_ {
-                                            courses.insert(c.get_id(), c);
+                        courses.get(&course_id).and_then(|course| {
+                            sessions.values().next().map(|session| {
+                                let mut contents = Vec::new();
+                                match LocationWithRange::from_log(session, course) {
+                                    Ok(locations) => {
+                                        if locations.is_empty() {
+                                            warn!("没有从该课程中获取到位置信息。");
+                                        }
+                                        for (_, l) in locations {
+                                            contents.push(format!(
+                                                "{}${}${}\n",
+                                                course_id,
+                                                l.to_shifted_location(),
+                                                ""
+                                            ));
                                         }
                                     }
                                     Err(e) => {
-                                        warn!(
-                                            "未能获取用户[{}]的课程，错误信息：{e}.",
-                                            session.get_stu_name()
-                                        );
+                                        warn!("遇到了问题：{e}");
                                     }
                                 }
-                            }
-                            courses.get(&course_id).and_then(|course| {
-                                let account_table = AccountTable::from_ref(db);
-                                let sessions = account_table.get_sessions();
-                                sessions.values().next().map(|session| {
-                                    let mut contents = Vec::new();
-                                    match LocationWithRange::from_log(session, course) {
-                                        Ok(locations) => {
-                                            if locations.is_empty() {
-                                                warn!("没有从该课程中获取到位置信息。");
-                                            }
-                                            for (_, l) in locations {
-                                                contents.push(format!(
-                                                    "{}${}${}\n",
-                                                    course_id,
-                                                    l.to_shifted_location(),
-                                                    ""
-                                                ));
-                                            }
-                                        }
-                                        Err(e) => {
-                                            warn!("遇到了问题：{e}");
-                                        }
-                                    }
-                                    contents.into_iter()
-                                })
+                                contents.into_iter()
                             })
                         })
-                        .into_iter()
-                        .flatten(),
-                )
-                .enumerate()
-            {
-                len = content.0;
-                contents += content.1.as_str()
+                    })
+                    .into_iter()
+                    .flatten()
+            } {
+                contents += content.as_str()
             }
-            if len == 0 {
+            if contents.is_empty() {
                 warn!("没有获取到位置，不做任何事情。")
             } else if let Some(output) = output {
                 let _ = std::fs::write(output, contents)
