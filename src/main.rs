@@ -160,24 +160,9 @@ fn main() {
                     (account_table.get_sessions(), false)
                 };
                 // 获取课程信息。
-                let mut courses = HashMap::new();
-                for session in sessions.values() {
-                    match cxsign::Course::get_courses(&session) {
-                        Ok(courses_) => {
-                            for c in courses_ {
-                                courses.insert(c.get_id(), c);
-                            }
-                        }
-                        Err(e) => {
-                            warn!(
-                                "未能获取用户[{}]的课程，错误信息：{e}.",
-                                session.get_stu_name()
-                            );
-                        }
-                    }
-                }
+                let courses = cxsign::Course::get_courses(sessions.values()).unwrap_or_default();
                 // 列出所有课程。
-                for (_, c) in courses {
+                for (c, _) in courses {
                     info!("{}", c);
                 }
             }
@@ -216,22 +201,11 @@ fn main() {
             MainCommand::List { course, all } => {
                 let sessions = AccountTable::from_ref(&db).get_sessions();
                 if let Some(course) = course {
-                    let mut courses = HashMap::new();
-                    for session in sessions.values() {
-                        match cxsign::Course::get_courses(&session) {
-                            Ok(courses_) => {
-                                for c in courses_ {
-                                    courses.insert(c.get_id(), c);
-                                }
-                            }
-                            Err(e) => {
-                                warn!(
-                                    "未能获取用户[{}]的课程，错误信息：{e}.",
-                                    session.get_stu_name()
-                                );
-                            }
-                        }
-                    }
+                    let courses = cxsign::Course::get_courses(sessions.values())
+                        .unwrap_or_default()
+                        .into_keys()
+                        .map(|c| (c.get_id(), c))
+                        .collect::<HashMap<_, _>>();
                     let (a, n) = if let Some(course) = courses.get(&course)
                         && let Some(session) = sessions.values().next()
                         && let Ok((a, n, _)) = Activity::get_course_activities(

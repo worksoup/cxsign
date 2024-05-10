@@ -321,23 +321,12 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             if let Some(course_id) = course
                 && let Some(course) = {
-                    let mut courses = HashMap::new();
                     let table = AccountTable::from_ref(db);
-                    for session in table.get_sessions().values() {
-                        match cxsign::Course::get_courses(&session) {
-                            Ok(courses_) => {
-                                for c in courses_ {
-                                    courses.insert(c.get_id(), c);
-                                }
-                            }
-                            Err(e) => {
-                                warn!(
-                                    "未能获取用户[{}]的课程，错误信息：{e}.",
-                                    session.get_stu_name()
-                                );
-                            }
-                        }
-                    }
+                    let courses = cxsign::Course::get_courses(table.get_sessions().values())
+                        .unwrap_or_default()
+                        .into_keys()
+                        .map(|c| (c.get_id(), c))
+                        .collect::<HashMap<_, _>>();
                     courses.get(&course_id).cloned()
                 }
             {
@@ -373,22 +362,11 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                     .and_then(|course_id| {
                         let account_table = AccountTable::from_ref(db);
                         let sessions = account_table.get_sessions();
-                        let mut courses = HashMap::new();
-                        for session in sessions.values() {
-                            match cxsign::Course::get_courses(&session) {
-                                Ok(courses_) => {
-                                    for c in courses_ {
-                                        courses.insert(c.get_id(), c);
-                                    }
-                                }
-                                Err(e) => {
-                                    warn!(
-                                        "未能获取用户[{}]的课程，错误信息：{e}.",
-                                        session.get_stu_name()
-                                    );
-                                }
-                            }
-                        }
+                        let courses = cxsign::Course::get_courses(sessions.values())
+                            .unwrap_or_default()
+                            .into_keys()
+                            .map(|c| (c.get_id(), c))
+                            .collect::<HashMap<_, _>>();
                         courses.get(&course_id).and_then(|course| {
                             sessions.values().next().map(|session| {
                                 let mut contents = Vec::new();
