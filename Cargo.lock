@@ -581,7 +581,7 @@ checksum = "ef8ae57c4978a2acd8b869ce6b9ca1dfe817bff704c220209fdef2c0b75a01b9"
 [[package]]
 name = "cxsign"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cxsign_internal",
 ]
@@ -589,7 +589,7 @@ dependencies = [
 [[package]]
 name = "cxsign_activity"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "chrono",
  "cxsign_captcha",
@@ -607,7 +607,7 @@ dependencies = [
 [[package]]
 name = "cxsign_captcha"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cxsign_imageproc",
  "cxsign_obfuscate",
@@ -621,7 +621,7 @@ dependencies = [
 [[package]]
 name = "cxsign_dir"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "directories",
  "lazy_static",
@@ -630,7 +630,7 @@ dependencies = [
 [[package]]
 name = "cxsign_error"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "thiserror",
  "ureq",
@@ -639,7 +639,7 @@ dependencies = [
 [[package]]
 name = "cxsign_imageproc"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "image",
  "imageproc",
@@ -650,7 +650,7 @@ dependencies = [
 [[package]]
 name = "cxsign_internal"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cxsign_activity",
  "cxsign_captcha",
@@ -669,7 +669,7 @@ dependencies = [
 [[package]]
 name = "cxsign_login"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cookie_store",
  "cxsign_error",
@@ -684,7 +684,7 @@ dependencies = [
 [[package]]
 name = "cxsign_obfuscate"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cxsign_utils",
  "proc-macro2",
@@ -694,7 +694,7 @@ dependencies = [
 [[package]]
 name = "cxsign_pan"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "log",
  "mime_guess",
@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "cxsign_signner"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cxsign_activity",
  "cxsign_error",
@@ -723,7 +723,7 @@ dependencies = [
 [[package]]
 name = "cxsign_store"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cxsign_dir",
  "cxsign_user",
@@ -734,7 +734,7 @@ dependencies = [
 [[package]]
 name = "cxsign_types"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cxsign_dir",
  "cxsign_pan",
@@ -750,7 +750,7 @@ dependencies = [
 [[package]]
 name = "cxsign_user"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "cookie_store",
  "cxsign_dir",
@@ -765,7 +765,7 @@ dependencies = [
 [[package]]
 name = "cxsign_utils"
 version = "0.1.1"
-source = "git+https://github.com/worksoup/newsign.git#8d48a2e5d77155c27743b6caf88955544b81430e"
+source = "git+https://github.com/worksoup/newsign.git#d0504c6bb72278a9043e30986c70892e274a572b"
 dependencies = [
  "chrono",
  "flate2",
@@ -1558,9 +1558,9 @@ dependencies = [
 
 [[package]]
 name = "num"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3135b08af27d103b0a51f2ae0f8632117b7b185ccf931445affa8df530576a41"
+checksum = "35bd024e8b2ff75562e5f34e7f4905839deb4b22955ef5e73d2fea1b9813cb23"
 dependencies = [
  "num-bigint",
  "num-complex",
@@ -1582,9 +1582,9 @@ dependencies = [
 
 [[package]]
 name = "num-complex"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23c6602fda94a57c990fe0df199a035d83576b496aa29f4e634a8ac6004e68a6"
+checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
  "num-traits",
 ]
@@ -1628,11 +1628,10 @@ dependencies = [
 
 [[package]]
 name = "num-rational"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0638a1c9d0a3c0914158145bc76cff373a75a627e6ecbfb71cbe6f453a5a19b0"
+checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
 dependencies = [
- "autocfg",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -2106,9 +2105,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-pki-types"
-version = "1.6.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51f344d206c5e1b010eec27349b815a4805f70a778895959d70b74b9b529b30a"
+checksum = "976295e77ce332211c0d24d92c0e83e50f5c5f046d11082cea19f3df13a3562d"
 
 [[package]]
 name = "rustls-webpki"
@@ -2179,18 +2178,18 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "serde"
-version = "1.0.200"
+version = "1.0.201"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddc6f9cc94d67c0e21aaf7eda3a010fd3af78ebf6e096aa6e2e13c79749cce4f"
+checksum = "780f1cebed1629e4753a1a38a3c72d30b97ec044f0aef68cb26650a3c5cf363c"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.200"
+version = "1.0.201"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "856f046b9400cee3c8c94ed572ecdb752444c24528c035cd35882aad6f492bcb"
+checksum = "c5e405930b9796f1c00bee880d03fc7e0bb4b9a11afc776885ffe84320da2865"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2199,9 +2198,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.116"
+version = "1.0.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e17db7126d17feb94eb3fad46bf1a96b034e8aacbc2e775fe81505f8b0b2813"
+checksum = "455182ea6142b14f93f4bc5320a2b31c1f266b66a4a5c858b013302a5d8cbfc3"
 dependencies = [
  "itoa",
  "ryu",

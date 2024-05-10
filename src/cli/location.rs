@@ -24,20 +24,6 @@ use cxsign::{
 use log::{debug, error, info, warn};
 use std::path::PathBuf;
 
-pub fn database_add_location(table: &LocationTable, course_id: i64, location: &Location) -> i64 {
-    // 为指定课程添加位置。
-    let mut lid = 0_i64;
-    loop {
-        if table.has_location(lid) {
-            lid += 1;
-            continue;
-        }
-        table.add_location_or(lid, course_id, location, |_, _, _, _| {});
-        break;
-    }
-    lid
-}
-
 #[derive(Subcommand, Debug)]
 pub enum LocationSubCommand {
     /// 添加位置或别名。
@@ -161,7 +147,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             let location = Location::parse(&location_str);
             let location_id = if let Ok(location) = location {
-                database_add_location(&location_table, course_id, &location)
+                location_table.insert_location(course_id, &location)
             } else {
                 if alias.is_none() {
                     warn!("无法确定所要操作的位置对象！");
@@ -306,7 +292,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                             }
                             if let Ok(location) = Location::parse(data[1]) {
                                 let location_id =
-                                    database_add_location(&location_table, course_id, &location);
+                                    location_table.insert_location(course_id, &location);
                                 if data.len() > 2 {
                                     let aliases: Vec<_> =
                                         data[2].split('/').map(|s| s.trim()).collect();
@@ -348,11 +334,8 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                                 warn!("没有从该课程中获取到位置信息。");
                             } else {
                                 for (_, l) in locations {
-                                    let _ = database_add_location(
-                                        &location_table,
-                                        course_id,
-                                        &l.to_shifted_location(),
-                                    );
+                                    let _ = location_table
+                                        .insert_location(course_id, &l.to_shifted_location());
                                 }
                                 do_something = true;
                             }

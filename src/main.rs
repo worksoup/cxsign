@@ -25,8 +25,7 @@ mod tools;
 mod xddcc;
 
 // #[global_allocator]
-// static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
-use crate::cli::location::database_add_location;
+// static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;s
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxsign::{
     store::{
@@ -87,7 +86,7 @@ fn main() {
         let alias_table = AliasTable::from_ref(&db);
         let location_table = LocationTable::from_ref(&db);
         if !alias_table.has_alias(s) {
-            let lid = database_add_location(&location_table, -1, l);
+            let lid = location_table.insert_location(-1, l);
             alias_table.add_alias_or(s, lid, |_, _, _| {})
         }
     }
