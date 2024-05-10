@@ -21,7 +21,6 @@
 #![feature(let_chains)]
 
 mod cli;
-mod tools;
 mod xddcc;
 
 // #[global_allocator]
@@ -33,7 +32,7 @@ use cxsign::{
         DataBase, DataBaseTableTrait,
     },
     utils::DIR,
-    Activity, Course, SignTrait,
+    Activity, SignTrait,
 };
 use log::{error, info, warn};
 use xdsign_data::LocationPreprocessor;
@@ -95,8 +94,29 @@ fn main() {
             MainCommand::Account { command } => {
                 match command {
                     AccountSubCommand::Add { uname, passwd } => {
+                        let table = AccountTable::from_ref(&db);
+                        let pwd = cxsign::utils::inquire_pwd(passwd);
+                        let session = table.login(uname.clone(), pwd);
                         // 添加账号。
-                        tools::inquire_pwd_and_add_account(&db, uname, passwd);
+                        match session {
+                            Ok(session) => {
+                                info!(
+                                    "添加账号 [{uname}]（用户名：{}）成功！",
+                                    session.get_stu_name()
+                                );
+                                let table = CourseTable::from_ref(&table);
+                                match table.refresh_courses(&session) {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        warn!(
+                                            "未能刷新用户[{}]的课程，错误信息：{e}.",
+                                            session.get_stu_name()
+                                        );
+                                    }
+                                }
+                            }
+                            Err(e) => warn!("添加账号 [{uname}] 失败：{e}."),
+                        };
                     }
                     AccountSubCommand::Remove { uname, yes } => {
                         if !yes {
@@ -121,8 +141,26 @@ fn main() {
                 let accounts = table.get_accounts();
                 if fresh {
                     for (uname, (ref enc_pwd, _)) in accounts {
-                        table.delete_account(&uname);
-                        tools::add_account_by_enc_pwd_when_fresh(&db, uname, enc_pwd);
+                        let session = table.relogin(uname.clone(), enc_pwd);
+                        match session {
+                            Ok(session) => {
+                                info!(
+                                    "添加账号 [{uname}]（用户名：{}）成功！",
+                                    session.get_stu_name()
+                                );
+                                let table = CourseTable::from_ref(&table);
+                                match table.refresh_courses(&session) {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        warn!(
+                                            "未能刷新用户[{}]的课程，错误信息：{e}.",
+                                            session.get_stu_name()
+                                        );
+                                    }
+                                }
+                            }
+                            Err(e) => warn!("添加账号 [{uname}] 失败：{e}."),
+                        };
                     }
                 }
                 // 列出所有账号。
@@ -139,15 +177,14 @@ fn main() {
                     let sessions = account_table.get_sessions();
                     CourseTable::delete(&db);
                     for (_, session) in sessions {
-                        let courses = Course::get_courses(&session).unwrap_or_else(|e| {
-                            warn!(
-                                "未能获取到用户[{}]的课程，错误信息：{e}.",
-                                session.get_stu_name()
-                            );
-                            Vec::default()
-                        });
-                        for c in courses {
-                            table.add_course_or(&c, |_, _| {});
+                        match table.refresh_courses(&session) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                warn!(
+                                    "未能刷新用户[{}]的课程，错误信息：{e}.",
+                                    session.get_stu_name()
+                                );
+                            }
                         }
                     }
                 }
