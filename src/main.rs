@@ -145,7 +145,7 @@ fn main() {
                         match session {
                             Ok(session) => {
                                 info!(
-                                    "添加账号 [{uname}]（用户名：{}）成功！",
+                                    "刷新账号 [{uname}]（用户名：{}）成功！",
                                     session.get_stu_name()
                                 );
                                 let table = CourseTable::from_ref(&table);
@@ -159,7 +159,7 @@ fn main() {
                                     }
                                 }
                             }
-                            Err(e) => warn!("添加账号 [{uname}] 失败：{e}."),
+                            Err(e) => warn!("刷新账号 [{uname}] 失败：{e}."),
                         };
                     }
                 }
