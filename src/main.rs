@@ -63,7 +63,10 @@ fn main() {
     let multi = indicatif::MultiProgress::new();
     indicatif_log_bridge::LogWrapper::new(multi.clone(), logger)
         .try_init()
-        .unwrap();
+        .unwrap_or_else(|e| {
+            error!("日志初始化失败。错误信息：{e}.");
+            panic!()
+        });
     cxsign::utils::set_boxed_location_preprocessor(Box::new(LocationPreprocessor));
     let args = <Args as clap::Parser>::parse();
     let Args {

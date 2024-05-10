@@ -73,10 +73,12 @@ pub fn xddcc(
             warn!("未有登录的账号！");
         }
         if let Some(session) = sessions.values().next() {
-            tools::out(
-                &tools::get_live_video_path(session, &device_code),
-                output.clone(),
-            );
+            tools::get_live_video_path(session, &device_code)
+                .ok()
+                .map(|path| {
+                    tools::out(&path, output.clone());
+                    true
+                });
         }
     } else {
         let sessions = if let Some(accounts) = accounts {

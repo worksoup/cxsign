@@ -1,10 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::xddcc::tools::{json_parsing_error_handler, prog_init_error_handler};
+use crate::xddcc::{room::Room, tools::VideoPath};
 use cxsign::Session;
 use indicatif::MultiProgress;
+use log::warn;
 use serde::{Deserialize, Serialize};
-
-use crate::xddcc::{room::Room, tools::VideoPath};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Live {
@@ -33,7 +34,7 @@ impl Live {
         let vec =
             crate::xddcc::protocol::list_student_course_live_page(session, week, term_year, term)?
                 .into_json::<Vec<Live>>()
-                .unwrap();
+                .unwrap_or_else(json_parsing_error_handler);
         let mut map = HashMap::new();
         for i in vec {
             map.insert(i.place, i.id);
@@ -51,7 +52,7 @@ impl Live {
         let vec =
             crate::xddcc::protocol::list_student_course_live_page(session, week, term_year, term)?
                 .into_json::<Vec<Live>>()
-                .unwrap();
+                .unwrap_or_else(json_parsing_error_handler);
         let iter = vec
             .into_iter()
             .filter(|live| (live.get_week_day() == week_day) && (live.get_jie() >= jie));
@@ -76,7 +77,7 @@ impl Live {
         let sty = indicatif::ProgressStyle::with_template(
             "获取直播号：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
         )
-        .unwrap();
+        .unwrap_or_else(prog_init_error_handler);
         let pb = multi.add(indicatif::ProgressBar::new(total));
         pb.set_style(sty);
         for session in sessions.clone() {
@@ -101,19 +102,27 @@ impl Live {
         let sty = indicatif::ProgressStyle::with_template(
             "获取地址中：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
         )
-        .unwrap();
+        .unwrap_or_else(prog_init_error_handler);
         let pb = multi.add(indicatif::ProgressBar::new(lives.len() as u64 * 2));
         pb.set_style(sty);
         pb.inc(0);
         if let Some(session) = sessions.clone().into_iter().next() {
             for live in lives {
-                if let Some(room) = Room::get_rooms(session, &live).unwrap() {
-                    pb.inc(1);
-                    let video_path = room.get_live_video_path(session);
-                    pb.inc(1);
-                    rooms.insert(live, (room, video_path));
-                } else {
-                    pb.inc(2);
+                match Room::get_rooms(session, &live) {
+                    Ok(room) => {
+                        if let Some(room) = room {
+                            pb.inc(1);
+                            let video_path = room.get_live_video_path(session);
+                            pb.inc(1);
+                            rooms.insert(live, (room, video_path));
+                        } else {
+                            pb.inc(2);
+                        }
+                    }
+                    Err(e) => {
+                        warn!("教室获取错误：{e}.");
+                        pb.inc(2);
+                    }
                 }
             }
         }
@@ -122,10 +131,17 @@ impl Live {
         let mut results = HashMap::new();
         for (session, live) in lives_map {
             if let Some((room, video_path)) = rooms.get(&live.get_id()) {
-                results.insert(
-                    session.get_uid(),
-                    (session.get_stu_name(), room.clone(), video_path.clone()),
-                );
+                match video_path {
+                    Ok(video_path) => {
+                        results.insert(
+                            session.get_uid(),
+                            (session.get_stu_name(), room.clone(), video_path.clone()),
+                        );
+                    }
+                    Err(e) => {
+                        warn!("获取教室失败：{e}.")
+                    }
+                }
             }
         }
         results
