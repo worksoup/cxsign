@@ -67,7 +67,8 @@ fn main() {
             error!("日志初始化失败。错误信息：{e}.");
             panic!()
         });
-    cxsign::utils::set_boxed_location_preprocessor(Box::new(LocationPreprocessor));
+    cxsign::utils::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
+        .unwrap_or_else(|e| error!("{e}"));
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
