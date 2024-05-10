@@ -8,6 +8,10 @@ use cxsign::Session;
 use indicatif::MultiProgress;
 use serde::{Deserialize, Serialize};
 
+use crate::xddcc::tools::{
+    arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
+    prog_init_error_handler,
+};
 use crate::xddcc::{live::Live, tools::VideoPath};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -26,7 +30,7 @@ impl Room {
         let _ = std::mem::replace(&mut self.name, name);
         self
     }
-    pub fn get_live_video_path(&self, session: &Session) -> VideoPath {
+    pub fn get_live_video_path(&self, session: &Session) -> Result<VideoPath, Box<ureq::Error>> {
         crate::xddcc::tools::get_live_video_path(session, &self.device_code)
     }
     // pub fn get_live_video_path(&self, session: &Session) -> VideoPath {
@@ -38,7 +42,7 @@ impl Room {
     pub fn get_rooms(session: &Session, live_id: &str) -> Result<Option<Room>, Box<ureq::Error>> {
         let rooms: Vec<Room> = crate::xddcc::protocol::list_single_course(session, live_id)?
             .into_json()
-            .unwrap();
+            .unwrap_or_else(json_parsing_error_handler);
         Ok(rooms
             .into_iter()
             .find(|r| r.id.to_string() == live_id)
@@ -58,7 +62,10 @@ impl Room {
         if let Some(session) = sessions.next() {
             Room::id_to_rooms(map.clone(), (*session).clone(), rooms.clone(), multi);
         }
-        Arc::into_inner(rooms).unwrap().into_inner().unwrap()
+        Arc::into_inner(rooms)
+            .unwrap_or_else(arc_into_inner_error_handler)
+            .into_inner()
+            .unwrap_or_else(mutex_into_inner_error_handler)
     }
     pub fn get_all_live_id(
         sessions: &[&Session],
@@ -72,7 +79,7 @@ impl Room {
         let sty = indicatif::ProgressStyle::with_template(
             "获取直播号：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
         )
-        .unwrap();
+        .unwrap_or_else(prog_init_error_handler);
         let pb = multi.add(indicatif::ProgressBar::new(total as u64));
         pb.set_style(sty);
         let pb = Arc::new(Mutex::new(pb));
@@ -93,7 +100,7 @@ impl Room {
                     } {
                         let (year, term, week) =
                             crate::xddcc::tools::date_count_to_year_term_week(now_year, date_count);
-                        let lives = Live::get_lives(&session, week, year, term).unwrap();
+                        let lives = Live::get_lives(&session, week, year, term).unwrap_or_default();
                         for live in lives {
                             id_map.lock().unwrap().insert(live.0, live.1);
                         }
@@ -106,7 +113,10 @@ impl Room {
         for handle in handles {
             handle.join().unwrap();
         }
-        let pb = Arc::into_inner(pb).unwrap().into_inner().unwrap();
+        let pb = Arc::into_inner(pb)
+            .unwrap_or_else(arc_into_inner_error_handler)
+            .into_inner()
+            .unwrap_or_else(mutex_into_inner_error_handler);
         pb.finish_with_message("获取直播号完成。");
         multi.remove(&pb);
     }

@@ -1,9 +1,30 @@
 use chrono::{Local, Timelike};
 use cxsign::Session;
-use log::info;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
+use std::error::Error as ErrorTrait;
 use std::{collections::HashMap, hash::Hash};
 
+pub(crate) fn json_parsing_error_handler<T>(e: impl ErrorTrait) -> T {
+    error!("json 解析出错！错误信息：{e}.");
+    panic!()
+}
+pub(crate) fn resp_parsing_error_handler<T>(e: impl ErrorTrait) -> T {
+    error!("响应数据无法转为字符串，错误信息：{e}.");
+    panic!()
+}
+pub(crate) fn prog_init_error_handler<T>(e: impl ErrorTrait) -> T {
+    error!("json 解析出错！错误信息：{e}.");
+    panic!()
+}
+pub(crate) fn arc_into_inner_error_handler<T>() -> T {
+    error!("Arc 指针为空！");
+    panic!()
+}
+pub(crate) fn mutex_into_inner_error_handler<T>(e: impl ErrorTrait) -> T {
+    error!("保有互斥锁的其他线程发生 panic, 错误信息：{e}.");
+    panic!()
+}
 #[derive(Serialize, Default, Debug, Clone)]
 pub struct VideoPath {
     ppt_video: Option<String>,
@@ -19,7 +40,7 @@ fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
     let url = &url.url.split("?info=").collect::<Vec<_>>()[1];
     let url = percent_encoding::percent_decode_str(url)
         .decode_utf8()
-        .unwrap()
+        .unwrap_or_default()
         .to_string();
     #[derive(Deserialize)]
     struct VideoPathInternal {
@@ -45,7 +66,7 @@ fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
                 teacher_track,
                 student_full,
             },
-    } = ureq::serde_json::from_str(&url).unwrap();
+    } = serde_json::from_str(&url).unwrap_or_else(json_parsing_error_handler);
     VideoPath {
         ppt_video,
         teacher_full,
@@ -53,16 +74,18 @@ fn web_url_to_video_path(url: &WebUrl) -> VideoPath {
         student_full,
     }
 }
-fn get_live_web_url(session: &Session, device_code: &str) -> WebUrl {
-    let url = crate::xddcc::protocol::get_live_url(session, device_code)
-        .unwrap()
+fn get_live_web_url(session: &Session, device_code: &str) -> Result<WebUrl, Box<ureq::Error>> {
+    let url = crate::xddcc::protocol::get_live_url(session, device_code)?
         .into_string()
-        .unwrap();
-    WebUrl { url }
+        .unwrap_or_else(resp_parsing_error_handler);
+    Ok(WebUrl { url })
 }
-pub fn get_live_video_path(session: &Session, device_code: &str) -> VideoPath {
+pub fn get_live_video_path(
+    session: &Session,
+    device_code: &str,
+) -> Result<VideoPath, Box<ureq::Error>> {
     let url = get_live_web_url(session, device_code);
-    web_url_to_video_path(&url)
+    Ok(web_url_to_video_path(&url?))
 }
 pub fn year_to_semester_id(year: i32, term: i32) -> i32 {
     let mut r = 2 * year - 4035 + term;
@@ -137,9 +160,9 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
     let date = date1.split('-').map(|s| s.trim()).collect::<Vec<_>>();
     let month = date[0].parse::<u32>().unwrap();
     let day = date[1].parse::<u32>().unwrap();
-    let term_begin_data_time = <chrono::DateTime<chrono::Local> as std::str::FromStr>::from_str(
-        &format!("{year}-{month}-{day}T00:00:00.0+08:00"),
-    )
+    let term_begin_data_time = <chrono::DateTime<Local> as std::str::FromStr>::from_str(&format!(
+        "{year}-{month}-{day}T00:00:00.0+08:00"
+    ))
     .unwrap();
     let week = data_time
         .signed_duration_since(term_begin_data_time)
