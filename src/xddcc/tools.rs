@@ -206,6 +206,6 @@ pub fn out<S: Serialize>(contents: &S, path: Option<std::path::PathBuf>) {
     if let Some(path) = path {
         std::fs::write(path, contents).expect("写入内容出错！");
     } else {
-        info!("{contents}")
+        println!("{contents}")
     }
 }
