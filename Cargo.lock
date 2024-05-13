@@ -669,6 +669,7 @@ dependencies = [
  "cxsign_imageproc",
  "cxsign_login",
  "cxsign_pan",
+ "cxsign_qrcode_utils",
  "cxsign_signner",
  "cxsign_store",
  "cxsign_types",
