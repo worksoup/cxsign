@@ -23,8 +23,8 @@ edition = "2021"
 [dependencies]
 # tikv-jemallocator = "0.5"
 clap = { version = "4.5", features = ["derive"] }
-cxsign = { git = "https://github.com/worksoup/newsign.git" }
-# cxsign = { path = "../newsign/" }
+# cxsign = { git = "https://github.com/worksoup/newsign.git" }
+cxsign = { path = "../newsign/" }
 env_logger = "0.11"
 inquire = "0.7"
 log = { version = "0.4", features = ["release_max_level_info"] }

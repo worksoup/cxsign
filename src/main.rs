@@ -30,7 +30,6 @@ use cxsign::{
         tables::{AccountTable, AliasTable, ExcludeTable, LocationTable},
         DataBase, DataBaseTableTrait,
     },
-    utils::DIR,
     Activity, SignTrait,
 };
 use log::{error, info, warn};
@@ -238,7 +237,7 @@ fn main() {
             MainCommand::WhereIsConfig => {
                 info!(
                     "{}",
-                    &DIR.get_config_dir()
+                    &cxsign::utils::Dir::get_config_dir()
                         .into_os_string()
                         .to_string_lossy()
                         .to_string()
