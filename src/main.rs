@@ -30,7 +30,6 @@ use cxsign::{
         tables::{AccountTable, AliasTable, ExcludeTable, LocationTable},
         DataBase, DataBaseTableTrait,
     },
-    utils::DIR,
     Activity, SignTrait,
 };
 use log::{error, info, warn};
@@ -57,6 +56,7 @@ fn main() {
     let mut builder = env_logger::Builder::from_env(env);
     // builder.target(env_logger::Target::Stdout);
     builder.init();
+    cxsign::utils::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -281,7 +281,7 @@ fn main() {
             MainCommand::WhereIsConfig => {
                 println!(
                     "{}",
-                    &DIR.get_config_dir()
+                    &cxsign::utils::Dir::get_config_dir()
                         .into_os_string()
                         .to_string_lossy()
                         .to_string()

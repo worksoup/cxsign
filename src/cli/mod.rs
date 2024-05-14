@@ -21,9 +21,9 @@ use cxsign::{
         tables::{AccountTable, ExcludeTable},
         DataBase, DataBaseTableTrait,
     },
-    Activity, DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
-    DefaultPhotoSignner, DefaultQrCodeSignner, RawSign, Session, Sign, SignResult, SignTrait,
-    SignnerTrait,
+    Activity, DefaultGestureOrSigncodeSignner, DefaultLocationInfoGetter, DefaultLocationSignner,
+    DefaultNormalOrRawSignner, DefaultPhotoSignner, DefaultQrCodeSignner, RawSign, Session, Sign,
+    SignResult, SignTrait, SignnerTrait,
 };
 use log::{info, warn};
 use std::collections::HashMap;
@@ -64,8 +64,14 @@ fn match_signs(
         }
         Sign::QrCode(qs) => {
             info!("签到[{sign_name}]为二维码签到。");
-            sign_results = DefaultQrCodeSignner::new(db, location_str, image, &None, *precisely)
-                .sign(qs, sessions)?;
+            sign_results = DefaultQrCodeSignner::new(
+                DefaultLocationInfoGetter::from(db),
+                location_str,
+                image,
+                &None,
+                *precisely,
+            )
+            .sign(qs, sessions)?;
         }
         Sign::Gesture(gs) => {
             info!("签到[{sign_name}]为手势签到。");
@@ -80,7 +86,9 @@ fn match_signs(
         }
         Sign::Location(ls) => {
             info!("签到[{sign_name}]为位置签到。");
-            sign_results = DefaultLocationSignner::new(db, location_str).sign(ls, sessions)?;
+            sign_results =
+                DefaultLocationSignner::new(DefaultLocationInfoGetter::from(db), location_str)
+                    .sign(ls, sessions)?;
         }
         Sign::Signcode(ss) => {
             info!("签到[{sign_name}]为签到码签到。");
