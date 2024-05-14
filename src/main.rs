@@ -54,7 +54,7 @@ const NOTICE: &str = r#"
 fn main() {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
-    builder.target(env_logger::Target::Stdout);
+    // builder.target(env_logger::Target::Stdout);
     builder.init();
     cxsign::utils::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
     let args = <Args as clap::Parser>::parse();
@@ -125,7 +125,7 @@ fn main() {
                 // 列出所有账号。
                 let accounts = table.get_accounts();
                 for a in accounts {
-                    info!("{}, {}", a.0.uname, a.1);
+                    println!("{}, {}", a.0.uname, a.1);
                 }
             }
             MainCommand::Courses { accounts } => {
@@ -142,38 +142,81 @@ fn main() {
                 let courses = cxsign::Course::get_courses(sessions.values()).unwrap_or_default();
                 // 列出所有课程。
                 for (c, _) in courses {
-                    info!("{}", c);
+                    println!("{}", c);
                 }
             }
             MainCommand::Location { command } => {
                 cli::location::parse_location_sub_command(&db, command)
             }
-            MainCommand::Locations { global, course } => {
+            MainCommand::Locations {
+                global,
+                course,
+                pretty,
+                short,
+            } => {
                 let location_table = LocationTable::from_ref(&db);
                 let alias_table = AliasTable::from_ref(&db);
                 let course_id = course.or(if global { Some(-1) } else { None });
-                if let Some(course_id) = course_id {
-                    // 列出指定课程的位置。
-                    let locations = location_table.get_location_map_by_course(course_id);
-                    for (location_id, location) in locations {
-                        info!(
-                            "位置id: {}, 位置: {},\n\t别名: {:?}",
-                            location_id,
-                            location,
-                            alias_table.get_aliases(location_id)
-                        )
+                if short {
+                    let locations = if let Some(course_id) = course_id {
+                        location_table.get_location_map_by_course(course_id)
+                    } else {
+                        location_table
+                            .get_locations()
+                            .into_iter()
+                            .map(|(k, v)| (k, v.1))
+                            .collect()
+                    };
+                    for (_, location) in locations {
+                        println!("{}", location,)
                     }
                 } else {
-                    // 列出所有位置。
-                    let locations = location_table.get_locations();
-                    for (location_id, (course_id, location)) in locations {
-                        info!(
-                            "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                            location_id,
-                            course_id,
-                            location,
-                            alias_table.get_aliases(location_id)
-                        )
+                    if let Some(course_id) = course_id {
+                        // 列出指定课程的位置。
+                        let locations = location_table.get_location_map_by_course(course_id);
+                        if pretty {
+                            for (location_id, location) in locations {
+                                println!(
+                                    "位置id: {}, 位置: {},\n\t别名: {:?}",
+                                    location_id,
+                                    location,
+                                    alias_table.get_aliases(location_id)
+                                )
+                            }
+                        } else {
+                            for (location_id, location) in locations {
+                                println!(
+                                    "{}${}${:?}",
+                                    location_id,
+                                    location,
+                                    alias_table.get_aliases(location_id)
+                                )
+                            }
+                        }
+                    } else {
+                        // 列出所有位置。
+                        let locations = location_table.get_locations();
+                        if pretty {
+                            for (location_id, (course_id, location)) in locations {
+                                println!(
+                                    "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
+                                    location_id,
+                                    course_id,
+                                    location,
+                                    alias_table.get_aliases(location_id)
+                                )
+                            }
+                        } else {
+                            for (location_id, (course_id, location)) in locations {
+                                println!(
+                                    "{}${}${}${:?}",
+                                    location_id,
+                                    course_id,
+                                    location,
+                                    alias_table.get_aliases(location_id)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -199,14 +242,14 @@ fn main() {
                     // 列出指定课程的有效签到。
                     for a in a {
                         if a.course.get_id() == course {
-                            info!("{}", a.fmt_without_course_info());
+                            println!("{}", a.fmt_without_course_info());
                         }
                     }
                     if all {
                         // 列出指定课程的所有签到。
                         for a in n {
                             if a.course.get_id() == course {
-                                info!("{}", a.fmt_without_course_info());
+                                println!("{}", a.fmt_without_course_info());
                             }
                         }
                     }
@@ -223,12 +266,12 @@ fn main() {
                         });
                     // 列出所有有效签到。
                     for a in available_sign_activities {
-                        info!("{}", a.0.as_inner());
+                        println!("{}", a.0.as_inner());
                     }
                     if all {
                         // 列出所有签到。
                         for a in other_sign_activities {
-                            info!("{}", a.0.as_inner());
+                            println!("{}", a.0.as_inner());
                         }
                     } else {
                         warn!("{NOTICE}");
@@ -236,7 +279,7 @@ fn main() {
                 }
             }
             MainCommand::WhereIsConfig => {
-                info!(
+                println!(
                     "{}",
                     &cxsign::utils::Dir::get_config_dir()
                         .into_os_string()
