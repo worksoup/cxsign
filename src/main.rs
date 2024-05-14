@@ -28,10 +28,9 @@ mod xddcc;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxsign::{
     store::{
-        tables::{AccountTable, AliasTable, ExcludeTable, LocationTable},
+        tables::{AccountTable, ExcludeTable},
         DataBase, DataBaseTableTrait,
     },
-    utils::DIR,
     Activity, SignTrait,
 };
 use log::{error, info, warn};
@@ -68,7 +67,8 @@ fn main() {
             error!("日志初始化失败。错误信息：{e}.");
             panic!()
         });
-    cxsign::utils::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
+    cxsign::utils::Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
+    cxsign::Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
     let args = <Args as clap::Parser>::parse();
     let Args {
@@ -83,16 +83,6 @@ fn main() {
     let db = DataBase::default();
     db.add_table::<AccountTable>();
     db.add_table::<ExcludeTable>();
-    db.add_table::<AliasTable>();
-    db.add_table::<LocationTable>();
-    for (s, l) in xdsign_data::LOCATIONS.iter() {
-        let alias_table = AliasTable::from_ref(&db);
-        let location_table = LocationTable::from_ref(&db);
-        if !alias_table.has_alias(s) {
-            let lid = location_table.insert_location(-1, l);
-            alias_table.add_alias_or(s, lid, |_, _, _| {})
-        }
-    }
     if let Some(sub_cmd) = command {
         match sub_cmd {
             MainCommand::Account { command } => {
@@ -166,77 +156,22 @@ fn main() {
                     println!("{}", c);
                 }
             }
-            MainCommand::Location { command } => {
-                cli::location::parse_location_sub_command(&db, command)
-            }
-            MainCommand::Locations {
-                global,
-                course,
-                pretty,
-                short,
-            } => {
-                let location_table = LocationTable::from_ref(&db);
-                let alias_table = AliasTable::from_ref(&db);
-                let course_id = course.or(if global { Some(-1) } else { None });
+            MainCommand::Locations { pretty, short } => {
                 if short {
-                    let locations = if let Some(course_id) = course_id {
-                        location_table.get_location_map_by_course(course_id)
-                    } else {
-                        location_table
-                            .get_locations()
-                            .into_iter()
-                            .map(|(k, v)| (k, v.1))
-                            .collect()
-                    };
+                    let locations = xdsign_data::LOCATIONS.iter();
                     for (_, location) in locations {
                         println!("{}", location,)
                     }
                 } else {
-                    if let Some(course_id) = course_id {
-                        // 列出指定课程的位置。
-                        let locations = location_table.get_location_map_by_course(course_id);
-                        if pretty {
-                            for (location_id, location) in locations {
-                                println!(
-                                    "位置id: {}, 位置: {},\n\t别名: {:?}",
-                                    location_id,
-                                    location,
-                                    alias_table.get_aliases(location_id)
-                                )
-                            }
-                        } else {
-                            for (location_id, location) in locations {
-                                println!(
-                                    "{}${}${:?}",
-                                    location_id,
-                                    location,
-                                    alias_table.get_aliases(location_id)
-                                )
-                            }
+                    // 列出所有位置。
+                    let locations = xdsign_data::LOCATIONS.iter();
+                    if pretty {
+                        for (alias, location) in locations {
+                            println!("位置: {}, 别名: {}", location, alias)
                         }
                     } else {
-                        // 列出所有位置。
-                        let locations = location_table.get_locations();
-                        if pretty {
-                            for (location_id, (course_id, location)) in locations {
-                                println!(
-                                    "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
-                                    location_id,
-                                    course_id,
-                                    location,
-                                    alias_table.get_aliases(location_id)
-                                )
-                            }
-                        } else {
-                            for (location_id, (course_id, location)) in locations {
-                                println!(
-                                    "{}${}${}${:?}",
-                                    location_id,
-                                    course_id,
-                                    location,
-                                    alias_table.get_aliases(location_id)
-                                )
-                            }
+                        for (alias, location) in locations {
+                            println!("{}${}", location, alias)
                         }
                     }
                 }
@@ -302,7 +237,7 @@ fn main() {
             MainCommand::WhereIsConfig => {
                 println!(
                     "{}",
-                    &DIR.get_config_dir()
+                    &cxsign::utils::Dir::get_config_dir()
                         .into_os_string()
                         .to_string_lossy()
                         .to_string()

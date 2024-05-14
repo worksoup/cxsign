@@ -1,6 +1,6 @@
 use chrono::{Local, Timelike};
 use cxsign::Session;
-use log::{error, info};
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::error::Error as ErrorTrait;
 use std::{collections::HashMap, hash::Hash};

@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::cli::location::LocationSubCommand;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -100,20 +99,8 @@ pub enum MainCommand {
         #[arg(short, long)]
         all: bool,
     },
-    /// 位置相关操作（列出、添加、删除）。
-    /// 默认列出所有位置。
-    Location {
-        #[command(subcommand)]
-        command: LocationSubCommand,
-    },
     /// 列出所有位置。
     Locations {
-        /// 列出全局位置。
-        #[arg(short, long)]
-        global: bool,
-        /// 列出指定课程的位置。
-        #[arg(short, long)]
-        course: Option<i64>,
         /// 以更好的格式显示结果。
         #[arg(short, long)]
         pretty: bool,

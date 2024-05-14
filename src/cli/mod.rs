@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pub mod arg;
-pub mod location;
 
 use cxsign::{
     store::{
@@ -22,17 +21,32 @@ use cxsign::{
         DataBase, DataBaseTableTrait,
     },
     Activity, DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
-    DefaultPhotoSignner, DefaultQrCodeSignner, RawSign, Session, Sign, SignResult, SignTrait,
-    SignnerTrait,
+    DefaultPhotoSignner, DefaultQrCodeSignner, Location, LocationInfoGetterTrait, LocationSign,
+    RawSign, Session, Sign, SignResult, SignTrait, SignnerTrait,
 };
 use log::{info, warn};
 use std::collections::HashMap;
+use xdsign_data::LOCATIONS;
 
 use self::arg::CliArgs;
 
+pub struct XdsignLocationInfoGetter;
+
+impl LocationInfoGetterTrait for XdsignLocationInfoGetter {
+    fn map_location_str(&self, location_str: &str) -> Option<Location> {
+        let location_str = location_str.trim();
+        location_str
+            .parse()
+            .ok()
+            .or_else(|| LOCATIONS.get(location_str).cloned())
+    }
+    fn get_fallback_location(&self, _: &LocationSign) -> Option<Location> {
+        LOCATIONS.values().next().cloned()
+    }
+}
+
 fn match_signs(
     raw_sign: RawSign,
-    db: &DataBase,
     sessions: &[Session],
     cli_args: &CliArgs,
 ) -> Result<(), Box<cxsign::Error>> {
@@ -64,8 +78,14 @@ fn match_signs(
         }
         Sign::QrCode(qs) => {
             info!("签到[{sign_name}]为二维码签到。");
-            sign_results = DefaultQrCodeSignner::new(db, location_str, image, &None, *precisely)
-                .sign(qs, sessions)?;
+            sign_results = DefaultQrCodeSignner::new(
+                XdsignLocationInfoGetter,
+                location_str,
+                image,
+                &None,
+                *precisely,
+            )
+            .sign(qs, sessions)?;
         }
         Sign::Gesture(gs) => {
             info!("签到[{sign_name}]为手势签到。");
@@ -80,7 +100,8 @@ fn match_signs(
         }
         Sign::Location(ls) => {
             info!("签到[{sign_name}]为位置签到。");
-            sign_results = DefaultLocationSignner::new(db, location_str).sign(ls, sessions)?;
+            sign_results = DefaultLocationSignner::new(XdsignLocationInfoGetter, location_str)
+                .sign(ls, sessions)?;
         }
         Sign::Signcode(ss) => {
             info!("签到[{sign_name}]为签到码签到。");
@@ -181,7 +202,7 @@ pub fn do_sign(
             names.push(s.get_stu_name().to_string())
         }
         info!("签到者：{names:?}");
-        match_signs(sign, &db, &sessions, &cli_args).unwrap_or_else(|e| warn!("{e}"));
+        match_signs(sign, &sessions, &cli_args).unwrap_or_else(|e| warn!("{e}"));
     }
     Ok(())
 }
