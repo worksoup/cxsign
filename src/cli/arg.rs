@@ -100,8 +100,7 @@ pub enum MainCommand {
         #[arg(short, long)]
         all: bool,
     },
-    /// 位置相关操作（列出、添加、删除）。
-    /// 默认列出所有位置。
+    /// 位置相关操作（添加、删除、批量删除、导入、导出）。
     Location {
         #[command(subcommand)]
         command: LocationSubCommand,
