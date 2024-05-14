@@ -114,6 +114,12 @@ pub enum MainCommand {
         /// 列出指定课程的位置。
         #[arg(short, long)]
         course: Option<i64>,
+        /// 以更好的格式显示结果。
+        #[arg(short, long)]
+        pretty: bool,
+        /// 精简显示结果。
+        #[arg(short, long)]
+        short: bool,
     },
     /// 显示配置文件夹位置。
     WhereIsConfig,
