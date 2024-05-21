@@ -15,11 +15,8 @@
 
 use clap::Subcommand;
 use cxsign::{
-    store::{
-        tables::{AccountTable, AliasTable, LocationTable},
-        DataBase, DataBaseTableTrait,
-    },
-    Location, LocationWithRange,
+    default_impl::store::{AccountTable, AliasTable, DataBase, DataBaseTableTrait, LocationTable},
+    types::{Location, LocationWithRange},
 };
 use log::{error, warn};
 use std::{collections::HashMap, path::PathBuf};
@@ -115,8 +112,6 @@ pub enum Remove {
 }
 
 pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand) {
-    let location_table = LocationTable::from_ref(db);
-    let alias_table = AliasTable::from_ref(db);
     fn confirm(msg: &str) -> bool {
         inquire::Confirm::new(msg)
             .with_default(false)
@@ -147,7 +142,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             let location = Location::parse(&location_str);
             let location_id = if let Ok(location) = location {
-                location_table.insert_location(course_id, &location)
+                LocationTable::insert_location(db, course_id, &location)
             } else {
                 if alias.is_none() {
                     warn!("无法确定所要操作的位置对象！");
@@ -155,11 +150,11 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 }
                 let location_id = location_str.trim().parse::<i64>();
                 if let Ok(location_id) = location_id
-                    && location_table.has_location(location_id)
+                    && LocationTable::has_location(db, location_id)
                 {
                     location_id
-                } else if alias_table.has_alias(location_str.trim())
-                    && let Some(location_id) = alias_table.get_location_id(location_str.trim())
+                } else if AliasTable::has_alias(db, location_str.trim())
+                    && let Some(location_id) = AliasTable::get_location_id(db, location_str.trim())
                 {
                     location_id
                 } else {
@@ -168,9 +163,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 }
             };
             if let Some(alias) = alias {
-                alias_table.add_alias_or(&alias, location_id, |alias_table, alias, location_id| {
-                    alias_table.update_alias(alias, location_id);
-                })
+                AliasTable::add_alias_or(db, &alias, location_id, AliasTable::update_alias)
             }
         }
         LocationSubCommand::Remove { command, yes } => {
@@ -182,23 +175,24 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             match command {
                 Remove::Locations { location_id, alias } => {
-                    let location_id = location_id
-                        .or_else(|| alias.and_then(|alias| alias_table.get_location_id(&alias)));
+                    let location_id = location_id.or_else(|| {
+                        alias.and_then(|alias| AliasTable::get_location_id(db, &alias))
+                    });
                     if let Some(location_id) = location_id
-                        && location_table.has_location(location_id)
+                        && LocationTable::has_location(db, location_id)
                     {
-                        location_table.delete_location(location_id);
-                        let aliases = alias_table.get_aliases(location_id);
+                        LocationTable::delete_location(db, location_id);
+                        let aliases = AliasTable::get_aliases(db, location_id);
                         for alias in aliases.iter() {
-                            alias_table.delete_alias(alias)
+                            AliasTable::delete_alias(db, alias)
                         }
                     } else {
                         warn!("警告：未指定有效的位置，将不做任何事情。");
                     }
                 }
                 Remove::Aliases { alias } => {
-                    if alias_table.has_alias(&alias) {
-                        alias_table.delete_alias(&alias);
+                    if AliasTable::has_alias(db, &alias) {
+                        AliasTable::delete_alias(db, &alias);
                     } else {
                         warn!("警告：该别名并不存在，将不做任何事情。");
                     }
@@ -220,12 +214,11 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             let course_id = course.or(if global { Some(-1) } else { None });
             let mut locations: Vec<i64> = if let Some(course_id) = course_id {
-                location_table
-                    .get_location_map_by_course(course_id)
+                LocationTable::get_location_map_by_course(db, course_id)
                     .into_keys()
                     .collect()
             } else if all {
-                location_table.get_locations().into_keys().collect()
+                LocationTable::get_locations(db).into_keys().collect()
             } else {
                 vec![]
             };
@@ -249,7 +242,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             let mut aliases = Vec::new();
             for location_id in locations.iter() {
-                let aliases_ = alias_table.get_aliases(*location_id);
+                let aliases_ = AliasTable::get_aliases(db, *location_id);
                 for alias in aliases_ {
                     aliases.push(alias)
                 }
@@ -266,11 +259,11 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             if delete_locations {
                 for location_id in locations {
-                    location_table.delete_location(location_id);
+                    LocationTable::delete_location(db, location_id);
                 }
             }
             for alias in aliases {
-                alias_table.delete_alias(&alias)
+                AliasTable::delete_alias(db, &alias)
             }
         }
         LocationSubCommand::Import { input, course } => {
@@ -292,18 +285,17 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                             }
                             if let Ok(location) = Location::parse(data[1]) {
                                 let location_id =
-                                    location_table.insert_location(course_id, &location);
+                                    LocationTable::insert_location(db, course_id, &location);
                                 if data.len() > 2 {
                                     let aliases: Vec<_> =
                                         data[2].split('/').map(|s| s.trim()).collect();
                                     for alias in aliases {
                                         if !alias.is_empty() {
-                                            alias_table.add_alias_or(
+                                            AliasTable::add_alias_or(
+                                                db,
                                                 alias,
                                                 location_id,
-                                                |t, a, l| {
-                                                    t.update_alias(a, l);
-                                                },
+                                                AliasTable::update_alias,
                                             )
                                         }
                                     }
@@ -321,17 +313,16 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
             if let Some(course_id) = course
                 && let Some(course) = {
-                    let table = AccountTable::from_ref(db);
-                    let courses = cxsign::Course::get_courses(table.get_sessions().values())
-                        .unwrap_or_default()
-                        .into_keys()
-                        .map(|c| (c.get_id(), c))
-                        .collect::<HashMap<_, _>>();
+                    let courses =
+                        cxsign::types::Course::get_courses(AccountTable::get_sessions(db).values())
+                            .unwrap_or_default()
+                            .into_keys()
+                            .map(|c| (c.get_id(), c))
+                            .collect::<HashMap<_, _>>();
                     courses.get(&course_id).cloned()
                 }
             {
-                let account_table = AccountTable::from_ref(db);
-                let sessions = account_table.get_sessions();
+                let sessions = AccountTable::get_sessions(db);
                 if let Some(session) = sessions.values().next() {
                     match LocationWithRange::from_log(session, &course) {
                         Ok(locations) => {
@@ -339,8 +330,11 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                                 warn!("没有从该课程中获取到位置信息。");
                             } else {
                                 for (_, l) in locations {
-                                    let _ = location_table
-                                        .insert_location(course_id, &l.to_shifted_location());
+                                    let _ = LocationTable::insert_location(
+                                        db,
+                                        course_id,
+                                        &l.to_shifted_location(),
+                                    );
                                 }
                                 do_something = true;
                             }
@@ -356,13 +350,12 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             }
         }
         LocationSubCommand::Export { output, course } => {
-            let mut contents = location_table.export();
+            let mut contents = <LocationTable as DataBaseTableTrait>::export(db);
             for content in {
                 course
                     .and_then(|course_id| {
-                        let account_table = AccountTable::from_ref(db);
-                        let sessions = account_table.get_sessions();
-                        let courses = cxsign::Course::get_courses(sessions.values())
+                        let sessions = AccountTable::get_sessions(db);
+                        let courses = cxsign::types::Course::get_courses(sessions.values())
                             .unwrap_or_default()
                             .into_keys()
                             .map(|c| (c.get_id(), c))
