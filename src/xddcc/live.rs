@@ -1,11 +1,12 @@
-use std::collections::{HashMap, HashSet};
-
-use crate::xddcc::tools::{json_parsing_error_handler, prog_init_error_handler};
-use crate::xddcc::{room::Room, tools::VideoPath};
-use cxsign::Session;
+use crate::xddcc::{
+    room::Room,
+    tools::{json_parsing_error_handler, prog_init_error_handler, VideoPath},
+};
+use cxsign::user::Session;
 use indicatif::MultiProgress;
 use log::warn;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Live {

@@ -1,4 +1,4 @@
-use cxsign::Session;
+use cxsign::user::Session;
 use ureq::{Agent, Response};
 
 static LIST_STUDENT_COURSE_LIVE_PAGE: &str =

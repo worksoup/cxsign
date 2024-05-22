@@ -27,11 +27,11 @@ mod xddcc;
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;s
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxsign::{
-    store::{
-        tables::{AccountTable, ExcludeTable},
-        DataBase, DataBaseTableTrait,
-    },
-    Activity, SignTrait,
+    activity::{Activity, RawSign},
+    default_impl::store::{AccountTable, DataBase, ExcludeTable, UnameAndEncPwdPair},
+    dir::Dir,
+    sign::SignTrait,
+    types::Location,
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
@@ -67,8 +67,8 @@ fn main() {
             error!("日志初始化失败。错误信息：{e}.");
             panic!()
         });
-    cxsign::utils::Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
-    cxsign::Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
+    Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
+    Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
     let args = <Args as clap::Parser>::parse();
     let Args {
@@ -88,9 +88,8 @@ fn main() {
             MainCommand::Account { command } => {
                 match command {
                     AccountSubCommand::Add { uname, passwd } => {
-                        let table = AccountTable::from_ref(&db);
                         let pwd = cxsign::utils::inquire_pwd(passwd);
-                        let session = table.login(uname.clone(), pwd);
+                        let session = AccountTable::login(&db, uname.clone(), pwd);
                         // 添加账号。
                         match session {
                             Ok(session) => info!(
@@ -114,16 +113,15 @@ fn main() {
                             }
                         }
                         // 删除指定账号。
-                        AccountTable::from_ref(&db).delete_account(&uname);
+                        AccountTable::delete_account(&db, &uname);
                     }
                 }
             }
             MainCommand::Accounts { fresh } => {
-                let table = AccountTable::from_ref(&db);
-                let accounts = table.get_accounts();
+                let accounts = AccountTable::get_accounts(&db);
                 if fresh {
-                    for (cxsign::UnameAndEncPwdPair { uname, enc_pwd }, _) in accounts {
-                        let session = table.relogin(uname.clone(), &enc_pwd);
+                    for (UnameAndEncPwdPair { uname, enc_pwd }, _) in accounts {
+                        let session = AccountTable::relogin(&db, uname.clone(), &enc_pwd);
                         match session {
                             Ok(session) => info!(
                                 "刷新账号 [{uname}]（用户名：{}）成功！",
@@ -134,23 +132,23 @@ fn main() {
                     }
                 }
                 // 列出所有账号。
-                let accounts = table.get_accounts();
+                let accounts = AccountTable::get_accounts(&db);
                 for a in accounts {
                     println!("{}, {}", a.0.uname, a.1);
                 }
             }
             MainCommand::Courses { accounts } => {
-                let account_table = AccountTable::from_ref(&db);
                 let (sessions, _) = if let Some(accounts_str) = &accounts {
                     (
-                        account_table.get_sessions_by_accounts_str(accounts_str),
+                        AccountTable::get_sessions_by_accounts_str(&db, accounts_str),
                         true,
                     )
                 } else {
-                    (account_table.get_sessions(), false)
+                    (AccountTable::get_sessions(&db), false)
                 };
                 // 获取课程信息。
-                let courses = cxsign::Course::get_courses(sessions.values()).unwrap_or_default();
+                let courses =
+                    cxsign::types::Course::get_courses(sessions.values()).unwrap_or_default();
                 // 列出所有课程。
                 for (c, _) in courses {
                     println!("{}", c);
@@ -177,21 +175,23 @@ fn main() {
                 }
             }
             MainCommand::List { course, all } => {
-                let sessions = AccountTable::from_ref(&db).get_sessions();
+                let sessions = AccountTable::get_sessions(&db);
                 if let Some(course) = course {
-                    let courses = cxsign::Course::get_courses(sessions.values())
+                    let courses = cxsign::types::Course::get_courses(sessions.values())
                         .unwrap_or_default()
                         .into_keys()
                         .map(|c| (c.get_id(), c))
                         .collect::<HashMap<_, _>>();
                     let (a, n) = if let Some(course) = courses.get(&course)
                         && let Some(session) = sessions.values().next()
-                        && let Ok((a, n, _)) = Activity::get_course_activities(
-                            ExcludeTable::from_ref(&db),
-                            session,
-                            course,
-                        ) {
-                        (a, n)
+                        && let Ok(a) = Activity::get_course_activities(&db, session, course)
+                    {
+                        a.into_iter()
+                            .filter_map(|k| match k {
+                                Activity::RawSign(k) => Some(k),
+                                Activity::Other(_) => None,
+                            })
+                            .partition(|k| k.is_valid())
                     } else {
                         (vec![], vec![])
                     };
@@ -210,24 +210,29 @@ fn main() {
                         }
                     }
                 } else {
-                    let (available_sign_activities, other_sign_activities, _) =
-                        Activity::get_all_activities(
-                            ExcludeTable::from_ref(&db),
-                            sessions.values(),
-                            all,
-                        )
+                    let activities = Activity::get_all_activities(&db, sessions.values(), all)
                         .unwrap_or_else(|e| {
                             warn!("未能获取签到列表，错误信息：{e}.",);
                             Default::default()
                         });
+                    let (available_sign_activities, other_sign_activities): (
+                        Vec<RawSign>,
+                        Vec<RawSign>,
+                    ) = activities
+                        .into_keys()
+                        .filter_map(|k| match k {
+                            Activity::RawSign(k) => Some(k),
+                            Activity::Other(_) => None,
+                        })
+                        .partition(|a| a.is_valid());
                     // 列出所有有效签到。
                     for a in available_sign_activities {
-                        println!("{}", a.0.as_inner());
+                        println!("{}", a.as_inner());
                     }
                     if all {
                         // 列出所有签到。
                         for a in other_sign_activities {
-                            println!("{}", a.0.as_inner());
+                            println!("{}", a.as_inner());
                         }
                     } else {
                         warn!("{NOTICE}");
@@ -237,7 +242,7 @@ fn main() {
             MainCommand::WhereIsConfig => {
                 println!(
                     "{}",
-                    &cxsign::utils::Dir::get_config_dir()
+                    &cxsign::dir::Dir::get_config_dir()
                         .into_os_string()
                         .to_string_lossy()
                         .to_string()
@@ -250,8 +255,7 @@ fn main() {
                 output,
                 list,
             } => {
-                let table = AccountTable::from_ref(&db);
-                xddcc::xddcc(accounts, this, device_code, output, list, &table, &multi);
+                xddcc::xddcc(accounts, this, device_code, output, list, &db, &multi);
             }
         }
     } else {

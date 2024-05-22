@@ -5,7 +5,7 @@ mod tools;
 
 use crate::xddcc::{live::Live, room::Room, tools::PairVec};
 use clap::Parser;
-use cxsign::store::tables::AccountTable;
+use cxsign::default_impl::store::{AccountTable, DataBase};
 use indicatif::MultiProgress;
 use log::warn;
 use std::path::PathBuf;
@@ -38,7 +38,7 @@ pub fn xddcc(
     device_code: Option<String>,
     output: Option<PathBuf>,
     list: bool,
-    table: &AccountTable,
+    db: &DataBase,
     multi: &MultiProgress,
 ) {
     if list {
@@ -52,9 +52,9 @@ pub fn xddcc(
         //     warn!("多余的参数: `-w, --web`.")
         // }
         let sessions = if let Some(accounts) = accounts {
-            table.get_sessions_by_accounts_str(&accounts)
+            AccountTable::get_sessions_by_accounts_str(db, &accounts)
         } else {
-            table.get_sessions()
+            AccountTable::get_sessions(db)
         };
         if sessions.is_empty() {
             warn!("请至少登录一个账号！");
@@ -68,7 +68,7 @@ pub fn xddcc(
         if this {
             warn!("多余的参数: `-t, --this`.")
         }
-        let sessions = table.get_sessions();
+        let sessions = AccountTable::get_sessions(db);
         if sessions.is_empty() {
             warn!("未有登录的账号！");
         }
@@ -82,9 +82,9 @@ pub fn xddcc(
         }
     } else {
         let sessions = if let Some(accounts) = accounts {
-            table.get_sessions_by_accounts_str(&accounts)
+            AccountTable::get_sessions_by_accounts_str(db, &accounts)
         } else {
-            table.get_sessions()
+            AccountTable::get_sessions(db)
         };
         if sessions.is_empty() {
             warn!("未有登录的账号！");

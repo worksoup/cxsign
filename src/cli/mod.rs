@@ -16,13 +16,20 @@
 pub mod arg;
 
 use cxsign::{
-    store::{
-        tables::{AccountTable, ExcludeTable},
-        DataBase, DataBaseTableTrait,
+    activity::{Activity, RawSign},
+    default_impl::{
+        sign::{LocationSign, Sign},
+        signner::{
+            DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
+            DefaultPhotoSignner, DefaultQrCodeSignner, LocationInfoGetterTrait,
+        },
+        store::{AccountTable, DataBase},
     },
-    Activity, DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
-    DefaultPhotoSignner, DefaultQrCodeSignner, Location, LocationInfoGetterTrait, LocationSign,
-    RawSign, Session, Sign, SignResult, SignTrait, SignnerTrait,
+    error::Error,
+    sign::{SignResult, SignTrait},
+    signner::SignnerTrait,
+    types::Location,
+    user::Session,
 };
 use log::{info, warn};
 use std::collections::HashMap;
@@ -49,14 +56,14 @@ fn match_signs(
     raw_sign: RawSign,
     sessions: &[Session],
     cli_args: &CliArgs,
-) -> Result<(), Box<cxsign::Error>> {
+) -> Result<(), Box<Error>> {
     let sign_name = raw_sign.name.clone();
     let mut sign = if sessions.is_empty() {
         warn!("无法判断签到[{sign_name}]的签到类型。");
         Sign::Unknown(raw_sign)
     } else {
         info!("成功判断签到[{sign_name}]的签到类型。");
-        raw_sign.to_sign(&sessions[0])
+        Sign::from_raw(raw_sign, &sessions[0])
     };
     let sign = &mut sign;
     let CliArgs {
@@ -141,19 +148,27 @@ pub fn do_sign(
     active_id: Option<i64>,
     accounts_str: Option<String>,
     cli_args: CliArgs,
-) -> Result<(), cxsign::Error> {
-    let account_table = AccountTable::from_ref(&db);
+) -> Result<(), Error> {
     let (sessions, has_accounts_arg) = if let Some(accounts_str) = &accounts_str {
         (
-            account_table.get_sessions_by_accounts_str(accounts_str),
+            AccountTable::get_sessions_by_accounts_str(&db, accounts_str),
             true,
         )
     } else {
-        (account_table.get_sessions(), false)
+        (AccountTable::get_sessions(&db), false)
     };
-    let (valid_signs, other_signs, _) =
-        Activity::get_all_activities(ExcludeTable::from_ref(&db), sessions.values(), false)
-            .map_err(cxsign::Error::from)?;
+    let activities =
+        Activity::get_all_activities(&db, sessions.values(), false).map_err(Error::from)?;
+    let (valid_signs, other_signs): (
+        HashMap<RawSign, Vec<Session>>,
+        HashMap<RawSign, Vec<Session>>,
+    ) = activities
+        .into_iter()
+        .filter_map(|(k, v)| match k {
+            Activity::RawSign(k) => Some((k, v)),
+            Activity::Other(_) => None,
+        })
+        .partition(|(k, _)| k.is_valid());
     let signs = if let Some(active_id) = active_id {
         let (sign, sessions) = {
             if let Some(s1) = valid_signs

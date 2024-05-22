@@ -1,12 +1,11 @@
+use chrono::{Datelike, Local};
+use cxsign::user::Session;
+use indicatif::MultiProgress;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
-
-use chrono::{Datelike, Local};
-use cxsign::Session;
-use indicatif::MultiProgress;
-use serde::{Deserialize, Serialize};
 
 use crate::xddcc::tools::{
     arc_into_inner_error_handler, json_parsing_error_handler, mutex_into_inner_error_handler,
