@@ -223,9 +223,14 @@ fn main() {
                         .collect::<HashMap<_, _>>();
                     let (a, n) = if let Some(course) = courses.get(&course)
                         && let Some(session) = sessions.values().next()
-                        && let Ok((a, _)) = Activity::get_course_activities(&db, session, course)
+                        && let Ok(a) = Activity::get_course_activities(&db, session, course)
                     {
-                        a.into_iter().partition(|k| k.is_valid())
+                        a.into_iter()
+                            .filter_map(|k| match k {
+                                Activity::RawSign(k) => Some(k),
+                                Activity::Other(_) => None,
+                            })
+                            .partition(|k| k.is_valid())
                     } else {
                         (vec![], vec![])
                     };
@@ -244,7 +249,7 @@ fn main() {
                         }
                     }
                 } else {
-                    let (activities, _) = Activity::get_all_activities(&db, sessions.values(), all)
+                    let activities = Activity::get_all_activities(&db, sessions.values(), all)
                         .unwrap_or_else(|e| {
                             warn!("未能获取签到列表，错误信息：{e}.",);
                             Default::default()
@@ -252,7 +257,13 @@ fn main() {
                     let (available_sign_activities, other_sign_activities): (
                         Vec<RawSign>,
                         Vec<RawSign>,
-                    ) = activities.into_keys().partition(|a| a.is_valid());
+                    ) = activities
+                        .into_keys()
+                        .filter_map(|k| match k {
+                            Activity::RawSign(k) => Some(k),
+                            Activity::Other(_) => None,
+                        })
+                        .partition(|a| a.is_valid());
                     // 列出所有有效签到。
                     for a in available_sign_activities {
                         println!("{}", a.as_inner());

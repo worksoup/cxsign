@@ -143,12 +143,18 @@ pub fn do_sign(
     } else {
         (AccountTable::get_sessions(&db), false)
     };
-    let (activities, _) =
+    let activities =
         Activity::get_all_activities(&db, sessions.values(), false).map_err(Error::from)?;
     let (valid_signs, other_signs): (
         HashMap<RawSign, Vec<Session>>,
         HashMap<RawSign, Vec<Session>>,
-    ) = activities.into_iter().partition(|(k, _)| k.is_valid());
+    ) = activities
+        .into_iter()
+        .filter_map(|(k, v)| match k {
+            Activity::RawSign(k) => Some((k, v)),
+            Activity::Other(_) => None,
+        })
+        .partition(|(k, _)| k.is_valid());
     let signs = if let Some(active_id) = active_id {
         let (sign, sessions) = {
             if let Some(s1) = valid_signs
