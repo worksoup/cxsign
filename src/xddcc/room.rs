@@ -33,9 +33,7 @@ impl Room {
     pub fn get_live_video_path(&self, session: &Session) -> Result<VideoPath, Box<ureq::Error>> {
         crate::xddcc::tools::get_live_video_path(session, &self.device_code)
     }
-    pub fn get_recording_url(&self, session: &Session) -> Result<VideoPath, Box<ureq::Error>> {
-        crate::xddcc::tools::get_recording_live_video_path(session, self.id)
-    }
+
     // pub fn get_live_video_path(&self, session: &Session) -> VideoPath {
     //     crate::tools::get_live_video_path(session, &self.device_code)
     // }
@@ -69,31 +67,6 @@ impl Room {
             .unwrap_or_else(arc_into_inner_error_handler)
             .into_inner()
             .unwrap_or_else(mutex_into_inner_error_handler)
-    }
-    pub fn get_recording_lives(
-        session: &Session,
-        live_id: i64,
-        multi: &MultiProgress,
-    ) -> Result<HashMap<i64, VideoPath>, Box<ureq::Error>> {
-        let rooms: Vec<Room> = crate::xddcc::protocol::list_single_course(&session, live_id)?
-            .into_json()
-            .unwrap_or_else(json_parsing_error_handler);
-        let total = rooms.len();
-        let sty = indicatif::ProgressStyle::with_template(
-            "获取回放地址：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-        )
-        .unwrap_or_else(prog_init_error_handler);
-        let pb = multi.add(indicatif::ProgressBar::new(total as u64));
-        pb.set_style(sty);
-        let pathes = rooms.into_iter().filter_map(|room| {
-            let path = room.get_live_video_path(session).ok().map(|p| (room.id, p));
-            pb.inc(1);
-            path
-        });
-        let pathes = pathes.collect();
-        pb.finish_with_message("获取回放地址完成。");
-        multi.remove(&pb);
-        Ok(pathes)
     }
     pub fn get_all_live_id(
         sessions: &[&Session],

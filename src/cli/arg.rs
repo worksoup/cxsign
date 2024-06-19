@@ -127,21 +127,24 @@ pub enum MainCommand {
         /// 获取特定账号下节课的直播信息，格式为以半角逗号隔开的字符串。
         #[arg(short, long)]
         accounts: Option<String>,
-        /// 覆盖默认行为至获取当前课的直播信息。
-        #[arg(short, long)]
-        this: bool,
         /// 通过 `device_code` 获取直播信息。
         #[arg(short, long)]
         device_code: Option<String>,
-        /// 获取某节课的回放信息，格式为`周数/节数`。
+        /// 获取回放信息，参数为 `live_id`, 默认获取整门课的。
         #[arg(short, long)]
         id: Option<i64>,
+        /// 获取某门课中每节课的 `live_id`.
+        #[arg(short, long)]
+        just_id: bool,
         /// 导出文件路径。可选提供。
         #[arg(short, long)]
         output: Option<PathBuf>,
         /// 列出所有设备码。
         #[arg(short, long)]
         list: bool,
+        /// 获取直播信息时覆盖默认行为至获取当前课的直播信息，获取回放信息时指定只获取一节课的回放信息。
+        #[arg(short, long)]
+        this: bool,
         // /// 网页播放器地址。
         // #[arg(short, long)]
         // web: bool,
