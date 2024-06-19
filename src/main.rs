@@ -254,8 +254,18 @@ fn main() {
                 device_code,
                 output,
                 list,
+                id,
             } => {
-                xddcc::xddcc(accounts, this, device_code, output, list, &db, &multi);
+                xddcc::xddcc(
+                    accounts,
+                    this,
+                    device_code,
+                    id,
+                    output,
+                    list,
+                    &db,
+                    &multi,
+                );
             }
         }
     } else {

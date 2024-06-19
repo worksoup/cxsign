@@ -121,6 +121,9 @@ pub enum MainCommand {
         /// 通过 `device_code` 获取直播信息。
         #[arg(short, long)]
         device_code: Option<String>,
+        /// 获取某节课的回放信息，格式为`周数/节数`。
+        #[arg(short, long)]
+        id: Option<i64>,
         /// 导出文件路径。可选提供。
         #[arg(short, long)]
         output: Option<PathBuf>,

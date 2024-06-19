@@ -22,6 +22,9 @@ pub struct XddccSubCommand {
     /// 通过 `device_code` 获取直播信息。
     #[arg(short, long)]
     pub device_code: Option<String>,
+    /// 获取某节课的回放信息，格式为`周数/节数`。
+    #[arg(short, long)]
+    pub record: Option<i64>,
     /// 导出文件路径。可选提供。
     #[arg(short, long)]
     pub output: Option<PathBuf>,
@@ -36,6 +39,7 @@ pub fn xddcc(
     accounts: Option<String>,
     this: bool,
     device_code: Option<String>,
+    id: Option<i64>,
     output: Option<PathBuf>,
     list: bool,
     db: &DataBase,
@@ -47,6 +51,9 @@ pub fn xddcc(
         }
         if this {
             warn!("多余的参数: `-t, --this`.")
+        }
+        if id.is_some() {
+            warn!("多余的参数: `-r, --record`.")
         }
         // if web {
         //     warn!("多余的参数: `-w, --web`.")
@@ -68,6 +75,9 @@ pub fn xddcc(
         if this {
             warn!("多余的参数: `-t, --this`.")
         }
+        if id.is_some() {
+            warn!("多余的参数: `-r, --record`.")
+        }
         let sessions = AccountTable::get_sessions(db);
         if sessions.is_empty() {
             warn!("未有登录的账号！");
@@ -79,6 +89,26 @@ pub fn xddcc(
                     tools::out(&path, output.clone());
                     true
                 });
+        }
+    } else if let Some(live_id) = id {
+        if this {
+            warn!("多余的参数: `-t, --this`.")
+        }
+        let sessions = if let Some(accounts) = accounts {
+            AccountTable::get_sessions_by_accounts_str(db, &accounts)
+        } else {
+            AccountTable::get_sessions(db)
+        };
+        if sessions.is_empty() {
+            warn!("未有登录的账号！");
+        }
+        if let Some(session) = sessions.into_values().next() {
+            tools::out(
+                &PairVec::new(tools::map_sort_by_key(
+                    Room::get_recording_lives(&session, live_id, multi).unwrap_or_default(),
+                )),
+                output.clone(),
+            );
         }
     } else {
         let sessions = if let Some(accounts) = accounts {

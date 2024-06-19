@@ -1,6 +1,11 @@
 use cxsign::user::Session;
 use ureq::{Agent, Response};
 
+static GET_VIEW_URL_HLS: &str = "http://newesxidian.chaoxing.com/live/getViewUrlHls";
+pub fn get_view_url_hls(agent: &Agent, live_id: i64) -> Result<Response, Box<ureq::Error>> {
+    let url = format!("{GET_VIEW_URL_HLS}?liveId={live_id}&status=1&jie=&isStudent=");
+    Ok(agent.get(&url).call()?)
+}
 static LIST_STUDENT_COURSE_LIVE_PAGE: &str =
     "http://newesxidian.chaoxing.com/frontLive/listStudentCourseLivePage";
 pub fn list_student_course_live_page(
@@ -16,7 +21,7 @@ pub fn list_student_course_live_page(
     Ok(session.get(&url).call()?)
 }
 static LIST_SINGLE_COURSE: &str = "http://newesxidian.chaoxing.com/live/listSignleCourse";
-pub fn list_single_course(session: &Session, live_id: &str) -> Result<Response, Box<ureq::Error>> {
+pub fn list_single_course(session: &Session, live_id: i64) -> Result<Response, Box<ureq::Error>> {
     let url = format!(
         "{LIST_SINGLE_COURSE}?fid=16820&liveId={live_id}&uId={}",
         session.get_uid()

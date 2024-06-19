@@ -80,11 +80,24 @@ fn get_live_web_url(session: &Session, device_code: &str) -> Result<WebUrl, Box<
         .unwrap_or_else(resp_parsing_error_handler);
     Ok(WebUrl { url })
 }
+fn get_recording_live_web_url(session: &Session, live_id: i64) -> Result<WebUrl, Box<ureq::Error>> {
+    let url = crate::xddcc::protocol::get_view_url_hls(session, live_id)?
+        .into_string()
+        .unwrap_or_else(resp_parsing_error_handler);
+    Ok(WebUrl { url })
+}
 pub fn get_live_video_path(
     session: &Session,
     device_code: &str,
 ) -> Result<VideoPath, Box<ureq::Error>> {
     let url = get_live_web_url(session, device_code);
+    Ok(web_url_to_video_path(&url?))
+}
+pub fn get_recording_live_video_path(
+    session: &Session,
+    live_id: i64,
+) -> Result<VideoPath, Box<ureq::Error>> {
+    let url = get_recording_live_web_url(session, live_id);
     Ok(web_url_to_video_path(&url?))
 }
 pub fn year_to_semester_id(year: i32, term: i32) -> i32 {
