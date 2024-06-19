@@ -16,13 +16,13 @@ pub struct Live {
     jie: i32,
 }
 impl Live {
-    pub fn get_id(&self) -> String {
-        self.id.to_string()
+    pub fn get_id(&self) -> i64 {
+        self.id
     }
     pub fn get_week_day(&self) -> u32 {
         self.week_day
     }
-    fn get_jie(&self) -> i32 {
+    pub fn get_jie(&self) -> i32 {
         self.jie
     }
     pub fn get_lives(
@@ -108,7 +108,7 @@ impl Live {
         pb.inc(0);
         if let Some(session) = sessions.clone().into_iter().next() {
             for live in lives {
-                match Room::get_rooms(session, &live) {
+                match Room::get_rooms(session, live) {
                     Ok(room) => {
                         if let Some(room) = room {
                             pb.inc(1);
