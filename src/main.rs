@@ -255,12 +255,14 @@ fn main() {
                 output,
                 list,
                 id,
+                just_id,
             } => {
                 xddcc::xddcc(
                     accounts,
                     this,
                     device_code,
                     id,
+                    just_id,
                     output,
                     list,
                     &db,

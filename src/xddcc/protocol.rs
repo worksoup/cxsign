@@ -3,7 +3,7 @@ use ureq::{Agent, Response};
 
 static GET_VIEW_URL_HLS: &str = "http://newesxidian.chaoxing.com/live/getViewUrlHls";
 pub fn get_view_url_hls(agent: &Agent, live_id: i64) -> Result<Response, Box<ureq::Error>> {
-    let url = format!("{GET_VIEW_URL_HLS}?liveId={live_id}&status=1&jie=&isStudent=");
+    let url = format!("{GET_VIEW_URL_HLS}?liveId={live_id}&status=2&jie=&isStudent=");
     Ok(agent.get(&url).call()?)
 }
 static LIST_STUDENT_COURSE_LIVE_PAGE: &str =
