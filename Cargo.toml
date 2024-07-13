@@ -34,7 +34,7 @@ log = { version = "0.4", features = ["release_max_level_info"] }
 percent-encoding = "2.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-ureq = { version = "2.9", features = ["cookies", "json"] }
+ureq = { version = "2.10", features = ["cookies", "json"] }
 xdsign_data = { git = "https://github.com/learturely/xdsign_data.git" }
 
 [profile.release]

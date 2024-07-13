@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![feature(ascii_char)]
-#![feature(lint_reasons)]
 #![feature(async_closure)]
 #![feature(hash_set_entry)]
 #![feature(map_try_insert)]
@@ -24,7 +23,7 @@ mod cli;
 mod xddcc;
 
 // #[global_allocator]
-// static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;s
+// static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxsign::{
     activity::{Activity, RawSign},
@@ -32,6 +31,7 @@ use cxsign::{
     dir::Dir,
     sign::SignTrait,
     types::Location,
+    user::Session,
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
@@ -54,7 +54,6 @@ const NOTICE: &str = r#"
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 "#;
-
 fn main() {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
@@ -121,7 +120,7 @@ fn main() {
                 let accounts = AccountTable::get_accounts(&db);
                 if fresh {
                     for (UnameAndEncPwdPair { uname, enc_pwd }, _) in accounts {
-                        let session = AccountTable::relogin(&db, uname.clone(), &enc_pwd);
+                        let session = Session::relogin(&uname, &enc_pwd);
                         match session {
                             Ok(session) => info!(
                                 "刷新账号 [{uname}]（用户名：{}）成功！",
