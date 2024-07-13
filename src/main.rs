@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![feature(ascii_char)]
-#![feature(lint_reasons)]
 #![feature(async_closure)]
 #![feature(hash_set_entry)]
 #![feature(map_try_insert)]
@@ -31,6 +30,7 @@ use cxsign::{
         AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable, UnameAndEncPwdPair,
     },
     sign::SignTrait,
+    user::Session,
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
@@ -110,7 +110,7 @@ fn main() {
                 let accounts = AccountTable::get_accounts(&db);
                 if fresh {
                     for (UnameAndEncPwdPair { uname, enc_pwd }, _) in accounts {
-                        let session = AccountTable::relogin(&db, uname.clone(), &enc_pwd);
+                        let session = Session::relogin(&uname, &enc_pwd);
                         match session {
                             Ok(session) => info!(
                                 "刷新账号 [{uname}]（用户名：{}）成功！",

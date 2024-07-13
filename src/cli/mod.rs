@@ -57,6 +57,7 @@ fn match_signs(
         signcode,
         precisely,
     } = cli_args;
+    #[allow(clippy::mutable_key_type)]
     let mut sign_results = HashMap::new();
     let sessions = sessions.iter();
     match sign {
