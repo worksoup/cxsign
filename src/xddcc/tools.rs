@@ -1,6 +1,6 @@
 use chrono::{Local, Timelike};
 use cxsign::user::Session;
-use log::error;
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::error::Error as ErrorTrait;
 use std::{collections::HashMap, hash::Hash};
@@ -173,14 +173,6 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
     let date = date1.split('-').map(|s| s.trim()).collect::<Vec<_>>();
     let month = date[0].parse::<u32>().unwrap();
     let day = date[1].parse::<u32>().unwrap();
-    let term_begin_data_time = <chrono::DateTime<Local> as std::str::FromStr>::from_str(&format!(
-        "{year}-{month}-{day}T00:00:00.0+08:00"
-    ))
-    .unwrap();
-    let week = data_time
-        .signed_duration_since(term_begin_data_time)
-        .num_weeks()
-        + 1;
     let (term_year, term) = if chrono::Datelike::month(&data_time) * 100
         + chrono::Datelike::day(&data_time)
         > month * 100 + day
@@ -190,6 +182,23 @@ pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
     } else {
         (year, 1)
     };
+    let semester_id = year_to_semester_id(term_year, term);
+    let WeekDetail { date1, .. } = crate::xddcc::protocol::get_week_detail(session, 1, semester_id)
+        .unwrap()
+        .into_json()
+        .unwrap();
+    let date = date1.split('-').map(|s| s.trim()).collect::<Vec<_>>();
+    let month = date[0].parse::<u32>().unwrap();
+    let day = date[1].parse::<u32>().unwrap();
+    let term_begin_data_time = <chrono::DateTime<Local> as std::str::FromStr>::from_str(&format!(
+        "{year}-{month}-{day}T00:00:00.0+08:00"
+    ))
+    .unwrap();
+    let week = data_time
+        .signed_duration_since(term_begin_data_time)
+        .num_weeks()
+        + 1;
+    debug!("term_year_detail: ({}, {}, {}).", term_year, term, week);
     (term_year, term, week)
 }
 
@@ -220,5 +229,15 @@ pub fn out<S: Serialize>(contents: &S, path: Option<std::path::PathBuf>) {
         std::fs::write(path, contents).expect("写入内容出错！");
     } else {
         println!("{contents}")
+    }
+}
+#[cfg(test)]
+mod tests {
+    use crate::xddcc::tools::year_to_semester_id;
+
+    #[test]
+    fn test_year_to_semester_id() {
+        let s = year_to_semester_id(2024, 1);
+        println!("year_to_semester_id: {}", s);
     }
 }

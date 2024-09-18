@@ -109,9 +109,6 @@ pub fn xddcc(
             }
         }
     } else {
-        if this {
-            warn!("多余的参数: `-t, --this`.")
-        }
         if just_id {
             warn!("多余的参数: `-j, --just_id`.")
         }
