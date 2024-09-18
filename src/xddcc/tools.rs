@@ -3,6 +3,7 @@ use cxsign::user::Session;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::error::Error as ErrorTrait;
+use std::ops::RangeBounds;
 use std::{collections::HashMap, hash::Hash};
 
 pub(crate) fn json_parsing_error_handler<T>(e: impl ErrorTrait) -> T {
@@ -158,38 +159,61 @@ pub fn map_sort_by_key<K: Ord + Hash, V>(map: HashMap<K, V>) -> Vec<(K, V)> {
     map.into_iter().collect()
 }
 pub fn term_year_detail(session: &Session) -> (i32, i32, i64) {
-    let data_time = chrono::DateTime::<Local>::from(std::time::SystemTime::now());
-    let year = chrono::Datelike::year(&data_time);
-    let semester_id = year_to_semester_id(year - 1, 2);
-
     #[derive(Deserialize)]
     struct WeekDetail {
         date1: String,
     }
-    let WeekDetail { date1, .. } = crate::xddcc::protocol::get_week_detail(session, 1, semester_id)
-        .unwrap()
-        .into_json()
-        .unwrap();
-    let date = date1.split('-').map(|s| s.trim()).collect::<Vec<_>>();
-    let month = date[0].parse::<u32>().unwrap();
-    let day = date[1].parse::<u32>().unwrap();
-    let (term_year, term) = if chrono::Datelike::month(&data_time) * 100
-        + chrono::Datelike::day(&data_time)
-        > month * 100 + day
-        && chrono::Datelike::month(&data_time) * 100 + chrono::Datelike::day(&data_time) < 700
-    {
-        (year - 1, 2)
-    } else {
-        (year, 1)
-    };
-    let semester_id = year_to_semester_id(term_year, term);
-    let WeekDetail { date1, .. } = crate::xddcc::protocol::get_week_detail(session, 1, semester_id)
-        .unwrap()
-        .into_json()
-        .unwrap();
-    let date = date1.split('-').map(|s| s.trim()).collect::<Vec<_>>();
-    let month = date[0].parse::<u32>().unwrap();
-    let day = date[1].parse::<u32>().unwrap();
+    fn date_number(month: u32, day: u32) -> u32 {
+        month * 100 + day
+    }
+    fn str_to_date_number(date: &str) -> u32 {
+        let date = date.split('-').map(|s| s.trim()).collect::<Vec<_>>();
+        let month = date[0].parse::<u32>().unwrap();
+        let day = date[1].parse::<u32>().unwrap();
+        date_number(month, day)
+    }
+    // 当前时间。
+    let data_time = chrono::DateTime::<Local>::from(std::time::SystemTime::now());
+    // 当前年份。
+    let year = chrono::Datelike::year(&data_time);
+    // 当前年份前半年的学期 id.
+    let semester_id1 = year_to_semester_id(year - 1, 2);
+    // 当前年份后半年的学期 id.
+    let semester_id2 = year_to_semester_id(year, 1);
+    let WeekDetail { date1, .. } =
+        crate::xddcc::protocol::get_week_detail(session, 1, semester_id1)
+            .unwrap()
+            .into_json()
+            .unwrap();
+    let WeekDetail { date1: date2, .. } =
+        crate::xddcc::protocol::get_week_detail(session, 1, semester_id2)
+            .unwrap()
+            .into_json()
+            .unwrap();
+    // 转换为可直接比较的数字。
+    let date_number1 = str_to_date_number(&date1);
+    let date_number2 = str_to_date_number(&date2);
+    let date_number = date_number(
+        chrono::Datelike::month(&data_time),
+        chrono::Datelike::day(&data_time),
+    );
+    // 两日期之间为上半年的学期，之后为下半年学期，之前则是去年的学期。
+    let (term_begin_data_number, term_year, term) =
+        if (date_number1..date_number2).contains(&date_number) {
+            (date_number1, year - 1, 2)
+        } else if date_number2 <= date_number {
+            (date_number2, year, 1)
+        } else {
+            let semester_id = year_to_semester_id(year - 1, 1);
+            let WeekDetail { date1: date, .. } =
+                crate::xddcc::protocol::get_week_detail(session, 1, semester_id)
+                    .unwrap()
+                    .into_json()
+                    .unwrap();
+            (str_to_date_number(&date), year - 1, 1)
+        };
+    let month = term_begin_data_number / 100;
+    let day = term_begin_data_number % 100;
     let term_begin_data_time = <chrono::DateTime<Local> as std::str::FromStr>::from_str(&format!(
         "{year}-{month}-{day}T00:00:00.0+08:00"
     ))
@@ -234,10 +258,24 @@ pub fn out<S: Serialize>(contents: &S, path: Option<std::path::PathBuf>) {
 #[cfg(test)]
 mod tests {
     use crate::xddcc::tools::year_to_semester_id;
+    use chrono::Local;
 
     #[test]
     fn test_year_to_semester_id() {
-        let s = year_to_semester_id(2024, 1);
+        let data_time = chrono::DateTime::<Local>::from(std::time::SystemTime::now());
+        let year = chrono::Datelike::year(&data_time);
+        let month = 2;
+        let day = 26;
+        let s = year_to_semester_id(2023, 2);
         println!("year_to_semester_id: {}", s);
+        let term_begin_data_time = <chrono::DateTime<Local> as std::str::FromStr>::from_str(
+            &format!("{year}-{month}-{day}T00:00:00.0+08:00"),
+        )
+        .unwrap();
+        let week = data_time
+            .signed_duration_since(term_begin_data_time)
+            .num_weeks()
+            + 1;
+        println!("week: {}", week);
     }
 }
