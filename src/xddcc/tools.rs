@@ -3,7 +3,6 @@ use cxsign::user::Session;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::error::Error as ErrorTrait;
-use std::ops::RangeBounds;
 use std::{collections::HashMap, hash::Hash};
 
 pub(crate) fn json_parsing_error_handler<T>(e: impl ErrorTrait) -> T {
