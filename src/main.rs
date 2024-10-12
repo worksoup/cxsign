@@ -257,15 +257,10 @@ fn main() {
                 just_id,
             } => {
                 xddcc::xddcc(
-                    accounts,
-                    this,
-                    device_code,
-                    id,
-                    just_id,
+                    (accounts, device_code, id),
                     output,
-                    list,
-                    &db,
-                    &multi,
+                    (&db, &multi),
+                    (this, just_id, list),
                 );
             }
         }

@@ -22,7 +22,6 @@ edition = "2021"
 
 [dependencies]
 # tikv-jemallocator = "0.5"
-chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
 cxsign = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
 # cxsign = { path = "../newsign/" }
@@ -31,10 +30,7 @@ indicatif = "0.17"
 indicatif-log-bridge = "0.2"
 inquire = "0.7"
 log = { version = "0.4", features = ["release_max_level_info"] }
-percent-encoding = "2.3"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-ureq = { version = "2.10", features = ["cookies", "json"] }
+xddcc = { git = "https://github.com/learturely/xddcc.git" }
 xdsign_data = { git = "https://github.com/learturely/xdsign_data.git" }
 
 [profile.release]
