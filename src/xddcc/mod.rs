@@ -1,8 +1,8 @@
 use cxsign::default_impl::store::{AccountTable, DataBase};
-use indicatif::MultiProgress;
-use log::warn;
+use indicatif::{MultiProgress, ProgressBar};
+use log::{error, warn};
 use std::path::PathBuf;
-use xddcc::{lesson::Lesson, Live, PairVec, Room};
+use xddcc::{lesson::Lesson, Live, PairVec, ProgressTracker, ProgressTrackerHolder, Room};
 
 pub fn xddcc(
     (accounts, device_code, id): (Option<String>, Option<String>, Option<i64>),
@@ -114,5 +114,44 @@ pub fn xddcc(
             ))),
             output.clone(),
         );
+    }
+}
+
+use std::error::Error as ErrorTrait;
+use std::ops::Deref;
+use wnewtype::NewType;
+
+pub(crate) fn prog_init_error_handler<T>(e: impl ErrorTrait) -> T {
+    error!("json 解析出错！错误信息：{e}.");
+    panic!()
+}
+
+#[derive(Debug, NewType)]
+pub struct MyProgressBar(ProgressBar);
+
+impl ProgressTracker for MyProgressBar {
+    fn inc(&self, delta: u64) {
+        self.deref().inc(delta);
+    }
+
+    fn finish(&self, progress_bar_holder: &impl ProgressTrackerHolder<Self>, msg: &'static str) {
+        self.finish_with_message(msg);
+        progress_bar_holder.remove_progress(self);
+    }
+}
+
+#[derive(Debug, NewType)]
+pub struct MyMultiProgress(MultiProgress);
+impl ProgressTrackerHolder<MyProgressBar> for MultiProgress {
+    fn init(&self, total: u64, data: &str) -> MyProgressBar {
+        let sty =
+            indicatif::ProgressStyle::with_template(data).unwrap_or_else(prog_init_error_handler);
+        let pb = self.add(ProgressBar::new(total));
+        pb.set_style(sty);
+        pb.into()
+    }
+
+    fn remove_progress(&self, progress: &MyProgressBar) {
+        self.remove(progress);
     }
 }

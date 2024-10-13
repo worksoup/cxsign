@@ -30,6 +30,7 @@ indicatif = "0.17"
 indicatif-log-bridge = "0.2"
 inquire = "0.7"
 log = { version = "0.4", features = ["release_max_level_info"] }
+wnewtype = { git = "https://github.com/worksoup/wnewtype.git" }
 xddcc = { git = "https://github.com/learturely/xddcc.git" }
 xdsign_data = { git = "https://github.com/learturely/xdsign_data.git" }
 
