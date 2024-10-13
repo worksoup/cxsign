@@ -2,7 +2,9 @@ use cxsign::default_impl::store::{AccountTable, DataBase};
 use indicatif::{MultiProgress, ProgressBar};
 use log::{error, warn};
 use std::path::PathBuf;
-use xddcc::{lesson::Lesson, Live, PairVec, ProgressTracker, ProgressTrackerHolder, Room};
+use xddcc::{
+    lesson::Lesson, Live, PairVec, ProgressState, ProgressTracker, ProgressTrackerHolder, Room,
+};
 
 pub fn xddcc(
     (accounts, device_code, id): (Option<String>, Option<String>, Option<i64>),
@@ -134,8 +136,15 @@ impl ProgressTracker for MyProgressBar {
         self.deref().inc(delta);
     }
 
-    fn finish(&self, progress_bar_holder: &impl ProgressTrackerHolder<Self>, msg: &'static str) {
-        self.finish_with_message(msg);
+    fn finish(&self, progress_bar_holder: &impl ProgressTrackerHolder<Self>, data: ProgressState) {
+        let data = match data {
+            ProgressState::GetRecordingLives => "获取回放地址完成。",
+            ProgressState::GetLiveIds => "获取直播号完成。",
+            ProgressState::GetLiveUrls => "已获取直播地址。",
+            ProgressState::GetDeviceCodes => "获取设备码完成。",
+            _ => "获取 Bug 完成。",
+        };
+        self.finish_with_message(data);
         progress_bar_holder.remove_progress(self);
     }
 }
@@ -143,7 +152,22 @@ impl ProgressTracker for MyProgressBar {
 #[derive(Debug, NewType)]
 pub struct MyMultiProgress(MultiProgress);
 impl ProgressTrackerHolder<MyProgressBar> for MultiProgress {
-    fn init(&self, total: u64, data: &str) -> MyProgressBar {
+    fn init(&self, total: u64, data: ProgressState) -> MyProgressBar {
+        let data = match data {
+            ProgressState::GetRecordingLives => {
+                "获取回放地址：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}"
+            }
+            ProgressState::GetLiveIds => {
+                "获取直播号：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}"
+            }
+            ProgressState::GetLiveUrls => {
+                "获取地址中：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}"
+            }
+            ProgressState::GetDeviceCodes => {
+                "获取设备码：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}"
+            }
+            _ => "获取 Bug 中：[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
+        };
         let sty =
             indicatif::ProgressStyle::with_template(data).unwrap_or_else(prog_init_error_handler);
         let pb = self.add(ProgressBar::new(total));

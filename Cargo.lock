@@ -3141,7 +3141,7 @@ dependencies = [
 [[package]]
 name = "xddcc"
 version = "0.0.1"
-source = "git+https://github.com/learturely/xddcc.git#c5a4c5d98dd92f47156d05af0307c97f8abf15c0"
+source = "git+https://github.com/learturely/xddcc.git#8718faba6ed74a5aa793be33b9bd6d9ef4d8f65a"
 dependencies = [
  "chrono",
  "cxsign",
