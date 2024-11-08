@@ -16,7 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-            submodule: true
+            submodules: true
+      - run: sudo apt-get install -yqq libdbus-1-dev
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
