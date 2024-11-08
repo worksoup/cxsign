@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-            submodule: true
+            submodules: true
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
