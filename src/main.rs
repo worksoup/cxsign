@@ -67,6 +67,7 @@ fn main() {
             panic!()
         });
     Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
+    let _ = cxsign::default_impl::init_all();
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
     let args = <Args as clap::Parser>::parse();
