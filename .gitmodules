@@ -1,0 +1,3 @@
+[submodule "newsign"]
+	path = newsign
+	url = https://github.com/worksoup/newsign.git
