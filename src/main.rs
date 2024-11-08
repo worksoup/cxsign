@@ -57,6 +57,7 @@ fn main() {
     // builder.target(env_logger::Target::Stdout);
     builder.init();
     cxsign::dir::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
+    let _ = cxsign::default_impl::init_all();
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,

@@ -253,9 +253,9 @@ checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
 
 [[package]]
 name = "cc"
-version = "1.1.36"
+version = "1.1.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baee610e9452a8f6f0a1b6194ec09ff9e2d85dea54432acdae41aa0761c95d70"
+checksum = "40545c26d092346d8a8dab71ee48e7685a7a9cba76e634790c215b41a4a7b4cf"
 dependencies = [
  "jobserver",
  "libc",
@@ -573,13 +573,12 @@ name = "cxsign_activity"
 version = "0.2.0"
 dependencies = [
  "chrono",
- "cxsign_captcha",
  "cxsign_error",
+ "cxsign_protocol",
  "cxsign_types",
  "cxsign_user",
  "cxsign_utils",
  "log",
- "num_enum",
  "percent-encoding",
  "serde",
  "ureq",
@@ -592,6 +591,7 @@ dependencies = [
  "cxsign_error",
  "cxsign_imageproc",
  "cxsign_obfuscate",
+ "cxsign_protocol",
  "hex",
  "log",
  "rand",
@@ -609,6 +609,7 @@ dependencies = [
  "cxsign_error",
  "cxsign_imageproc",
  "cxsign_login",
+ "cxsign_protocol",
  "cxsign_qrcode_utils",
  "cxsign_sign",
  "cxsign_signner",
@@ -621,6 +622,7 @@ dependencies = [
  "percent-encoding",
  "serde",
  "sqlite",
+ "toml",
  "ureq",
 ]
 
@@ -628,15 +630,15 @@ dependencies = [
 name = "cxsign_dir"
 version = "0.2.0"
 dependencies = [
- "cxsign_error",
  "directories",
+ "onceinit",
 ]
 
 [[package]]
 name = "cxsign_error"
 version = "0.2.0"
 dependencies = [
- "thiserror 1.0.68",
+ "thiserror 2.0.0",
  "ureq",
 ]
 
@@ -677,6 +679,7 @@ version = "0.2.0"
 dependencies = [
  "cookie_store",
  "cxsign_error",
+ "cxsign_protocol",
  "des",
  "hex",
  "log",
@@ -698,6 +701,7 @@ dependencies = [
 name = "cxsign_pan"
 version = "0.2.0"
 dependencies = [
+ "cxsign_protocol",
  "log",
  "mime_guess",
  "rand",
@@ -705,10 +709,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cxsign_protocol"
+version = "0.2.0"
+dependencies = [
+ "cxsign_error",
+ "onceinit",
+]
+
+[[package]]
 name = "cxsign_qrcode_utils"
 version = "0.2.0"
 dependencies = [
  "cxsign_imageproc",
+ "cxsign_protocol",
  "cxsign_utils",
  "image",
  "log",
@@ -724,6 +737,7 @@ dependencies = [
  "cxsign_activity",
  "cxsign_captcha",
  "cxsign_error",
+ "cxsign_protocol",
  "cxsign_types",
  "cxsign_user",
  "cxsign_utils",
@@ -748,14 +762,6 @@ dependencies = [
 [[package]]
 name = "cxsign_store"
 version = "0.2.0"
-dependencies = [
- "cxsign_dir",
- "cxsign_error",
- "cxsign_login",
- "cxsign_user",
- "log",
- "sqlite",
-]
 
 [[package]]
 name = "cxsign_types"
@@ -764,13 +770,12 @@ dependencies = [
  "cxsign_dir",
  "cxsign_error",
  "cxsign_pan",
- "cxsign_store",
+ "cxsign_protocol",
  "cxsign_user",
  "log",
  "onceinit",
  "rand",
  "serde",
- "sqlite",
  "ureq",
 ]
 
@@ -782,6 +787,7 @@ dependencies = [
  "cxsign_dir",
  "cxsign_error",
  "cxsign_login",
+ "cxsign_protocol",
  "log",
  "serde",
  "serde_json",
@@ -1807,7 +1813,8 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 [[package]]
 name = "onceinit"
 version = "0.0.3"
-source = "git+https://github.com/worksoup/onceinit.git#424abd1df5c4de679a70a72b61477ac5bcb45981"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59f49bb00d7d8e60d7daf77faf1c86cbc6749fd87080e8bb43d5aff2845a9a8c"
 dependencies = [
  "thiserror 2.0.0",
 ]
