@@ -136,7 +136,7 @@ impl ProgressTracker for MyProgressBar {
         self.deref().inc(delta);
     }
 
-    fn finish(&self, progress_bar_holder: &impl ProgressTrackerHolder<Self>, data: ProgressState) {
+    fn finish(&self, data: ProgressState) {
         let data = match data {
             ProgressState::GetRecordingLives => "获取回放地址完成。",
             ProgressState::GetLiveIds => "获取直播号完成。",
@@ -145,7 +145,6 @@ impl ProgressTracker for MyProgressBar {
             _ => "获取 Bug 完成。",
         };
         self.finish_with_message(data);
-        progress_bar_holder.remove_progress(self);
     }
 }
 
