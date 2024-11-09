@@ -18,8 +18,7 @@ jobs:
         with:
             submodules: true
       - name: Install libdbus-1-dev
-        if: always()
-        run: sudo apt-get install -yqq libdbus-1-dev
+        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
