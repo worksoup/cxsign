@@ -24,16 +24,16 @@ mod cli;
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
+use cxsign::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper};
 use cxsign::{
     activity::{Activity, RawSign},
-    default_impl::store::{
-        AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable, UnameAndEncPwdPair,
-    },
+    default_impl::store::{AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable},
     sign::SignTrait,
     user::Session,
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
+
 const NOTICE: &str = r#"
     
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -57,7 +57,6 @@ fn main() {
     // builder.target(env_logger::Target::Stdout);
     builder.init();
     cxsign::dir::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
-    let _ = cxsign::default_impl::init_all();
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -79,7 +78,12 @@ fn main() {
                 match command {
                     AccountSubCommand::Add { uname, passwd } => {
                         let pwd = cxsign::utils::inquire_pwd(passwd);
-                        let session = AccountTable::login(&db, uname.clone(), pwd);
+                        let session = AccountTable::login(
+                            &db,
+                            uname.clone(),
+                            pwd,
+                            DefaultLoginSolver.login_type().into(),
+                        );
                         // 添加账号。
                         match session {
                             Ok(session) => info!(
@@ -110,8 +114,13 @@ fn main() {
             MainCommand::Accounts { fresh } => {
                 let accounts = AccountTable::get_accounts(&db);
                 if fresh {
-                    for (UnameAndEncPwdPair { uname, enc_pwd }, _) in accounts {
-                        let session = Session::relogin(&uname, &enc_pwd);
+                    for a in accounts {
+                        let uname = a.uname();
+                        let session = Session::relogin(
+                            uname,
+                            a.enc_pwd(),
+                            &LoginSolverWrapper::new(a.login_type()),
+                        );
                         match session {
                             Ok(session) => info!(
                                 "刷新账号 [{uname}]（用户名：{}）成功！",
@@ -124,7 +133,8 @@ fn main() {
                 // 列出所有账号。
                 let accounts = AccountTable::get_accounts(&db);
                 for a in accounts {
-                    println!("{}, {}", a.0.uname, a.1);
+                    // TODO: stu_name;
+                    println!("{}, {}", a.uname(), a.login_type());
                 }
             }
             MainCommand::Courses { accounts } => {
