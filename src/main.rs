@@ -24,10 +24,12 @@ mod xddcc;
 
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+use authxd::AuthxdLoginSolver;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
+use cxsign::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, LoginSolvers};
 use cxsign::{
     activity::{Activity, RawSign},
-    default_impl::store::{AccountTable, DataBase, ExcludeTable, UnameAndEncPwdPair},
+    default_impl::store::{AccountTable, DataBase, ExcludeTable},
     dir::Dir,
     sign::SignTrait,
     types::Location,
@@ -67,9 +69,12 @@ fn main() {
             panic!()
         });
     Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
-    let _ = cxsign::default_impl::init_all();
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
+    let login_solver = AuthxdLoginSolver::new("https://learning.xidian.edu.cn/cassso/xidian");
+    let login_type = login_solver.login_type().to_owned();
+    LoginSolvers::register(login_solver)
+        .unwrap_or_else(|_| warn!("登录协议 `{login_type}` 注册失败！"));
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -89,7 +94,17 @@ fn main() {
                 match command {
                     AccountSubCommand::Add { uname, passwd } => {
                         let pwd = cxsign::utils::inquire_pwd(passwd);
-                        let session = AccountTable::login(&db, uname.clone(), pwd);
+                        let login_type_and_uname = uname.split_once(":");
+                        let session = if let Some((login_type, uname)) = login_type_and_uname {
+                            AccountTable::login(&db, uname.into(), pwd, login_type.into())
+                        } else {
+                            AccountTable::login(
+                                &db,
+                                uname.clone(),
+                                pwd,
+                                DefaultLoginSolver.login_type().into(),
+                            )
+                        };
                         // 添加账号。
                         match session {
                             Ok(session) => info!(
@@ -120,8 +135,13 @@ fn main() {
             MainCommand::Accounts { fresh } => {
                 let accounts = AccountTable::get_accounts(&db);
                 if fresh {
-                    for (UnameAndEncPwdPair { uname, enc_pwd }, _) in accounts {
-                        let session = Session::relogin(&uname, &enc_pwd);
+                    for a in accounts {
+                        let uname = a.uname();
+                        let session = Session::relogin(
+                            uname,
+                            a.enc_pwd(),
+                            &LoginSolverWrapper::new(a.login_type()),
+                        );
                         match session {
                             Ok(session) => info!(
                                 "刷新账号 [{uname}]（用户名：{}）成功！",
@@ -134,7 +154,8 @@ fn main() {
                 // 列出所有账号。
                 let accounts = AccountTable::get_accounts(&db);
                 for a in accounts {
-                    println!("{}, {}", a.0.uname, a.1);
+                    // TODO: stu_name;
+                    println!("{}, {}", a.uname(), a.login_type());
                 }
             }
             MainCommand::Courses { accounts } => {
