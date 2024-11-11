@@ -78,12 +78,17 @@ fn main() {
                 match command {
                     AccountSubCommand::Add { uname, passwd } => {
                         let pwd = cxsign::utils::inquire_pwd(passwd);
-                        let session = AccountTable::login(
-                            &db,
-                            uname.clone(),
-                            pwd,
-                            DefaultLoginSolver.login_type().into(),
-                        );
+                        let login_type_and_uname = uname.split_once(":");
+                        let session = if let Some((login_type, uname)) = login_type_and_uname {
+                            AccountTable::login(&db, uname.into(), pwd, login_type.into())
+                        } else {
+                            AccountTable::login(
+                                &db,
+                                uname.clone(),
+                                pwd,
+                                DefaultLoginSolver.login_type().into(),
+                            )
+                        };
                         // 添加账号。
                         match session {
                             Ok(session) => info!(
