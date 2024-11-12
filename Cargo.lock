@@ -142,29 +142,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
-name = "authxd"
-version = "0.1.0"
-source = "git+https://github.com/learturely/authxd.git#4b9015e098d8390d3c2805b98b4c43c70216a4dc"
-dependencies = [
- "base64",
- "chrono",
- "cookie_store",
- "cxsign_error",
- "cxsign_imageproc",
- "cxsign_login",
- "cxsign_protocol",
- "image",
- "log",
- "onceinit",
- "percent-encoding",
- "rand 0.8.5",
- "rust-crypto",
- "serde",
- "serde_html_form",
- "ureq",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2525,19 +2502,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_html_form"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8de514ef58196f1fc96dcaef80fe6170a1ce6215df9687a93fe8300e773fefc5"
-dependencies = [
- "form_urlencoded",
- "indexmap",
- "itoa",
- "ryu",
- "serde",
-]
-
-[[package]]
 name = "serde_json"
 version = "1.0.132"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3472,6 +3436,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
 
 [[package]]
+name = "x_l4rs"
+version = "0.0.1"
+source = "git+https://github.com/learturely/x_l4rs.git#d138dae2c1082c91308ee3309d2544211abbf1d9"
+dependencies = [
+ "base64",
+ "cookie_store",
+ "cxsign_error",
+ "cxsign_imageproc",
+ "cxsign_login",
+ "cxsign_protocol",
+ "image",
+ "log",
+ "onceinit",
+ "percent-encoding",
+ "rand 0.8.5",
+ "rust-crypto",
+ "serde",
+ "ureq",
+]
+
+[[package]]
 name = "xcap"
 version = "0.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3520,7 +3505,6 @@ dependencies = [
 name = "xdsign"
 version = "0.0.6"
 dependencies = [
- "authxd",
  "clap",
  "cxsign",
  "env_logger",
@@ -3529,6 +3513,7 @@ dependencies = [
  "inquire",
  "log",
  "wnewtype",
+ "x_l4rs",
  "xddcc",
  "xdsign_data",
 ]

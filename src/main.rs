@@ -24,7 +24,6 @@ mod xddcc;
 
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
-use authxd::AuthxdLoginSolver;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxsign::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, LoginSolvers};
 use cxsign::{
@@ -37,6 +36,7 @@ use cxsign::{
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
+use x_l4rs::XL4rsLoginSolver;
 use xdsign_data::LocationPreprocessor;
 
 const NOTICE: &str = r#"
@@ -71,7 +71,7 @@ fn main() {
     Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
-    let login_solver = AuthxdLoginSolver::new("https://learning.xidian.edu.cn/cassso/xidian");
+    let login_solver = XL4rsLoginSolver::new("https://learning.xidian.edu.cn/cassso/xidian");
     let login_type = login_solver.login_type().to_owned();
     LoginSolvers::register(login_solver)
         .unwrap_or_else(|_| warn!("登录协议 `{login_type}` 注册失败！"));
