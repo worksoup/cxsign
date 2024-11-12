@@ -56,7 +56,7 @@ const NOTICE: &str = r#"
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 "#;
-fn main() {
+fn init_output() -> indicatif::MultiProgress {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
     // builder.target(env_logger::Target::Stdout);
@@ -68,13 +68,20 @@ fn main() {
             error!("日志初始化失败。错误信息：{e}.");
             panic!()
         });
+    multi
+}
+fn init_function() {
     Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
-    let login_solver = XL4rsLoginSolver::new("https://learning.xidian.edu.cn/cassso/xidian");
+    let login_solver = XL4rsLoginSolver::TARGET_LEARNING;
     let login_type = login_solver.login_type().to_owned();
     LoginSolvers::register(login_solver)
         .unwrap_or_else(|_| warn!("登录协议 `{login_type}` 注册失败！"));
+}
+fn main() {
+    let multi = init_output();
+    init_function();
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
