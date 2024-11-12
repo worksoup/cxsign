@@ -117,8 +117,9 @@ fn main() {
                 }
             }
             MainCommand::Accounts { fresh } => {
-                let accounts = AccountTable::get_accounts(&db);
                 if fresh {
+                    let accounts = AccountTable::get_accounts(&db);
+                    let mut sessions = Vec::new();
                     for a in accounts {
                         let uname = a.uname();
                         let session = Session::relogin(
@@ -127,19 +128,25 @@ fn main() {
                             &LoginSolverWrapper::new(a.login_type()),
                         );
                         match session {
-                            Ok(session) => info!(
-                                "刷新账号 [{uname}]（用户名：{}）成功！",
-                                session.get_stu_name()
-                            ),
+                            Ok(session) => {
+                                info!(
+                                    "刷新账号 [{uname}]（用户名：{}）成功！",
+                                    session.get_stu_name()
+                                );
+                                sessions.push(session);
+                            }
                             Err(e) => warn!("刷新账号 [{uname}] 失败：{e}."),
                         };
                     }
-                }
-                // 列出所有账号。
-                let accounts = AccountTable::get_accounts(&db);
-                for a in accounts {
-                    // TODO: stu_name;
-                    println!("{}, {}", a.uname(), a.login_type());
+                    for session in sessions {
+                        println!("{}, {}", session.get_uname(), session.get_stu_name());
+                    }
+                } else {
+                    // 列出所有账号。
+                    let sessions = AccountTable::get_sessions(&db);
+                    for (_uid, session) in sessions {
+                        println!("{}, {}", session.get_uname(), session.get_stu_name());
+                    }
                 }
             }
             MainCommand::Courses { accounts } => {
