@@ -22,6 +22,7 @@ edition = "2021"
 
 [dependencies]
 authxd = { git = "https://github.com/learturely/authxd.git" }
+#authxd = { path = "../../authxd" }
 # tikv-jemallocator = "0.5"
 clap = { version = "4.5", features = ["derive"] }
 cxsign = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }

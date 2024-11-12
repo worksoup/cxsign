@@ -144,7 +144,7 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 [[package]]
 name = "authxd"
 version = "0.1.0"
-source = "git+https://github.com/learturely/authxd.git#618db033757a2e9d02659dfe54e4e7d738ea735f"
+source = "git+https://github.com/learturely/authxd.git#4b9015e098d8390d3c2805b98b4c43c70216a4dc"
 dependencies = [
  "base64",
  "chrono",
@@ -157,6 +157,7 @@ dependencies = [
  "log",
  "onceinit",
  "percent-encoding",
+ "rand 0.8.5",
  "rust-crypto",
  "serde",
  "serde_html_form",
@@ -589,7 +590,7 @@ dependencies = [
 [[package]]
 name = "cxsign"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_internal",
 ]
@@ -597,7 +598,7 @@ dependencies = [
 [[package]]
 name = "cxsign_activity"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "chrono",
  "cxsign_error",
@@ -614,7 +615,7 @@ dependencies = [
 [[package]]
 name = "cxsign_captcha"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_error",
  "cxsign_imageproc",
@@ -630,7 +631,7 @@ dependencies = [
 [[package]]
 name = "cxsign_default_impl"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_activity",
  "cxsign_captcha",
@@ -658,7 +659,7 @@ dependencies = [
 [[package]]
 name = "cxsign_dir"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "directories",
  "onceinit",
@@ -667,7 +668,7 @@ dependencies = [
 [[package]]
 name = "cxsign_error"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "thiserror 2.0.3",
  "ureq",
@@ -676,7 +677,7 @@ dependencies = [
 [[package]]
 name = "cxsign_imageproc"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "image",
  "imageproc",
@@ -687,7 +688,7 @@ dependencies = [
 [[package]]
 name = "cxsign_internal"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_activity",
  "cxsign_captcha",
@@ -709,7 +710,7 @@ dependencies = [
 [[package]]
 name = "cxsign_login"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cookie_store",
  "cxsign_error",
@@ -726,7 +727,7 @@ dependencies = [
 [[package]]
 name = "cxsign_obfuscate"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_utils",
  "proc-macro2",
@@ -736,7 +737,7 @@ dependencies = [
 [[package]]
 name = "cxsign_pan"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_protocol",
  "log",
@@ -748,7 +749,7 @@ dependencies = [
 [[package]]
 name = "cxsign_protocol"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_dir",
  "cxsign_error",
@@ -761,7 +762,7 @@ dependencies = [
 [[package]]
 name = "cxsign_qrcode_utils"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_imageproc",
  "cxsign_protocol",
@@ -775,7 +776,7 @@ dependencies = [
 [[package]]
 name = "cxsign_sign"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "chrono",
  "cxsign_activity",
@@ -795,7 +796,7 @@ dependencies = [
 [[package]]
 name = "cxsign_signner"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_activity",
  "cxsign_error",
@@ -807,12 +808,12 @@ dependencies = [
 [[package]]
 name = "cxsign_store"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 
 [[package]]
 name = "cxsign_types"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cxsign_dir",
  "cxsign_error",
@@ -829,7 +830,7 @@ dependencies = [
 [[package]]
 name = "cxsign_user"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "cookie_store",
  "cxsign_dir",
@@ -845,7 +846,7 @@ dependencies = [
 [[package]]
 name = "cxsign_utils"
 version = "0.2.0"
-source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#d1ab68edd682dcd5f2ae4ea34bc61e415d7e7192"
+source = "git+https://github.com/worksoup/newsign.git?branch=dev-v0.2#b42009e917026885f2d97a31ce9dd4ee7ec79ee7"
 dependencies = [
  "chrono",
  "flate2",
@@ -2505,18 +2506,18 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "serde"
-version = "1.0.214"
+version = "1.0.215"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f55c3193aca71c12ad7890f1785d2b73e1b9f63a0bbc353c08ef26fe03fc56b5"
+checksum = "6513c1ad0b11a9376da888e3e0baa0077f1aed55c17f50e7b2397136129fb88f"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.214"
+version = "1.0.215"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de523f781f095e28fa605cdce0f8307e451cc0fd14e2eb4cd2e98a355b147766"
+checksum = "ad1e866f866923f252f05c889987993144fb74e722403468a4ebd70c3cd756c0"
 dependencies = [
  "proc-macro2",
  "quote",
