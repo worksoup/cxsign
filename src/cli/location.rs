@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use clap::Subcommand;
-use cxsign::{
+use cxlib::{
     default_impl::store::{AccountTable, AliasTable, DataBase, DataBaseTableTrait, LocationTable},
     types::{Location, LocationWithRange},
 };
@@ -314,7 +314,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
             if let Some(course_id) = course
                 && let Some(course) = {
                     let courses =
-                        cxsign::types::Course::get_courses(AccountTable::get_sessions(db).values())
+                        cxlib::types::Course::get_courses(AccountTable::get_sessions(db).values())
                             .unwrap_or_default()
                             .into_keys()
                             .map(|c| (c.get_id(), c))
@@ -355,7 +355,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 course
                     .and_then(|course_id| {
                         let sessions = AccountTable::get_sessions(db);
-                        let courses = cxsign::types::Course::get_courses(sessions.values())
+                        let courses = cxlib::types::Course::get_courses(sessions.values())
                             .unwrap_or_default()
                             .into_keys()
                             .map(|c| (c.get_id(), c))

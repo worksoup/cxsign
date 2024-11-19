@@ -23,9 +23,10 @@ mod cli;
 
 // #[global_allocator]
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
-use cxsign::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper};
-use cxsign::{
+use cxlib::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper};
+use cxlib::{
     activity::{Activity, RawSign},
     default_impl::store::{AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable},
     sign::SignTrait,
@@ -33,6 +34,7 @@ use cxsign::{
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
+use std::io::stdout;
 
 const NOTICE: &str = r#"
     
@@ -56,7 +58,7 @@ fn main() {
     let mut builder = env_logger::Builder::from_env(env);
     // builder.target(env_logger::Target::Stdout);
     builder.init();
-    cxsign::dir::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
+    cxlib::dir::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -77,7 +79,7 @@ fn main() {
             MainCommand::Account { command } => {
                 match command {
                     AccountSubCommand::Add { uname, passwd } => {
-                        let pwd = cxsign::utils::inquire_pwd(passwd);
+                        let pwd = cxlib::utils::inquire_pwd(passwd);
                         let login_type_and_uname = uname.split_once(":");
                         let session = if let Some((login_type, uname)) = login_type_and_uname {
                             AccountTable::login(&db, uname.into(), pwd, login_type.into())
@@ -160,7 +162,7 @@ fn main() {
                 };
                 // 获取课程信息。
                 let courses =
-                    cxsign::types::Course::get_courses(sessions.values()).unwrap_or_default();
+                    cxlib::types::Course::get_courses(sessions.values()).unwrap_or_default();
                 // 列出所有课程。
                 for (c, _) in courses {
                     println!("{}", c);
@@ -239,7 +241,7 @@ fn main() {
             MainCommand::List { course, all } => {
                 let sessions = AccountTable::get_sessions(&db);
                 if let Some(course) = course {
-                    let courses = cxsign::types::Course::get_courses(sessions.values())
+                    let courses = cxlib::types::Course::get_courses(sessions.values())
                         .unwrap_or_default()
                         .into_keys()
                         .map(|c| (c.get_id(), c))
@@ -304,11 +306,21 @@ fn main() {
             MainCommand::WhereIsConfig => {
                 println!(
                     "{}",
-                    &cxsign::dir::Dir::get_config_dir()
+                    &cxlib::dir::Dir::get_config_dir()
                         .into_os_string()
                         .to_string_lossy()
                         .to_string()
                 );
+            }
+            MainCommand::Completions { shell, output } => {
+                if let Some(output) = output {
+                    shell
+                        .generate_to(&mut Args::command(), output)
+                        .map_err(|e| warn!("文件写入出错，请检查路径是否正确！错误信息：{e}"))
+                        .unwrap();
+                } else {
+                    shell.generate(&mut Args::command(), &mut stdout());
+                }
             }
         }
     } else {

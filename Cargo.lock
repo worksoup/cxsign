@@ -252,6 +252,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
 
 [[package]]
+name = "carapace_spec_clap"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09a6810b1aada7fb10830104d1d5dd8019fbdefd5e51bae3961cc5b58f458023"
+dependencies = [
+ "clap",
+ "clap_complete",
+ "indexmap",
+ "serde",
+ "serde_yaml_ng",
+]
+
+[[package]]
 name = "cc"
 version = "1.1.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -344,6 +357,48 @@ dependencies = [
  "anstyle",
  "clap_lex",
  "strsim",
+]
+
+[[package]]
+name = "clap_complete"
+version = "4.5.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9647a559c112175f17cf724dc72d3645680a883c58481332779192b0d8e7a01"
+dependencies = [
+ "clap",
+]
+
+[[package]]
+name = "clap_complete_command"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da8e198c052315686d36371e8a3c5778b7852fc75cc313e4e11eeb7a644a1b62"
+dependencies = [
+ "carapace_spec_clap",
+ "clap",
+ "clap_complete",
+ "clap_complete_fig",
+ "clap_complete_nushell",
+]
+
+[[package]]
+name = "clap_complete_fig"
+version = "4.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d494102c8ff3951810c72baf96910b980fb065ca5d3101243e6a8dc19747c86b"
+dependencies = [
+ "clap",
+ "clap_complete",
+]
+
+[[package]]
+name = "clap_complete_nushell"
+version = "4.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "315902e790cc6e5ddd20cbd313c1d0d49db77f191e149f96397230fb82a17677"
+dependencies = [
+ "clap",
+ "clap_complete",
 ]
 
 [[package]]
@@ -552,33 +607,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign"
+name = "cxlib"
 version = "0.2.0"
 dependencies = [
- "cxsign_internal",
+ "cxlib_internal",
 ]
 
 [[package]]
-name = "cxsign"
-version = "0.4.0"
-dependencies = [
- "clap",
- "cxsign 0.2.0",
- "env_logger",
- "inquire",
- "log",
-]
-
-[[package]]
-name = "cxsign_activity"
+name = "cxlib_activity"
 version = "0.2.0"
 dependencies = [
  "chrono",
- "cxsign_error",
- "cxsign_protocol",
- "cxsign_types",
- "cxsign_user",
- "cxsign_utils",
+ "cxlib_error",
+ "cxlib_protocol",
+ "cxlib_types",
+ "cxlib_user",
+ "cxlib_utils",
  "log",
  "percent-encoding",
  "serde",
@@ -586,13 +630,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_captcha"
+name = "cxlib_captcha"
 version = "0.2.0"
 dependencies = [
- "cxsign_error",
- "cxsign_imageproc",
- "cxsign_obfuscate",
- "cxsign_protocol",
+ "cxlib_error",
+ "cxlib_imageproc",
+ "cxlib_obfuscate",
+ "cxlib_protocol",
  "hex",
  "log",
  "rand",
@@ -601,23 +645,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_default_impl"
+name = "cxlib_default_impl"
 version = "0.2.0"
 dependencies = [
- "cxsign_activity",
- "cxsign_captcha",
- "cxsign_dir",
- "cxsign_error",
- "cxsign_imageproc",
- "cxsign_login",
- "cxsign_protocol",
- "cxsign_qrcode_utils",
- "cxsign_sign",
- "cxsign_signner",
- "cxsign_store",
- "cxsign_types",
- "cxsign_user",
- "cxsign_utils",
+ "cxlib_activity",
+ "cxlib_captcha",
+ "cxlib_dir",
+ "cxlib_error",
+ "cxlib_imageproc",
+ "cxlib_login",
+ "cxlib_protocol",
+ "cxlib_qrcode_utils",
+ "cxlib_sign",
+ "cxlib_signner",
+ "cxlib_store",
+ "cxlib_types",
+ "cxlib_user",
+ "cxlib_utils",
  "log",
  "num_enum",
  "percent-encoding",
@@ -628,7 +672,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_dir"
+name = "cxlib_dir"
 version = "0.2.0"
 dependencies = [
  "directories",
@@ -636,7 +680,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_error"
+name = "cxlib_error"
 version = "0.2.0"
 dependencies = [
  "thiserror 2.0.3",
@@ -644,7 +688,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_imageproc"
+name = "cxlib_imageproc"
 version = "0.2.0"
 dependencies = [
  "image",
@@ -654,33 +698,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_internal"
+name = "cxlib_internal"
 version = "0.2.0"
 dependencies = [
- "cxsign_activity",
- "cxsign_captcha",
- "cxsign_default_impl",
- "cxsign_dir",
- "cxsign_error",
- "cxsign_imageproc",
- "cxsign_login",
- "cxsign_pan",
- "cxsign_qrcode_utils",
- "cxsign_sign",
- "cxsign_signner",
- "cxsign_store",
- "cxsign_types",
- "cxsign_user",
- "cxsign_utils",
+ "cxlib_activity",
+ "cxlib_captcha",
+ "cxlib_default_impl",
+ "cxlib_dir",
+ "cxlib_error",
+ "cxlib_imageproc",
+ "cxlib_login",
+ "cxlib_pan",
+ "cxlib_qrcode_utils",
+ "cxlib_sign",
+ "cxlib_signner",
+ "cxlib_store",
+ "cxlib_types",
+ "cxlib_user",
+ "cxlib_utils",
 ]
 
 [[package]]
-name = "cxsign_login"
+name = "cxlib_login"
 version = "0.2.0"
 dependencies = [
  "cookie_store",
- "cxsign_error",
- "cxsign_protocol",
+ "cxlib_error",
+ "cxlib_protocol",
  "des",
  "hex",
  "log",
@@ -691,19 +735,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_obfuscate"
+name = "cxlib_obfuscate"
 version = "0.2.0"
 dependencies = [
- "cxsign_utils",
+ "cxlib_utils",
  "proc-macro2",
  "quote",
 ]
 
 [[package]]
-name = "cxsign_pan"
+name = "cxlib_pan"
 version = "0.2.0"
 dependencies = [
- "cxsign_protocol",
+ "cxlib_protocol",
  "log",
  "mime_guess",
  "rand",
@@ -711,11 +755,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_protocol"
+name = "cxlib_protocol"
 version = "0.2.0"
 dependencies = [
- "cxsign_dir",
- "cxsign_error",
+ "cxlib_dir",
+ "cxlib_error",
  "log",
  "onceinit",
  "serde",
@@ -723,12 +767,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_qrcode_utils"
+name = "cxlib_qrcode_utils"
 version = "0.2.0"
 dependencies = [
- "cxsign_imageproc",
- "cxsign_protocol",
- "cxsign_utils",
+ "cxlib_imageproc",
+ "cxlib_protocol",
+ "cxlib_utils",
  "image",
  "log",
  "rxing",
@@ -736,17 +780,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_sign"
+name = "cxlib_sign"
 version = "0.2.0"
 dependencies = [
  "chrono",
- "cxsign_activity",
- "cxsign_captcha",
- "cxsign_error",
- "cxsign_protocol",
- "cxsign_types",
- "cxsign_user",
- "cxsign_utils",
+ "cxlib_activity",
+ "cxlib_captcha",
+ "cxlib_error",
+ "cxlib_protocol",
+ "cxlib_types",
+ "cxlib_user",
+ "cxlib_utils",
  "log",
  "num_enum",
  "percent-encoding",
@@ -755,29 +799,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_signner"
+name = "cxlib_signner"
 version = "0.2.0"
 dependencies = [
- "cxsign_activity",
- "cxsign_error",
- "cxsign_sign",
- "cxsign_types",
- "cxsign_user",
+ "cxlib_activity",
+ "cxlib_error",
+ "cxlib_sign",
+ "cxlib_types",
+ "cxlib_user",
 ]
 
 [[package]]
-name = "cxsign_store"
+name = "cxlib_store"
 version = "0.2.0"
 
 [[package]]
-name = "cxsign_types"
+name = "cxlib_types"
 version = "0.2.0"
 dependencies = [
- "cxsign_dir",
- "cxsign_error",
- "cxsign_pan",
- "cxsign_protocol",
- "cxsign_user",
+ "cxlib_dir",
+ "cxlib_error",
+ "cxlib_pan",
+ "cxlib_protocol",
+ "cxlib_user",
  "log",
  "onceinit",
  "rand",
@@ -786,14 +830,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_user"
+name = "cxlib_user"
 version = "0.2.0"
 dependencies = [
  "cookie_store",
- "cxsign_dir",
- "cxsign_error",
- "cxsign_login",
- "cxsign_protocol",
+ "cxlib_dir",
+ "cxlib_error",
+ "cxlib_login",
+ "cxlib_protocol",
  "log",
  "serde",
  "serde_json",
@@ -801,7 +845,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxsign_utils"
+name = "cxlib_utils"
 version = "0.2.0"
 dependencies = [
  "chrono",
@@ -809,6 +853,18 @@ dependencies = [
  "inquire",
  "log",
  "unicode-width 0.2.0",
+]
+
+[[package]]
+name = "cxsign"
+version = "0.4.0"
+dependencies = [
+ "clap",
+ "clap_complete_command",
+ "cxlib",
+ "env_logger",
+ "inquire",
+ "log",
 ]
 
 [[package]]
@@ -1395,6 +1451,7 @@ checksum = "707907fe3c25f5424cce2cb7e1cbcafee6bdbe735ca90ef77c29e84591e5b9da"
 dependencies = [
  "equivalent",
  "hashbrown",
+ "serde",
 ]
 
 [[package]]
@@ -2363,6 +2420,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_yaml_ng"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b4db627b98b36d4203a7b458cf3573730f2bb591b28871d916dfa9efabfd41f"
+dependencies = [
+ "indexmap",
+ "itoa",
+ "ryu",
+ "serde",
+ "unsafe-libyaml",
+]
+
+[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2752,6 +2822,12 @@ name = "unicode-width"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fc81956842c57dac11422a97c3b8195a1ff727f06e85c84ed2e8aa277c9a0fd"
+
+[[package]]
+name = "unsafe-libyaml"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
 
 [[package]]
 name = "untrusted"

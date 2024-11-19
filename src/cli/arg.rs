@@ -15,6 +15,7 @@
 
 use crate::cli::location::LocationSubCommand;
 use clap::{Parser, Subcommand};
+use clap_complete_command::Shell;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -122,8 +123,17 @@ pub enum MainCommand {
     },
     /// 显示配置文件夹位置。
     WhereIsConfig,
+    #[cfg(feature = "completions")]
+    /// 生成命令补全文件。
+    Completions {
+        /// 补全的 Shell 类型。
+        #[arg(value_enum)]
+        shell: Shell,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
 }
-
+/// 账号操作子命令。
 #[derive(Subcommand, Debug)]
 pub enum AccountSubCommand {
     /// 添加账号。
