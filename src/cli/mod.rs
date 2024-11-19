@@ -15,7 +15,7 @@
 
 pub mod arg;
 
-use cxsign::{
+use cxlib::{
     activity::{Activity, RawSign},
     default_impl::{
         sign::{LocationSign, Sign},
@@ -208,7 +208,7 @@ pub fn do_sign(
             "即将处理签到：[{}], id 为 {}, 开始时间为 {}, 课程为 {} / {} / {}",
             sign.name,
             sign.active_id,
-            cxsign::utils::time_string_from_mills(sign.start_time_mills),
+            cxlib::utils::time_string_from_mills(sign.start_time_mills),
             sign.course.get_class_id(),
             sign.course.get_id(),
             sign.course.get_name()

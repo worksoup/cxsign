@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use clap::{Parser, Subcommand};
+use clap_complete_command::Shell;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -137,8 +138,17 @@ pub enum MainCommand {
         // #[arg(short, long)]
         // web: bool,
     },
+    #[cfg(feature = "completions")]
+    /// 生成命令补全文件。
+    Completions {
+        /// 补全的 Shell 类型。
+        #[arg(value_enum)]
+        shell: Shell,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
 }
-
+/// 账号操作子命令。
 #[derive(Subcommand, Debug)]
 pub enum AccountSubCommand {
     /// 添加账号。

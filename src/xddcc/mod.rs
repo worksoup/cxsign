@@ -1,4 +1,4 @@
-use cxsign::default_impl::store::{AccountTable, DataBase};
+use cxlib::default_impl::store::{AccountTable, DataBase};
 use indicatif::{MultiProgress, ProgressBar};
 use log::{error, warn};
 use std::path::PathBuf;
