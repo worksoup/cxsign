@@ -22,14 +22,14 @@ edition = "2021"
 [features]
 default = ["completions"]
 completions = ["completion-nu", "completion-carapace", "completion-fig"]
-completion-nu = ["clap_complete_command/nushell"]
-completion-carapace = ["clap_complete_command/carapace"]
-completion-fig = ["clap_complete_command/fig"]
+completion-nu = ["clap_complete_command", "clap_complete_command/nushell"]
+completion-carapace = ["clap_complete_command", "clap_complete_command/carapace"]
+completion-fig = ["clap_complete_command", "clap_complete_command/fig"]
 
 [dependencies]
 # tikv-jemallocator = "0.5"
 clap = { version = "4.5", features = ["derive"] }
-clap_complete_command = { version = "0.6", default-features = false }
+clap_complete_command = { version = "0.6", default-features = false, optional = true }
 cxlib = { path = "newsign" }
 # cxsign = { path = "../newsign/" }
 env_logger = "0.11"
