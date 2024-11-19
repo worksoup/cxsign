@@ -312,6 +312,7 @@ fn main() {
                         .to_string()
                 );
             }
+            #[cfg(feature = "completions")]
             MainCommand::Completions { shell, output } => {
                 if let Some(output) = output {
                     shell
