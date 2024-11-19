@@ -22,9 +22,9 @@ edition = "2021"
 [features]
 default = ["completions"]
 completions = ["completion-nu", "completion-carapace", "completion-fig"]
-completion-nu = ["clap_complete_command/nushell"]
-completion-carapace = ["clap_complete_command/carapace"]
-completion-fig = ["clap_complete_command/fig"]
+completion-nu = ["clap_complete_command", "clap_complete_command/nushell"]
+completion-carapace = ["clap_complete_command", "clap_complete_command/carapace"]
+completion-fig = ["clap_complete_command", "clap_complete_command/fig"]
 
 [dependencies]
 x_l4rs = { git = "https://github.com/learturely/x_l4rs.git" }
@@ -32,7 +32,7 @@ x_l4rs = { git = "https://github.com/learturely/x_l4rs.git" }
 # tikv-jemallocator = "0.5"
 clap = { version = "4.5", features = ["derive"] }
 cxlib = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
-clap_complete_command = { version = "0.6", default-features = false }
+clap_complete_command = { version = "0.6", default-features = false, optional = true }
 # cxsign = { path = "../newsign/" }
 env_logger = "0.11"
 indicatif = "0.17"
