@@ -301,6 +301,7 @@ fn main() {
                     (this, just_id, list),
                 );
             }
+            #[cfg(feature = "completions")]
             MainCommand::Completions { shell, output } => {
                 if let Some(output) = output {
                     shell
