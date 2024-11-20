@@ -3475,7 +3475,7 @@ checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
 [[package]]
 name = "x_l4rs"
 version = "0.0.1"
-source = "git+https://github.com/learturely/x_l4rs.git#d0de81ce3c7322b8e3ec75adf59af08aba2bab9b"
+source = "git+https://github.com/learturely/x_l4rs.git#2d73026ddbcdf00aea4b264d9b398e7e13706dc3"
 dependencies = [
  "base64",
  "cookie_store",
