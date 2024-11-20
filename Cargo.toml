@@ -30,7 +30,7 @@ completion-fig = ["clap_complete_command", "clap_complete_command/fig"]
 # tikv-jemallocator = "0.5"
 clap = { version = "4.5", features = ["derive"] }
 clap_complete_command = { version = "0.6", default-features = false, optional = true }
-cxlib = { path = "newsign" }
+cxlib = { path = "cxlib" }
 # cxsign = { path = "../newsign/" }
 env_logger = "0.11"
 inquire = "0.7"
