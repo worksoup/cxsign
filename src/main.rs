@@ -37,9 +37,9 @@ use cxlib::{
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
-use x_l4rs::XL4rsLoginSolver;
-use xdsign_data::LocationPreprocessor;
 use std::io::stdout;
+use x_l4rs::IDSLoginImpl;
+use xdsign_data::LocationPreprocessor;
 
 const NOTICE: &str = r#"
     
@@ -76,7 +76,9 @@ fn init_function() {
     Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
-    let login_solver = XL4rsLoginSolver::TARGET_LEARNING;
+    let login_solver = IDSLoginImpl::TARGET_LEARNING.get_login_solver(|a, b| {
+        cxlib::imageproc::find_sub_image(a, b, cxlib::imageproc::find_max_ncc)
+    });
     let login_type = login_solver.login_type().to_owned();
     LoginSolvers::register(login_solver)
         .unwrap_or_else(|_| warn!("登录协议 `{login_type}` 注册失败！"));
