@@ -131,9 +131,9 @@ pub enum MainCommand {
         /// 列出所有设备码。
         #[arg(short, long)]
         list: bool,
-        /// 获取直播信息时覆盖默认行为至获取当前课的直播信息，获取回放信息时指定只获取一节课的回放信息。
+        /// 获取直播信息时覆盖默认行为至获取上节课的直播信息，获取回放信息时指定只获取一节课的回放信息。
         #[arg(short, long)]
-        this: bool,
+        previous: bool,
         // /// 网页播放器地址。
         // #[arg(short, long)]
         // web: bool,

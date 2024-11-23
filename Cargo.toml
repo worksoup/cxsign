@@ -27,7 +27,7 @@ completion-carapace = ["clap_complete_command", "clap_complete_command/carapace"
 completion-fig = ["clap_complete_command", "clap_complete_command/fig"]
 
 [dependencies]
-x_l4rs = { git = "https://github.com/learturely/x_l4rs.git", features = ["cxlib_integrated"] }
+x_l4rs = { git = "https://github.com/learturely/x_l4rs.git", default-features = false, features = ["cxlib_integrated"] }
 #authxd = { path = "../../authxd" }
 # tikv-jemallocator = "0.5"
 clap = { version = "4.5", features = ["derive"] }

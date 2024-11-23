@@ -10,14 +10,14 @@ pub fn xddcc(
     (accounts, device_code, id): (Option<String>, Option<String>, Option<i64>),
     output: Option<PathBuf>,
     (db, multi_progress): (&DataBase, &MultiProgress),
-    (this, just_id, list): (bool, bool, bool),
+    (previous, just_id, list): (bool, bool, bool),
 ) {
     if list {
         if device_code.is_some() {
             warn!("多余的参数: `-d, --device-code`.")
         }
-        if this {
-            warn!("多余的参数: `-t, --this`.")
+        if previous {
+            warn!("多余的参数: `-p, --previous`.")
         }
         if id.is_some() {
             warn!("多余的参数: `-r, --record`.")
@@ -42,8 +42,8 @@ pub fn xddcc(
         if accounts.is_some() {
             warn!("多余的参数: `-a, --accounts`.")
         }
-        if this {
-            warn!("多余的参数: `-t, --this`.")
+        if previous {
+            warn!("多余的参数: `-p, --previous`.")
         }
         if id.is_some() {
             warn!("多余的参数: `-r, --record`.")
@@ -73,7 +73,7 @@ pub fn xddcc(
             warn!("未有登录的账号！");
         }
         if let Some(session) = sessions.into_values().next() {
-            if this {
+            if previous {
                 if just_id {
                     warn!("多余的参数: `-j, --just_id`.")
                 }
@@ -111,7 +111,7 @@ pub fn xddcc(
         xddcc::out(
             &PairVec::new(xddcc::map_sort_by_key(Live::get_lives_now(
                 sessions.values(),
-                this,
+                previous,
                 multi_progress,
             ))),
             output.clone(),

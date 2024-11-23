@@ -289,7 +289,7 @@ fn main() {
             }
             MainCommand::Xddcc {
                 accounts,
-                this,
+                previous,
                 device_code,
                 output,
                 list,
@@ -300,7 +300,7 @@ fn main() {
                     (accounts, device_code, id),
                     output,
                     (&db, &multi),
-                    (this, just_id, list),
+                    (previous, just_id, list),
                 );
             }
             #[cfg(feature = "completions")]
