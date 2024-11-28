@@ -29,7 +29,7 @@ pub fn xddcc(
         //     warn!("多余的参数: `-w, --web`.")
         // }
         let sessions = if let Some(accounts) = accounts {
-            AccountTable::get_sessions_by_accounts_str(db, &accounts)
+            AccountTable::get_sessions_by_uid_list_str(db, &accounts)
         } else {
             AccountTable::get_sessions(db)
         };
@@ -65,7 +65,7 @@ pub fn xddcc(
         }
     } else if let Some(live_id) = id {
         let sessions = if let Some(accounts) = accounts {
-            AccountTable::get_sessions_by_accounts_str(db, &accounts)
+            AccountTable::get_sessions_by_uid_list_str(db, &accounts)
         } else {
             AccountTable::get_sessions(db)
         };
@@ -101,7 +101,7 @@ pub fn xddcc(
             warn!("多余的参数: `-j, --just_id`.")
         }
         let sessions = if let Some(accounts) = accounts {
-            AccountTable::get_sessions_by_accounts_str(db, &accounts)
+            AccountTable::get_sessions_by_uid_list_str(db, &accounts)
         } else {
             AccountTable::get_sessions(db)
         };
