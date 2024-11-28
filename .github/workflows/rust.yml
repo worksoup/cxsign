@@ -25,7 +25,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check_and_build:
+  check:
     name: Rust project
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +37,7 @@ jobs:
         with:
             toolchain: nightly
             override: true
-            components: rustfmt, clippy
+            components: clippy
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
@@ -46,6 +46,28 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
+  build:
+    if: true
+    needs: [ check ]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest }
+          - { os: windows-2022 }
+          - { os: macos-12 }
+    name: ${{ format('{0}', matrix.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install libdbus-1-dev
+        if: ${{ matrix.os }} == 'ubuntu-latest'
+        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
       - name: Run cargo build
         uses: actions-rs/cargo@v1
         with:
@@ -54,5 +76,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binary
+          name: '${{ matrix.o }}'
           path: '${{ github.workspace }}/target/release/*sign'
