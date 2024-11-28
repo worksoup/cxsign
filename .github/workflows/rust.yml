@@ -17,15 +17,15 @@ name: Rust
 
 on:
   push:
-    branches: [ "main", "newsign" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "newsign" ]
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  check_and_build:
     name: Rust project
     runs-on: ubuntu-latest
     steps:
@@ -42,6 +42,15 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
