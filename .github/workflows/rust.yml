@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install libdbus-1-dev
-        if: ${{ matrix.os }} == 'ubuntu-latest'
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
