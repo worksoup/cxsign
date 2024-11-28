@@ -56,17 +56,17 @@ const NOTICE: &str = r#"
 fn main() {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
-    // builder.target(env_logger::Target::Stdout);
+    builder.target(env_logger::Target::Stderr);
     builder.init();
     cxlib::dir::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
-        active_id,
-        accounts,
+        id,
+        uid,
         location,
         image,
-        signcode,
+        code,
         precisely,
     } = args;
     let db = DataBase::default();
@@ -100,7 +100,7 @@ fn main() {
                             Err(e) => warn!("添加账号 [{uname}] 失败：{e}."),
                         };
                     }
-                    AccountSubCommand::Remove { uname, yes } => {
+                    AccountSubCommand::Remove { uid, yes } => {
                         if !yes {
                             let ans = inquire::Confirm::new("是否删除？")
                                 .with_default(false)
@@ -114,7 +114,7 @@ fn main() {
                             }
                         }
                         // 删除指定账号。
-                        AccountTable::delete_account(&db, &uname);
+                        AccountTable::delete_account(&db, &uid);
                     }
                 }
             }
@@ -141,7 +141,12 @@ fn main() {
                         };
                     }
                     for session in sessions {
-                        println!("{}, {}", session.get_uname(), session.get_stu_name());
+                        println!(
+                            "{}, {}, {}",
+                            session.get_uname(),
+                            session.get_stu_name(),
+                            session.get_uid()
+                        );
                     }
                 } else {
                     // 列出所有账号。
@@ -151,10 +156,10 @@ fn main() {
                     }
                 }
             }
-            MainCommand::Courses { accounts } => {
-                let (sessions, _) = if let Some(accounts_str) = &accounts {
+            MainCommand::Courses { uid } => {
+                let (sessions, _) = if let Some(uid_list_str) = &uid {
                     (
-                        AccountTable::get_sessions_by_accounts_str(&db, accounts_str),
+                        AccountTable::get_sessions_by_uid_list_str(&db, uid_list_str),
                         true,
                     )
                 } else {
@@ -312,7 +317,7 @@ fn main() {
                         .to_string()
                 );
             }
-            #[cfg(feature = "completions")]
+            #[cfg(feature = "clap_complete_command")]
             MainCommand::Completions { shell, output } => {
                 if let Some(output) = output {
                     shell
@@ -328,11 +333,10 @@ fn main() {
         let cli_args = cli::arg::CliArgs {
             location_str: location,
             image,
-            signcode,
+            signcode: code,
             precisely,
         };
         warn!("{NOTICE}");
-        cli::do_sign(db, active_id, accounts, cli_args)
-            .unwrap_or_else(|e| error!("签到失败！错误信息：{e}."));
+        cli::do_sign(db, id, uid, cli_args).unwrap_or_else(|e| error!("签到失败！错误信息：{e}."));
     }
 }

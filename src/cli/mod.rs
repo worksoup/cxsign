@@ -133,12 +133,12 @@ fn match_signs(
 pub fn do_sign(
     db: DataBase,
     active_id: Option<i64>,
-    accounts_str: Option<String>,
+    uid_list_str: Option<String>,
     cli_args: CliArgs,
 ) -> Result<(), Error> {
-    let (sessions, has_accounts_arg) = if let Some(accounts_str) = &accounts_str {
+    let (sessions, has_uid_arg) = if let Some(uid_list_str) = &uid_list_str {
         (
-            AccountTable::get_sessions_by_accounts_str(&db, accounts_str),
+            AccountTable::get_sessions_by_uid_list_str(&db, uid_list_str),
             true,
         )
     } else {
@@ -168,7 +168,7 @@ pub fn do_sign(
                 .find(|kv| kv.0.as_inner().active_id == active_id.to_string())
             {
                 s2
-            } else if has_accounts_arg {
+            } else if has_uid_arg {
                 panic!(
                     "没有该签到活动！请检查签到活动 ID 是否正确或所指定的账号是否存在该签到活动！"
                 );
