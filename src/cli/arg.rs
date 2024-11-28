@@ -112,7 +112,7 @@ pub enum MainCommand {
     Xddcc {
         /// 获取特定账号下节课的直播信息，格式为以半角逗号隔开的字符串。
         #[arg(short, long)]
-        accounts: Option<String>,
+        uid: Option<String>,
         /// 通过 `device_code` 获取直播信息。
         #[arg(short, long)]
         device_code: Option<String>,

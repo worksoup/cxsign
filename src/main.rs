@@ -293,7 +293,7 @@ fn main() {
                 );
             }
             MainCommand::Xddcc {
-                accounts,
+                uid: uid_list_str,
                 previous,
                 device_code,
                 output,
@@ -302,7 +302,7 @@ fn main() {
                 just_id,
             } => {
                 xddcc::xddcc(
-                    (accounts, device_code, id),
+                    (uid_list_str, device_code, id),
                     output,
                     (&db, &multi),
                     (previous, just_id, list),

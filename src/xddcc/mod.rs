@@ -7,7 +7,7 @@ use xddcc::{
 };
 
 pub fn xddcc(
-    (accounts, device_code, id): (Option<String>, Option<String>, Option<i64>),
+    (uid_list_str, device_code, id): (Option<String>, Option<String>, Option<i64>),
     output: Option<PathBuf>,
     (db, multi_progress): (&DataBase, &MultiProgress),
     (previous, just_id, list): (bool, bool, bool),
@@ -28,8 +28,8 @@ pub fn xddcc(
         // if web {
         //     warn!("多余的参数: `-w, --web`.")
         // }
-        let sessions = if let Some(accounts) = accounts {
-            AccountTable::get_sessions_by_uid_list_str(db, &accounts)
+        let sessions = if let Some(uid_list_str) = uid_list_str {
+            AccountTable::get_sessions_by_uid_list_str(db, &uid_list_str)
         } else {
             AccountTable::get_sessions(db)
         };
@@ -39,7 +39,7 @@ pub fn xddcc(
         let rooms = xddcc::map_sort_by_key(Room::get_all_rooms(sessions.values(), multi_progress));
         xddcc::out(&PairVec::new(rooms), output)
     } else if let Some(device_code) = device_code {
-        if accounts.is_some() {
+        if uid_list_str.is_some() {
             warn!("多余的参数: `-a, --accounts`.")
         }
         if previous {
@@ -64,8 +64,8 @@ pub fn xddcc(
                 });
         }
     } else if let Some(live_id) = id {
-        let sessions = if let Some(accounts) = accounts {
-            AccountTable::get_sessions_by_uid_list_str(db, &accounts)
+        let sessions = if let Some(uid_list_str) = uid_list_str {
+            AccountTable::get_sessions_by_uid_list_str(db, &uid_list_str)
         } else {
             AccountTable::get_sessions(db)
         };
@@ -100,8 +100,8 @@ pub fn xddcc(
         if just_id {
             warn!("多余的参数: `-j, --just_id`.")
         }
-        let sessions = if let Some(accounts) = accounts {
-            AccountTable::get_sessions_by_uid_list_str(db, &accounts)
+        let sessions = if let Some(uid_list_str) = uid_list_str {
+            AccountTable::get_sessions_by_uid_list_str(db, &uid_list_str)
         } else {
             AccountTable::get_sessions(db)
         };
