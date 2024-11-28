@@ -3539,7 +3539,7 @@ dependencies = [
 
 [[package]]
 name = "xdsign"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "clap",
  "clap_complete_command",
