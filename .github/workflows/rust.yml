@@ -74,7 +74,14 @@ jobs:
           command: build
           args: --release --all-features
       - name: Upload artifact
+        if: ${{ matrix.os != 'windows-2022' }}
         uses: actions/upload-artifact@v4
         with:
           name: '${{ matrix.os }}'
           path: '${{ github.workspace }}/target/release/*sign'
+      - name: Upload artifact (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: '${{ matrix.os }}'
+          path: '${{ github.workspace }}/target/release/*sign.exe'
