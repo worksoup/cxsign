@@ -52,7 +52,7 @@ jobs:
           command: build
           args: --release --all-features
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: binary
           path: '${{ github.workspace }}/target/release/*sign'
