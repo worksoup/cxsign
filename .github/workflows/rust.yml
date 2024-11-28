@@ -42,3 +42,8 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: binary
+          path: '${{ github.workspace }}/target/release/*sign'
