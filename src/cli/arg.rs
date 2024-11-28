@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use clap::{Parser, Subcommand};
+#[cfg(feature = "clap_complete_command")]
 use clap_complete_command::Shell;
 use std::path::PathBuf;
 
@@ -39,11 +40,11 @@ pub struct Args {
     pub command: Option<MainCommand>,
     /// 签到 ID.
     /// 默认以最近起对所有有效签到顺序进行签到，且缺少参数时会跳过并继续。
-    pub active_id: Option<i64>,
-    /// 签到账号，格式为以半角逗号隔开的字符串。
+    pub id: Option<i64>,
+    /// 签到账号，格式为以半角逗号隔开的 uid (可通过 accounts 子命令查看).
     /// 默认以一定顺序对所有用户进行签到。
     #[arg(short, long)]
-    pub accounts: Option<String>,
+    pub uid: Option<String>,
     /// 指定位置。
     /// 教师未指定位置的位置签到或需要位置的二维码签到需要提供。
     /// 格式为：`地址,经度,纬度,海拔`, 不满足格式的字符串将被视为别名。
@@ -58,10 +59,6 @@ pub struct Args {
     /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
     #[arg(short, long)]
     pub image: Option<PathBuf>,
-    // /// 从屏幕上获取二维码。
-    // /// 二维码签到时需要提供。
-    // #[arg(short, long)]
-    // pub capture: bool,
     /// 精确地截取二维码。
     /// 如果二维码识别过慢可以尝试添加添加此选项。
     #[arg(long)]
@@ -69,7 +66,7 @@ pub struct Args {
     /// 签到码。
     /// 签到码签到时需要提供。
     #[arg(short, long)]
-    pub signcode: Option<String>,
+    pub code: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -87,9 +84,9 @@ pub enum MainCommand {
     },
     /// 获取课程信息。
     Courses {
-        /// 待操作账号，格式为以半角逗号隔开的字符串。
+        /// 待操作账号，格式为以半角逗号隔开的 uid (可通过 accounts 子命令查看).
         #[arg(short, long)]
-        accounts: Option<String>,
+        uid: Option<String>,
     },
     /// 列出有效签到。
     List {
@@ -138,7 +135,7 @@ pub enum MainCommand {
         // #[arg(short, long)]
         // web: bool,
     },
-    #[cfg(feature = "completions")]
+    #[cfg(feature = "clap_complete_command")]
     /// 生成命令补全文件。
     Completions {
         /// 补全的 Shell 类型。
@@ -161,8 +158,8 @@ pub enum AccountSubCommand {
     },
     /// 删除账号。
     Remove {
-        /// 账号（手机号）。
-        uname: String,
+        /// uid (可通过 accounts 子命令查看).
+        uid: String,
         /// 无需确认直接删除。
         #[arg(short, long)]
         yes: bool,
