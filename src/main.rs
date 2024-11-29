@@ -119,41 +119,29 @@ fn main() {
                 }
             }
             MainCommand::Accounts { fresh } => {
-                if fresh {
-                    let accounts = AccountTable::get_accounts(&db);
-                    let mut sessions = Vec::new();
-                    for a in accounts {
-                        let uname = a.uname();
-                        let session = Session::relogin(
-                            uname,
-                            a.enc_pwd(),
-                            &LoginSolverWrapper::new(a.login_type()),
-                        );
-                        match session {
-                            Ok(session) => {
-                                info!(
-                                    "刷新账号 [{uname}]（用户名：{}）成功！",
-                                    session.get_stu_name()
-                                );
-                                sessions.push(session);
-                            }
-                            Err(e) => warn!("刷新账号 [{uname}] 失败：{e}."),
-                        };
-                    }
-                    for session in sessions {
-                        println!(
-                            "{}, {}, {}",
-                            session.get_uname(),
-                            session.get_stu_name(),
-                            session.get_uid()
-                        );
-                    }
+                let sessions: Vec<Session> = if fresh {
+                    AccountTable::get_accounts(&db)
+                        .into_iter()
+                        .filter_map(|a| {
+                            let session = Session::relogin(
+                                a.uname(),
+                                a.enc_pwd(),
+                                &LoginSolverWrapper::new(a.login_type()),
+                            );
+                            session.ok()
+                        })
+                        .collect()
                 } else {
                     // 列出所有账号。
-                    let sessions = AccountTable::get_sessions(&db);
-                    for (_uid, session) in sessions {
-                        println!("{}, {}", session.get_uname(), session.get_stu_name());
-                    }
+                    AccountTable::get_sessions(&db).into_values().collect()
+                };
+                for session in sessions {
+                    println!(
+                        "{}, {}, {}",
+                        session.get_uname(),
+                        session.get_stu_name(),
+                        session.get_uid()
+                    );
                 }
             }
             MainCommand::Courses { uid } => {
