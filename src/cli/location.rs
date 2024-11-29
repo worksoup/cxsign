@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use clap::Subcommand;
+use cxlib::dir::{AppInfo, Dir};
 use cxlib::{
     default_impl::store::{AccountTable, AliasTable, DataBase, DataBaseTableTrait, LocationTable},
     types::{Location, LocationWithRange},
@@ -148,12 +149,15 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                     warn!("无法确定所要操作的位置对象！");
                     return;
                 }
+                // 尝试将其解释为 `location_id`.
                 let location_id = location_str.trim().parse::<i64>();
                 if let Ok(location_id) = location_id
                     && LocationTable::has_location(db, location_id)
                 {
                     location_id
-                } else if AliasTable::has_alias(db, location_str.trim())
+                }
+                // 无法解释为 `location_id` 则解释为别名。
+                else if AliasTable::has_alias(db, location_str.trim())
                     && let Some(location_id) = AliasTable::get_location_id(db, location_str.trim())
                 {
                     location_id
@@ -163,7 +167,20 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 }
             };
             if let Some(alias) = alias {
-                AliasTable::add_alias_or(db, &alias, location_id, AliasTable::update_alias)
+                AliasTable::add_alias_or(db, &alias, location_id, |d, a, l| {
+                    let app = AppInfo::get_instance().application();
+                    warn!(
+                        r#"
+该别名 `{a}` 已存在，无法添加。
+如需更改，请先使用 `{app} location remove aliases {a}` 命令删除该别名。
+参考命令：
+``` sh
+{app} location remove aliases {a}
+{app} location add {l} {a}
+```
+                    "#,
+                    );
+                })
             }
         }
         LocationSubCommand::Remove { command, yes } => {
