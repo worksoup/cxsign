@@ -14,28 +14,28 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![feature(ascii_char)]
-#![feature(lint_reasons)]
 #![feature(async_closure)]
 #![feature(hash_set_entry)]
 #![feature(map_try_insert)]
 #![feature(let_chains)]
 
 mod cli;
-mod tools;
 
-use cli::{
-    arg::{AccCmds, Args, MainCmds},
-    location::Struct位置操作使用的信息,
+// #[global_allocator]
+// static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+use clap::CommandFactory;
+use cli::arg::{AccountSubCommand, Args, MainCommand};
+use cxlib::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper};
+use cxlib::{
+    activity::{Activity, RawSign},
+    default_impl::store::{AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable},
+    sign::SignTrait,
+    user::Session,
 };
-use cxsign::{
-    store::{
-        tables::{AccountTable, AliasTable, CourseTable, ExcludeTable, LocationTable},
-        DataBase, DataBaseTableTrait,
-    },
-    utils::DIR,
-    Activity, Course, SignTrait,
-};
-use log::warn;
+use log::{error, info, warn};
+use std::collections::HashMap;
+use std::io::stdout;
+
 const NOTICE: &str = r#"
     
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -56,126 +56,199 @@ const NOTICE: &str = r#"
 fn main() {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
-    builder.target(env_logger::Target::Stdout);
+    builder.target(env_logger::Target::Stderr);
     builder.init();
+    cxlib::dir::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
-        active_id,
-        accounts,
+        id,
+        uid,
         location,
         image,
-        signcode,
+        code,
         precisely,
-        no_random_shift,
     } = args;
     let db = DataBase::default();
     db.add_table::<AccountTable>();
-    db.add_table::<CourseTable>();
     db.add_table::<ExcludeTable>();
     db.add_table::<AliasTable>();
     db.add_table::<LocationTable>();
     if let Some(sub_cmd) = command {
         match sub_cmd {
-            MainCmds::Account { command, fresh } => {
-                if let Some(acc_sub_cmd) = command {
-                    match acc_sub_cmd {
-                        AccCmds::Add { uname } => {
-                            // 添加账号。
-                            tools::添加账号(&db, uname, None);
-                        }
-                        AccCmds::Remove { uname, yes } => {
-                            if !yes {
-                                let ans = inquire::Confirm::new("是否删除？")
-                                    .with_default(false)
-                                    .prompt()
-                                    .unwrap();
-                                if !ans {
-                                    return;
-                                }
+            MainCommand::Account { command } => {
+                match command {
+                    AccountSubCommand::Add { uname, passwd } => {
+                        let pwd = cxlib::utils::inquire_pwd(passwd);
+                        let login_type_and_uname = uname.split_once(":");
+                        let session = if let Some((login_type, uname)) = login_type_and_uname {
+                            AccountTable::login(&db, uname.into(), pwd, login_type.into())
+                        } else {
+                            AccountTable::login(
+                                &db,
+                                uname.clone(),
+                                pwd,
+                                DefaultLoginSolver.login_type().into(),
+                            )
+                        };
+                        // 添加账号。
+                        match session {
+                            Ok(session) => info!(
+                                "添加账号 [{uname}]（用户名：{}）成功！",
+                                session.get_stu_name()
+                            ),
+                            Err(e) => warn!("添加账号 [{uname}] 失败：{e}."),
+                        };
+                    }
+                    AccountSubCommand::Remove { uid, yes } => {
+                        if !yes {
+                            let ans = inquire::Confirm::new("是否删除？")
+                                .with_default(false)
+                                .prompt()
+                                .unwrap_or_else(|e| {
+                                    warn!("无法识别输入：{e}.");
+                                    false
+                                });
+                            if !ans {
+                                return;
                             }
-                            // 删除指定账号。
-                            AccountTable::from_ref(&db).delete_account(&uname);
+                        }
+                        // 删除指定账号。
+                        AccountTable::delete_account(&db, &uid);
+                    }
+                }
+            }
+            MainCommand::Accounts { fresh } => {
+                let sessions: Vec<Session> = if fresh {
+                    AccountTable::get_accounts(&db)
+                        .into_iter()
+                        .filter_map(|a| {
+                            let session = Session::relogin(
+                                a.uname(),
+                                a.enc_pwd(),
+                                &LoginSolverWrapper::new(a.login_type()),
+                            );
+                            session.ok()
+                        })
+                        .collect()
+                } else {
+                    // 列出所有账号。
+                    AccountTable::get_sessions(&db).into_values().collect()
+                };
+                for session in sessions {
+                    println!(
+                        "{}, {}, {}",
+                        session.get_uname(),
+                        session.get_stu_name(),
+                        session.get_uid()
+                    );
+                }
+            }
+            MainCommand::Courses { uid } => {
+                let (sessions, _) = if let Some(uid_list_str) = &uid {
+                    (
+                        AccountTable::get_sessions_by_uid_list_str(&db, uid_list_str),
+                        true,
+                    )
+                } else {
+                    (AccountTable::get_sessions(&db), false)
+                };
+                // 获取课程信息。
+                let courses =
+                    cxlib::types::Course::get_courses(sessions.values()).unwrap_or_default();
+                // 列出所有课程。
+                for (c, _) in courses {
+                    println!("{}", c);
+                }
+            }
+            MainCommand::Location { command } => {
+                cli::location::parse_location_sub_command(&db, command)
+            }
+            MainCommand::Locations {
+                global,
+                course,
+                pretty,
+                short,
+            } => {
+                let course_id = course.or(if global { Some(-1) } else { None });
+                if short {
+                    let locations = if let Some(course_id) = course_id {
+                        LocationTable::get_location_map_by_course(&db, course_id)
+                    } else {
+                        LocationTable::get_locations(&db)
+                            .into_iter()
+                            .map(|(k, v)| (k, v.1))
+                            .collect()
+                    };
+                    for (_, location) in locations {
+                        println!("{}", location,)
+                    }
+                } else if let Some(course_id) = course_id {
+                    // 列出指定课程的位置。
+                    let locations = LocationTable::get_location_map_by_course(&db, course_id);
+                    if pretty {
+                        for (location_id, location) in locations {
+                            println!(
+                                "位置id: {}, 位置: {},\n\t别名: {:?}",
+                                location_id,
+                                location,
+                                AliasTable::get_aliases(&db, location_id)
+                            )
+                        }
+                    } else {
+                        for (location_id, location) in locations {
+                            println!(
+                                "{}${}${:?}",
+                                location_id,
+                                location,
+                                AliasTable::get_aliases(&db, location_id)
+                            )
                         }
                     }
                 } else {
-                    let table = AccountTable::from_ref(&db);
-                    let accounts = table.get_accounts();
-                    if fresh {
-                        for (uname, (ref enc_pwd, _)) in accounts {
-                            table.delete_account(&uname);
-                            tools::添加账号_使用加密过的密码_刷新时用_此时密码一定是存在的且为加密后的密码(&db, uname, enc_pwd);
+                    // 列出所有位置。
+                    let locations = LocationTable::get_locations(&db);
+                    if pretty {
+                        for (location_id, (course_id, location)) in locations {
+                            println!(
+                                "位置id: {}, 课程号: {}, 位置: {},\n\t别名: {:?}",
+                                location_id,
+                                course_id,
+                                location,
+                                AliasTable::get_aliases(&db, location_id)
+                            )
                         }
-                    }
-                    // 列出所有账号。
-                    let accounts = table.get_accounts();
-                    for a in accounts {
-                        println!("{}, {}", a.0, a.1 .1);
-                    }
-                }
-            }
-            MainCmds::Course { fresh } => {
-                let table = CourseTable::from_ref(&db);
-                if fresh {
-                    // 重新获取课程信息并缓存。
-                    let account_table = AccountTable::from_ref(&db);
-                    let sessions = account_table.get_sessions();
-                    CourseTable::delete(&db);
-                    for (_, session) in sessions {
-                        let courses = Course::get_courses(&session).unwrap();
-                        for c in courses {
-                            table.add_course_or(&c, |_, _| {});
+                    } else {
+                        for (location_id, (course_id, location)) in locations {
+                            println!(
+                                "{}${}${}${:?}",
+                                location_id,
+                                course_id,
+                                location,
+                                AliasTable::get_aliases(&db, location_id)
+                            )
                         }
                     }
                 }
-                // 列出所有课程。
-                let courses = table.get_courses();
-                for c in courses {
-                    println!("{}", c.1);
-                }
             }
-            MainCmds::Location {
-                lication_id,
-                list,
-                new,
-                import,
-                export,
-                alias,
-                remove,
-                remove_locations,
-                remove_aliases,
-                course,
-                global,
-                yes,
-            } => {
-                let args = Struct位置操作使用的信息 {
-                    location_id: lication_id,
-                    list,
-                    new,
-                    import,
-                    export,
-                    alias,
-                    remove,
-                    remove_locations,
-                    remove_aliases,
-                    course,
-                    global,
-                    yes,
-                };
-                cli::location::location(&db, args)
-            }
-            MainCmds::List { course, all } => {
-                let sessions = AccountTable::from_ref(&db).get_sessions();
+            MainCommand::List { course, all } => {
+                let sessions = AccountTable::get_sessions(&db);
                 if let Some(course) = course {
-                    let (a, n) = if let Some(course) =
-                        CourseTable::from_ref(&db).get_courses().get(&course)
+                    let courses = cxlib::types::Course::get_courses(sessions.values())
+                        .unwrap_or_default()
+                        .into_keys()
+                        .map(|c| (c.get_id(), c))
+                        .collect::<HashMap<_, _>>();
+                    let (a, n) = if let Some(course) = courses.get(&course)
                         && let Some(session) = sessions.values().next()
-                        && let Ok((a, n, _)) = Activity::get_course_activities(
-                            ExcludeTable::from_ref(&db),
-                            session,
-                            course,
-                        ) {
-                        (a, n)
+                        && let Ok(a) = Activity::get_course_activities(&db, session, course)
+                    {
+                        a.into_iter()
+                            .filter_map(|k| match k {
+                                Activity::RawSign(k) => Some(k),
+                                Activity::Other(_) => None,
+                            })
+                            .partition(|k| k.is_valid())
                     } else {
                         (vec![], vec![])
                     };
@@ -194,40 +267,64 @@ fn main() {
                         }
                     }
                 } else {
-                    let (available_sign_activities, other_sign_activities, _) =
-                        Activity::get_all_activities(
-                            ExcludeTable::from_ref(&db),
-                            sessions.values().into_iter(),
-                            all,
-                        )
-                        .unwrap();
+                    let activities = Activity::get_all_activities(&db, sessions.values(), all)
+                        .unwrap_or_else(|e| {
+                            warn!("未能获取签到列表，错误信息：{e}.",);
+                            Default::default()
+                        });
+                    let (available_sign_activities, other_sign_activities): (
+                        Vec<RawSign>,
+                        Vec<RawSign>,
+                    ) = activities
+                        .into_keys()
+                        .filter_map(|k| match k {
+                            Activity::RawSign(k) => Some(k),
+                            Activity::Other(_) => None,
+                        })
+                        .partition(|a| a.is_valid());
                     // 列出所有有效签到。
                     for a in available_sign_activities {
-                        println!("{}", a.0.as_inner());
+                        println!("{}", a.as_inner());
                     }
                     if all {
                         // 列出所有签到。
                         for a in other_sign_activities {
-                            println!("{}", a.0.as_inner());
+                            println!("{}", a.as_inner());
                         }
                     } else {
                         warn!("{NOTICE}");
                     }
                 }
             }
-            MainCmds::WhereIsConfig => {
-                println!("{}", &DIR.get_config_dir().to_str().unwrap());
+            MainCommand::WhereIsConfig => {
+                println!(
+                    "{}",
+                    &cxlib::dir::Dir::get_config_dir()
+                        .into_os_string()
+                        .to_string_lossy()
+                        .to_string()
+                );
+            }
+            #[cfg(feature = "clap_complete_command")]
+            MainCommand::Completions { shell, output } => {
+                if let Some(output) = output {
+                    shell
+                        .generate_to(&mut Args::command(), output)
+                        .map_err(|e| warn!("文件写入出错，请检查路径是否正确！错误信息：{e}"))
+                        .unwrap();
+                } else {
+                    shell.generate(&mut Args::command(), &mut stdout());
+                }
             }
         }
     } else {
-        let 签到可能使用的信息 = cli::arg::CliArgs {
-            位置字符串: location,
-            图片或图片路径: image,
-            签到码: signcode,
-            是否精确识别二维码: precisely,
-            是否禁用随机偏移: no_random_shift,
+        let cli_args = cli::arg::CliArgs {
+            location_str: location,
+            image,
+            signcode: code,
+            precisely,
         };
         warn!("{NOTICE}");
-        cli::签到(db, active_id, accounts, 签到可能使用的信息).unwrap();
+        cli::do_sign(db, id, uid, cli_args).unwrap_or_else(|e| error!("签到失败！错误信息：{e}."));
     }
 }

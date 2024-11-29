@@ -16,70 +16,74 @@
 pub mod arg;
 pub mod location;
 
-use cxsign::{
-    store::{
-        tables::{AccountTable, ExcludeTable},
-        DataBase, DataBaseTableTrait,
+use cxlib::{
+    activity::{Activity, RawSign},
+    default_impl::{
+        sign::Sign,
+        signner::{
+            DefaultGestureOrSigncodeSignner, DefaultLocationInfoGetter, DefaultLocationSignner,
+            DefaultNormalOrRawSignner, DefaultPhotoSignner, DefaultQrCodeSignner,
+        },
+        store::{AccountTable, DataBase},
     },
-    Activity, DefaultGestureOrSigncodeSignner, DefaultLocationSignner, DefaultNormalOrRawSignner,
-    DefaultPhotoSignner, DefaultQrCodeSignner, RawSign, Session, Sign, SignResult, SignTrait,
-    SignnerTrait,
+    error::Error,
+    sign::{SignResult, SignTrait},
+    signner::SignnerTrait,
+    user::Session,
 };
 use log::{info, warn};
 use std::collections::HashMap;
 
 use self::arg::CliArgs;
 
-fn 区分签到类型并进行签到<'a>(
-    签到: RawSign,
+fn match_signs(
+    raw_sign: RawSign,
     db: &DataBase,
-    签到会话列表: &Vec<Session>,
-    签到可能使用的信息: &CliArgs,
-) -> Result<(), cxsign::Error> {
-    let sign_name = 签到.name.clone();
-    let mut 签到 = if 签到会话列表.is_empty() {
+    sessions: &[Session],
+    cli_args: &CliArgs,
+) -> Result<(), Box<Error>> {
+    let sign_name = raw_sign.name.clone();
+    let mut sign = if sessions.is_empty() {
         warn!("无法判断签到[{sign_name}]的签到类型。");
-        Sign::Unknown(签到)
+        Sign::Unknown(raw_sign)
     } else {
         info!("成功判断签到[{sign_name}]的签到类型。");
-        签到.to_sign(&签到会话列表[0])
+        Sign::from_raw(raw_sign, &sessions[0])
     };
-    let 签到 = &mut 签到;
+    let sign = &mut sign;
     let CliArgs {
-        位置字符串,
-        图片或图片路径: pic,
-        签到码,
-        是否精确识别二维码,
-        是否禁用随机偏移,
-    } = 签到可能使用的信息;
-    let mut 签到结果列表 = HashMap::new();
-    let sessions = 签到会话列表.into_iter();
-    match 签到 {
+        location_str,
+        image,
+        signcode,
+        precisely,
+    } = cli_args;
+    #[allow(clippy::mutable_key_type)]
+    let mut sign_results = HashMap::new();
+    let sessions = sessions.iter();
+    match sign {
         Sign::Photo(ps) => {
             info!("签到[{sign_name}]为拍照签到。");
-            签到结果列表 = DefaultPhotoSignner::new(&pic).sign(ps, sessions)?;
+            sign_results = DefaultPhotoSignner::new(image).sign(ps, sessions)?;
         }
         Sign::Normal(ns) => {
             info!("签到[{sign_name}]为普通签到。");
-            签到结果列表 = DefaultNormalOrRawSignner.sign(ns, sessions)?;
+            sign_results = DefaultNormalOrRawSignner.sign(ns, sessions)?;
         }
         Sign::QrCode(qs) => {
             info!("签到[{sign_name}]为二维码签到。");
-            签到结果列表 = DefaultQrCodeSignner::new(
-                &db,
-                &位置字符串,
-                &pic,
+            sign_results = DefaultQrCodeSignner::new(
+                DefaultLocationInfoGetter::from(db),
+                location_str,
+                image,
                 &None,
-                *是否精确识别二维码,
-                *是否禁用随机偏移,
+                *precisely,
             )
             .sign(qs, sessions)?;
         }
         Sign::Gesture(gs) => {
             info!("签到[{sign_name}]为手势签到。");
-            if let Some(signcode) = 签到码 {
-                签到结果列表 =
-                    DefaultGestureOrSigncodeSignner::new(&signcode).sign(gs, sessions)?;
+            if let Some(signcode) = signcode {
+                sign_results = DefaultGestureOrSigncodeSignner::new(signcode).sign(gs, sessions)?;
             } else {
                 warn!(
                     "所有用户在手势签到[{}]中签到失败！需要提供签到码！",
@@ -89,14 +93,14 @@ fn 区分签到类型并进行签到<'a>(
         }
         Sign::Location(ls) => {
             info!("签到[{sign_name}]为位置签到。");
-            签到结果列表 = DefaultLocationSignner::new(&db, &位置字符串, *是否禁用随机偏移)
-                .sign(ls, sessions)?;
+            sign_results =
+                DefaultLocationSignner::new(DefaultLocationInfoGetter::from(db), location_str)
+                    .sign(ls, sessions)?;
         }
         Sign::Signcode(ss) => {
             info!("签到[{sign_name}]为签到码签到。");
-            if let Some(signcode) = 签到码 {
-                签到结果列表 =
-                    DefaultGestureOrSigncodeSignner::new(&signcode).sign(ss, sessions)?;
+            if let Some(signcode) = signcode {
+                sign_results = DefaultGestureOrSigncodeSignner::new(signcode).sign(ss, sessions)?;
             } else {
                 warn!(
                     "所有用户在手势签到[{}]中签到失败！需要提供签到码！",
@@ -106,84 +110,101 @@ fn 区分签到类型并进行签到<'a>(
         }
         Sign::Unknown(us) => {
             warn!("签到[{}]为无效签到类型！", us.name);
-            签到结果列表 = DefaultNormalOrRawSignner.sign(us, sessions)?;
+            sign_results = DefaultNormalOrRawSignner.sign(us, sessions)?;
         }
     }
-    if !签到结果列表.is_empty() {
-        println!("签到活动[{}]签到结果：", 签到.as_inner().name);
-        for (用户真名, 签到结果) in 签到结果列表 {
-            if let SignResult::Fail { msg } = 签到结果 {
+    if !sign_results.is_empty() {
+        info!("签到活动[{}]签到结果：", sign.as_inner().name);
+        for (session, sign_result) in sign_results {
+            if let SignResult::Fail { msg } = sign_result {
                 warn!(
                     "\t用户[{}]签到失败！失败信息：[{:?}]",
-                    用户真名.get_stu_name(),
+                    session.get_stu_name(),
                     msg
                 );
             } else {
-                println!("\t用户[{}]签到成功！", 用户真名.get_stu_name(),);
+                info!("\t用户[{}]签到成功！", session.get_stu_name(),);
             }
         }
     }
     Ok(())
 }
 
-pub fn 签到(
+pub fn do_sign(
     db: DataBase,
     active_id: Option<i64>,
-    账号列表字符串: Option<String>,
-    签到可能使用的信息: CliArgs,
-) -> Result<(), cxsign::Error> {
-    let account_table = AccountTable::from_ref(&db);
-    let (sessions, 是否指定accounts参数) = if let Some(账号列表字符串) = &账号列表字符串
-    {
+    uid_list_str: Option<String>,
+    cli_args: CliArgs,
+) -> Result<(), Error> {
+    let (sessions, has_uid_arg) = if let Some(uid_list_str) = &uid_list_str {
         (
-            account_table.get_sessions_by_accounts_str(账号列表字符串),
+            AccountTable::get_sessions_by_uid_list_str(&db, uid_list_str),
             true,
         )
     } else {
-        (account_table.get_sessions(), false)
+        (AccountTable::get_sessions(&db), false)
     };
-    let (有效签到列表, 其他签到列表, _) = Activity::get_all_activities(
-        ExcludeTable::from_ref(&db),
-        sessions.values().into_iter(),
-        false,
-    )
-    .unwrap();
+    let activities =
+        Activity::get_all_activities(&db, sessions.values(), false).map_err(Error::from)?;
+    let (valid_signs, other_signs): (
+        HashMap<RawSign, Vec<Session>>,
+        HashMap<RawSign, Vec<Session>>,
+    ) = activities
+        .into_iter()
+        .filter_map(|(k, v)| match k {
+            Activity::RawSign(k) => Some((k, v)),
+            Activity::Other(_) => None,
+        })
+        .partition(|(k, _)| k.is_valid());
     let signs = if let Some(active_id) = active_id {
-        let (签到_需要处理的, 账号对象_签到所需的_vec) = {
-            if let Some(s1) = 有效签到列表
+        let (sign, sessions) = {
+            if let Some(s1) = valid_signs
                 .into_iter()
                 .find(|kv| kv.0.as_inner().active_id == active_id.to_string())
             {
                 s1
-            } else if let Some(s2) = 其他签到列表
+            } else if let Some(s2) = other_signs
                 .into_iter()
                 .find(|kv| kv.0.as_inner().active_id == active_id.to_string())
             {
                 s2
+            } else if has_uid_arg {
+                panic!(
+                    "没有该签到活动！请检查签到活动 ID 是否正确或所指定的账号是否存在该签到活动！"
+                );
             } else {
-                if 是否指定accounts参数 {
-                    panic!("没有该签到活动！请检查签到活动 ID 是否正确或所指定的账号是否存在该签到活动！");
-                } else {
-                    panic!("没有该签到活动！请检查签到活动 ID 是否正确！");
-                }
+                panic!("没有该签到活动！请检查签到活动 ID 是否正确！");
             }
         };
         let mut map = HashMap::new();
-        map.insert(签到_需要处理的, 账号对象_签到所需的_vec);
+        map.insert(sign, sessions);
         map
     } else {
         let mut signs = HashMap::new();
-        for (sign, 账号对象_签到所需的_vec) in 有效签到列表 {
-            signs.insert(sign, 账号对象_签到所需的_vec);
+        for (sign, sessions) in valid_signs {
+            signs.insert(sign, sessions);
         }
         signs
     };
     if signs.is_empty() {
         warn!("签到列表为空。");
     }
-    for (sign, sessions) in signs.into_iter() {
-        区分签到类型并进行签到(sign, &db, &sessions, &签到可能使用的信息)
-            .unwrap_or_else(|e| warn!("{e}"));
+    for (sign, sessions) in signs {
+        info!(
+            "即将处理签到：[{}], id 为 {}, 开始时间为 {}, 课程为 {} / {} / {}",
+            sign.name,
+            sign.active_id,
+            cxlib::utils::time_string_from_mills(sign.start_time_mills),
+            sign.course.get_class_id(),
+            sign.course.get_id(),
+            sign.course.get_name()
+        );
+        let mut names = Vec::new();
+        for s in sessions.iter() {
+            names.push(s.get_stu_name().to_string())
+        }
+        info!("签到者：{names:?}");
+        match_signs(sign, &db, &sessions, &cli_args).unwrap_or_else(|e| warn!("{e}"));
     }
     Ok(())
 }
