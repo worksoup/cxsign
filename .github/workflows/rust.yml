@@ -62,6 +62,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Install libdbus-1-dev
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
