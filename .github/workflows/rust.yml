@@ -17,9 +17,9 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -47,7 +47,7 @@ jobs:
         with:
           command: clippy
   build:
-    if: true
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: [ check ]
     strategy:
       fail-fast: false
