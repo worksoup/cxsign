@@ -33,17 +33,17 @@ jobs:
       - name: Install libdbus-1-dev
         run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
       - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
+        uses: crusty-pie/toolchain@v1
         with:
             toolchain: nightly
             override: true
             components: clippy
       - name: Run cargo check
-        uses: actions-rs/cargo@v1
+        uses: clechasseur/rs-cargo@v2
         with:
           command: check
       - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
+        uses: clechasseur/rs-cargo@v2
         with:
           command: clippy
   build:
@@ -64,12 +64,12 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
       - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
+        uses: crusty-pie/toolchain@v1
         with:
             toolchain: nightly
             override: true
       - name: Run cargo build
-        uses: actions-rs/cargo@v1
+        uses: clechasseur/rs-cargo@v2
         with:
           command: build
           args: --release --all-features
