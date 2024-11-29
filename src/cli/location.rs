@@ -172,7 +172,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                     warn!(
                         r#"
 该别名 `{a}` 已存在，无法添加。
-如需更改，请先使用 `{app} location remove aliases {a}` 命令删除该别名。
+如需更改，请先使用 `{app} location remove --yes aliases {a}` 命令删除该别名。
 参考命令：
 ``` sh
 {app} location remove aliases {a}
