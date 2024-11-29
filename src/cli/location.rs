@@ -175,7 +175,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
 如需更改，请先使用 `{app} location remove --yes aliases {a}` 命令删除该别名。
 参考命令：
 ``` sh
-{app} location remove aliases {a}
+{app} location remove --yes aliases {a}
 {app} location add {l} {a}
 ```"#,
                     );
