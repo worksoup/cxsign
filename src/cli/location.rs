@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use clap::Subcommand;
-use cxlib::dir::{AppInfo, Dir};
+use cxlib::dir::AppInfo;
 use cxlib::{
     default_impl::store::{AccountTable, AliasTable, DataBase, DataBaseTableTrait, LocationTable},
     types::{Location, LocationWithRange},
@@ -167,7 +167,7 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 }
             };
             if let Some(alias) = alias {
-                AliasTable::add_alias_or(db, &alias, location_id, |d, a, l| {
+                AliasTable::add_alias_or(db, &alias, location_id, |_d, a, l| {
                     let app = AppInfo::get_instance().application();
                     warn!(
                         r#"
