@@ -151,14 +151,15 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 }
                 // 尝试将其解释为 `location_id`.
                 let location_id = location_str.trim().parse::<i64>();
-                if let Ok(location_id) = location_id
-                    && LocationTable::has_location(db, location_id)
+                if location_id
+                    .as_ref()
+                    .is_ok_and(|location_id| LocationTable::has_location(db, *location_id))
                 {
-                    location_id
+                    unsafe { location_id.unwrap_unchecked() }
                 }
                 // 无法解释为 `location_id` 则解释为别名。
-                else if AliasTable::has_alias(db, location_str.trim())
-                    && let Some(location_id) = AliasTable::get_location_id(db, location_str.trim())
+                else if let Some(location_id) =
+                    AliasTable::get_location_id(db, location_str.trim())
                 {
                     location_id
                 } else {
@@ -194,16 +195,21 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                     let location_id = location_id.or_else(|| {
                         alias.and_then(|alias| AliasTable::get_location_id(db, &alias))
                     });
-                    if let Some(location_id) = location_id
-                        && LocationTable::has_location(db, location_id)
-                    {
-                        LocationTable::delete_location(db, location_id);
-                        let aliases = AliasTable::get_aliases(db, location_id);
-                        for alias in aliases.iter() {
-                            AliasTable::delete_alias(db, alias)
+                    match location_id {
+                        Some(location_id) => {
+                            if LocationTable::has_location(db, location_id) {
+                                LocationTable::delete_location(db, location_id);
+                                let aliases = AliasTable::get_aliases(db, location_id);
+                                for alias in aliases.iter() {
+                                    AliasTable::delete_alias(db, alias)
+                                }
+                            } else {
+                                warn!("警告：未指定有效的位置，将不做任何事情。");
+                            }
                         }
-                    } else {
-                        warn!("警告：未指定有效的位置，将不做任何事情。");
+                        None => {
+                            warn!("警告：未指定有效的位置，将不做任何事情。");
+                        }
                     }
                 }
                 Remove::Aliases { alias } => {
@@ -327,19 +333,16 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                 }
                 do_something = true;
             }
-            if let Some(course_id) = course
-                && let Some(course) = {
-                    let courses =
-                        cxlib::types::Course::get_courses(AccountTable::get_sessions(db).values())
-                            .unwrap_or_default()
-                            .into_keys()
-                            .map(|c| (c.get_id(), c))
-                            .collect::<HashMap<_, _>>();
-                    courses.get(&course_id).cloned()
-                }
-            {
+            course.and_then(|course_id| {
+                let courses =
+                    cxlib::types::Course::get_courses(AccountTable::get_sessions(db).values())
+                        .ok()?;
+                let course = courses
+                    .into_iter()
+                    .find(|(course, _)| course.get_id() == course_id)?
+                    .0;
                 let sessions = AccountTable::get_sessions(db);
-                if let Some(session) = sessions.values().next() {
+                sessions.values().next().map(|session| {
                     match LocationWithRange::from_log(session, &course) {
                         Ok(locations) => {
                             if locations.is_empty() {
@@ -359,8 +362,8 @@ pub fn parse_location_sub_command(db: &DataBase, sub_command: LocationSubCommand
                             warn!("遇到了问题：{e}");
                         }
                     }
-                }
-            }
+                })
+            });
             if !do_something {
                 warn!("未指定任何参数，不做任何事情。")
             }
