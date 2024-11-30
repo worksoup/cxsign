@@ -70,6 +70,7 @@ fn match_signs(
         location_str,
         image,
         signcode,
+        #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
         precisely,
     } = cli_args;
     #[allow(clippy::mutable_key_type)]
@@ -91,6 +92,7 @@ fn match_signs(
                 location_str,
                 image,
                 &None,
+                #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
                 *precisely,
             )
             .sign(qs, sessions)?;

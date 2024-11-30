@@ -18,6 +18,10 @@ name = "xdsign"
 version = "0.0.7"
 edition = "2021"
 
+[lib]
+name = "xdsign"
+crate-type = ["lib", "cdylib", "staticlib"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["completions"]
