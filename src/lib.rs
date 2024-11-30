@@ -13,12 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![feature(ascii_char)]
-#![feature(async_closure)]
-#![feature(hash_set_entry)]
-#![feature(map_try_insert)]
-#![feature(let_chains)]
-
 mod cli;
 
 // #[global_allocator]
@@ -249,19 +243,22 @@ pub fn run() {
                         .into_keys()
                         .map(|c| (c.get_id(), c))
                         .collect::<HashMap<_, _>>();
-                    let (a, n) = if let Some(course) = courses.get(&course)
-                        && let Some(session) = sessions.values().next()
-                        && let Ok(a) = Activity::get_course_activities(&db, session, course)
-                    {
-                        a.into_iter()
-                            .filter_map(|k| match k {
-                                Activity::RawSign(k) => Some(k),
-                                Activity::Other(_) => None,
+                    let (a, n) = courses
+                        .get(&course)
+                        .and_then(|course| {
+                            sessions.values().next().and_then(|session| {
+                                Activity::get_course_activities(&db, session, course).ok()
                             })
-                            .partition(|k| k.is_valid())
-                    } else {
-                        (vec![], vec![])
-                    };
+                        })
+                        .map(|a| {
+                            a.into_iter()
+                                .filter_map(|k| match k {
+                                    Activity::RawSign(k) => Some(k),
+                                    Activity::Other(_) => None,
+                                })
+                                .partition(|k| k.is_valid())
+                        })
+                        .unwrap_or_else(|| (vec![], vec![]));
                     // 列出指定课程的有效签到。
                     for a in a {
                         if a.course.get_id() == course {

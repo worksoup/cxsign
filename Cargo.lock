@@ -1871,9 +1871,9 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
 name = "onceinit"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "489e963b6492965075a8d125053c118a79a0e8d9e26d4dbc91dbe30ad72dc3d3"
+checksum = "e15627afd8e933c820641816869e6310da7c0dfa315698958100d0da6fd7fa2a"
 dependencies = [
  "thiserror 2.0.3",
 ]
