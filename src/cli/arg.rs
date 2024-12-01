@@ -60,6 +60,7 @@ pub struct Args {
     /// 如果是目录，则会选择在该目录下修改日期最新的图片作为拍照签到图片或二维码图片。
     #[arg(short, long)]
     pub image: Option<PathBuf>,
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
     /// 精确地截取二维码。
     /// 如果二维码识别过慢可以尝试添加添加此选项。
     #[arg(long)]
@@ -156,6 +157,7 @@ pub struct CliArgs {
     pub location_str: Option<String>,
     pub image: Option<PathBuf>,
     // pub capture: bool,
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
     pub precisely: bool,
     pub signcode: Option<String>,
 }
