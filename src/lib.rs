@@ -20,18 +20,16 @@ mod xddcc;
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
-use cxlib::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, LoginSolvers};
 use cxlib::{
     activity::{Activity, RawSign},
     default_impl::store::{AccountTable, DataBase, ExcludeTable},
-    dir::Dir,
     sign::SignTrait,
+    store::Dir,
     types::Location,
-    user::Session,
+    user::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, LoginSolvers, Session},
 };
 use log::{error, info, warn};
-use std::collections::HashMap;
-use std::io::stdout;
+use std::{collections::HashMap, io::stdout};
 use x_l4rs::IDSLoginImpl;
 use xdsign_data::LocationPreprocessor;
 
@@ -71,7 +69,11 @@ fn init_function() {
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
     let login_solver = IDSLoginImpl::TARGET_LEARNING.get_login_solver(|a, b| {
-        cxlib::imageproc::find_sub_image(a, b, cxlib::imageproc::find_max_ncc)
+        Ok(cxlib::imageproc::find_sub_image(
+            a,
+            b,
+            cxlib::imageproc::slide_solvers::find_min_sum_of_squared_errors,
+        ))
     });
     let login_type = login_solver.login_type().to_owned();
     LoginSolvers::register(login_solver)
@@ -213,7 +215,7 @@ pub fn run() {
                         .get(&course)
                         .and_then(|course| {
                             sessions.values().next().and_then(|session| {
-                                Activity::get_course_activities(&db, session, course).ok()
+                                Activity::get_course_activities(&db, session, course, true).ok()
                             })
                         })
                         .map(|a| {
@@ -272,7 +274,7 @@ pub fn run() {
             MainCommand::WhereIsConfig => {
                 println!(
                     "{}",
-                    &cxlib::dir::Dir::get_config_dir()
+                    &cxlib::store::Dir::get_config_dir()
                         .into_os_string()
                         .to_string_lossy()
                         .to_string()

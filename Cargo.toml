@@ -15,7 +15,7 @@
 
 [package]
 name = "xdsign"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2021"
 
 [lib]
@@ -32,10 +32,11 @@ completion-fig = ["clap_complete_command", "clap_complete_command/fig"]
 
 [dependencies]
 # tikv-jemallocator = "0.5"
+chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
 clap_complete_command = { version = "0.6", default-features = false, optional = true }
 cxlib = { git = "https://github.com/worksoup/cxlib.git" }
-# cxsign = { path = "../newsign/" }
+# cxsign = { path = "../cxlib/" }
 env_logger = "0.11"
 indicatif = "0.17"
 indicatif-log-bridge = "0.2"

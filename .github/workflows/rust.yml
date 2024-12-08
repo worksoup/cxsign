@@ -35,9 +35,9 @@ jobs:
       - name: Install latest nightly
         uses: crusty-pie/toolchain@v1
         with:
-            toolchain: nightly
-            override: true
-            components: clippy
+          toolchain: nightly
+          override: true
+          components: clippy
       - name: Run cargo check
         uses: clechasseur/rs-cargo@v2
         with:
@@ -55,7 +55,7 @@ jobs:
         include:
           - { os: ubuntu-latest }
           - { os: windows-2022 }
-          - { os: macos-12 }
+          - { os: macos-13 }
     name: ${{ format('{0}', matrix.os) }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -66,8 +66,8 @@ jobs:
       - name: Install latest nightly
         uses: crusty-pie/toolchain@v1
         with:
-            toolchain: nightly
-            override: true
+          toolchain: nightly
+          override: true
       - name: Run cargo build
         uses: clechasseur/rs-cargo@v2
         with:

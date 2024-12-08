@@ -26,8 +26,7 @@ use cxlib::{
         store::{AccountTable, DataBase},
     },
     error::Error,
-    sign::{SignResult, SignTrait},
-    signner::SignnerTrait,
+    sign::{SignResult, SignTrait, SignnerTrait},
     types::Location,
     user::Session,
 };
@@ -40,23 +39,15 @@ use self::arg::CliArgs;
 pub struct XdsignLocationInfoGetter;
 
 impl LocationInfoGetterTrait for XdsignLocationInfoGetter {
-    fn map_location_str(&self, location_str: &str) -> Option<Location> {
-        let location_str = location_str.trim();
-        location_str
-            .parse()
-            .ok()
-            .or_else(|| LOCATIONS.get(location_str).cloned())
+    fn get_location_by_location_str(&self, location_str: &str) -> Option<Location> {
+        LOCATIONS.get(location_str).cloned()
     }
     fn get_fallback_location(&self, _: &LocationSign) -> Option<Location> {
         LOCATIONS.values().next().cloned()
     }
 }
 
-fn match_signs(
-    raw_sign: RawSign,
-    sessions: &[Session],
-    cli_args: &CliArgs,
-) -> Result<(), Box<Error>> {
+fn match_signs(raw_sign: RawSign, sessions: &[Session], cli_args: &CliArgs) -> Result<(), Error> {
     let sign_name = raw_sign.name.clone();
     let mut sign = if sessions.is_empty() {
         warn!("无法判断签到[{sign_name}]的签到类型。");
@@ -130,7 +121,7 @@ fn match_signs(
         }
     }
     if !sign_results.is_empty() {
-        info!("签到活动[{}]签到结果：", sign.as_inner().name);
+        info!("签到活动[{}]签到结果：", sign.as_raw().name);
         for (session, sign_result) in sign_results {
             if let SignResult::Fail { msg } = sign_result {
                 warn!(
@@ -210,7 +201,10 @@ pub fn do_sign(
             "即将处理签到：[{}], id 为 {}, 开始时间为 {}, 课程为 {} / {} / {}",
             sign.name,
             sign.active_id,
-            cxlib::utils::time_string_from_mills(sign.start_time_mills),
+            chrono::DateTime::from_timestamp_millis(sign.start_time_mills as i64)
+                .unwrap()
+                .naive_local()
+                .to_string(),
             sign.course.get_class_id(),
             sign.course.get_id(),
             sign.course.get_name()
