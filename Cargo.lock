@@ -105,9 +105,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.93"
+version = "1.0.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c95c10ba0b00a02636238b814946408b1322d5ac4760326e6fb8ec956d85775"
+checksum = "c1fd03a028ef38ba2276dce7e33fcd6369c158a1bca17946c4b1b701891c1ff7"
 
 [[package]]
 name = "approx"
@@ -266,9 +266,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.2"
+version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f34d93e62b03caf570cccc334cbc6c2fceca82f39211051345108adcba3eebdc"
+checksum = "27f657647bcff5394bf56c7317665bbf790a137a50eaaa5c6bfbb9e27a518f2d"
 dependencies = [
  "jobserver",
  "libc",
@@ -339,9 +339,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.21"
+version = "4.5.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb3b4b9e5a7c7514dfa52869339ee98b3156b0bfb4e8a77c4ff4babb64b1604f"
+checksum = "3135e7ec2ef7b10c6ed8950f0f792ed96ee093fa088608f1c76e569722700c84"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -349,9 +349,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.21"
+version = "4.5.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b17a95aa67cc7b5ebd32aa5370189aa0d79069ef1c64ce893bd30fb24bff20ec"
+checksum = "30582fc632330df2bd26877bde0c1f4470d57c582bbc070376afcd04d8cb4838"
 dependencies = [
  "anstream",
  "anstyle",
@@ -415,9 +415,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afb84c814227b90d6895e01398aee0d8033c00e7466aca416fb6a8e0eb19d8a7"
+checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
 name = "codepage-437"
@@ -608,14 +608,14 @@ dependencies = [
 
 [[package]]
 name = "cxlib"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cxlib_internal",
 ]
 
 [[package]]
 name = "cxlib_activity"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "cxlib_error",
@@ -624,21 +624,25 @@ dependencies = [
  "cxlib_user",
  "cxlib_utils",
  "log",
- "percent-encoding",
  "serde",
  "ureq",
 ]
 
 [[package]]
 name = "cxlib_captcha"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cxlib_error",
  "cxlib_imageproc",
  "cxlib_obfuscate",
  "cxlib_protocol",
+ "cxlib_utils",
+ "getset2",
  "hex",
+ "image",
  "log",
+ "onceinit",
+ "percent-encoding",
  "rand",
  "serde",
  "ureq",
@@ -646,182 +650,114 @@ dependencies = [
 
 [[package]]
 name = "cxlib_default_impl"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cxlib_activity",
- "cxlib_captcha",
- "cxlib_dir",
  "cxlib_error",
  "cxlib_imageproc",
- "cxlib_login",
  "cxlib_protocol",
- "cxlib_qrcode_utils",
  "cxlib_sign",
- "cxlib_signner",
  "cxlib_store",
  "cxlib_types",
  "cxlib_user",
  "cxlib_utils",
+ "image",
  "log",
- "num_enum",
- "percent-encoding",
+ "rxing",
  "serde",
  "sqlite",
- "toml",
+ "ureq",
+ "xcap",
+]
+
+[[package]]
+name = "cxlib_error"
+version = "0.3.0"
+dependencies = [
+ "log",
+ "thiserror 2.0.5",
  "ureq",
 ]
 
 [[package]]
-name = "cxlib_dir"
-version = "0.2.0"
+name = "cxlib_imageproc"
+version = "0.3.0"
+dependencies = [
+ "image",
+ "imageproc",
+ "num-traits",
+]
+
+[[package]]
+name = "cxlib_internal"
+version = "0.3.0"
+dependencies = [
+ "cxlib_activity",
+ "cxlib_captcha",
+ "cxlib_default_impl",
+ "cxlib_error",
+ "cxlib_sign",
+ "cxlib_store",
+ "cxlib_types",
+ "cxlib_user",
+ "cxlib_utils",
+]
+
+[[package]]
+name = "cxlib_obfuscate"
+version = "0.3.0"
+dependencies = [
+ "flate2",
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
+name = "cxlib_protocol"
+version = "0.3.0"
+dependencies = [
+ "cxlib_error",
+ "cxlib_store",
+ "log",
+ "onceinit",
+ "serde",
+ "toml",
+]
+
+[[package]]
+name = "cxlib_sign"
+version = "0.3.0"
+dependencies = [
+ "cxlib_activity",
+ "cxlib_captcha",
+ "cxlib_error",
+ "cxlib_protocol",
+ "cxlib_types",
+ "cxlib_user",
+ "log",
+ "num_enum",
+ "percent-encoding",
+ "serde",
+ "ureq",
+]
+
+[[package]]
+name = "cxlib_store"
+version = "0.3.0"
 dependencies = [
  "directories",
  "onceinit",
 ]
 
 [[package]]
-name = "cxlib_error"
-version = "0.2.0"
+name = "cxlib_types"
+version = "0.3.0"
 dependencies = [
- "thiserror 2.0.3",
- "ureq",
-]
-
-[[package]]
-name = "cxlib_imageproc"
-version = "0.2.0"
-dependencies = [
- "image",
- "imageproc",
- "num-traits",
- "ureq",
-]
-
-[[package]]
-name = "cxlib_internal"
-version = "0.2.0"
-dependencies = [
- "cxlib_activity",
- "cxlib_captcha",
- "cxlib_default_impl",
- "cxlib_dir",
  "cxlib_error",
- "cxlib_imageproc",
- "cxlib_login",
- "cxlib_pan",
- "cxlib_qrcode_utils",
- "cxlib_sign",
- "cxlib_signner",
- "cxlib_store",
- "cxlib_types",
+ "cxlib_protocol",
  "cxlib_user",
- "cxlib_utils",
-]
-
-[[package]]
-name = "cxlib_login"
-version = "0.2.0"
-dependencies = [
- "cookie_store",
- "cxlib_error",
- "cxlib_protocol",
- "cxlib_utils",
- "log",
- "onceinit",
- "serde",
- "serde_json",
- "ureq",
-]
-
-[[package]]
-name = "cxlib_obfuscate"
-version = "0.2.0"
-dependencies = [
- "cxlib_utils",
- "proc-macro2",
- "quote",
-]
-
-[[package]]
-name = "cxlib_pan"
-version = "0.2.0"
-dependencies = [
- "cxlib_protocol",
  "log",
  "mime_guess",
- "rand",
- "ureq",
-]
-
-[[package]]
-name = "cxlib_protocol"
-version = "0.2.0"
-dependencies = [
- "cxlib_dir",
- "cxlib_error",
- "log",
- "onceinit",
- "serde",
- "toml",
-]
-
-[[package]]
-name = "cxlib_qrcode_utils"
-version = "0.2.0"
-dependencies = [
- "cxlib_imageproc",
- "cxlib_protocol",
- "cxlib_utils",
- "image",
- "log",
- "rxing",
- "xcap",
-]
-
-[[package]]
-name = "cxlib_sign"
-version = "0.2.0"
-dependencies = [
- "chrono",
- "cxlib_activity",
- "cxlib_captcha",
- "cxlib_error",
- "cxlib_protocol",
- "cxlib_types",
- "cxlib_user",
- "cxlib_utils",
- "log",
- "num_enum",
- "percent-encoding",
- "serde",
- "ureq",
-]
-
-[[package]]
-name = "cxlib_signner"
-version = "0.2.0"
-dependencies = [
- "cxlib_activity",
- "cxlib_error",
- "cxlib_sign",
- "cxlib_types",
- "cxlib_user",
-]
-
-[[package]]
-name = "cxlib_store"
-version = "0.2.0"
-
-[[package]]
-name = "cxlib_types"
-version = "0.2.0"
-dependencies = [
- "cxlib_dir",
- "cxlib_error",
- "cxlib_pan",
- "cxlib_protocol",
- "cxlib_user",
- "log",
  "onceinit",
  "rand",
  "serde",
@@ -830,36 +766,37 @@ dependencies = [
 
 [[package]]
 name = "cxlib_user"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cookie_store",
- "cxlib_dir",
  "cxlib_error",
- "cxlib_login",
  "cxlib_protocol",
+ "cxlib_store",
+ "cxlib_utils",
+ "des",
+ "hex",
  "log",
+ "onceinit",
  "serde",
- "serde_json",
  "ureq",
 ]
 
 [[package]]
 name = "cxlib_utils"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
- "chrono",
- "des",
- "flate2",
- "hex",
  "inquire",
  "log",
+ "rxing",
  "unicode-width 0.2.0",
+ "ureq",
 ]
 
 [[package]]
 name = "cxsign"
-version = "0.5.0"
+version = "0.5.2"
 dependencies = [
+ "chrono",
  "clap",
  "clap_complete_command",
  "cxlib",
@@ -1071,9 +1008,9 @@ dependencies = [
 
 [[package]]
 name = "fdeflate"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07c6f4c64c1d33a3111c4466f7365ebdcc37c5bd1ea0d62aae2e3d722aacbedb"
+checksum = "1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c"
 dependencies = [
  "simd-adler32",
 ]
@@ -1169,6 +1106,18 @@ dependencies = [
  "libc",
  "wasi",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "getset2"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0103f4beaf538e75e289af484af18866b472a22f33b1d9697ec1849f3918a200"
+dependencies = [
+ "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1436,9 +1385,9 @@ checksum = "d0263a3d970d5c054ed9312c0057b4f3bde9c0b33836d3637361d4a9e6e7a408"
 
 [[package]]
 name = "indexmap"
-version = "2.6.0"
+version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "707907fe3c25f5424cce2cb7e1cbcafee6bdbe735ca90ef77c29e84591e5b9da"
+checksum = "62f822373a4fe84d4bb149bf54e584a7f4abec90e072ed49cda0edea5b95471f"
 dependencies = [
  "equivalent",
  "hashbrown",
@@ -1520,10 +1469,11 @@ checksum = "f5d4a7da358eff58addd2877a45865158f0d78c911d43a5784ceb7bbf52833b0"
 
 [[package]]
 name = "js-sys"
-version = "0.3.73"
+version = "0.3.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb15147158e79fd8b8afd0252522769c4f48725460b37338544d8379d94fc8f9"
+checksum = "6717b6b5b077764fb5966237269cb3c64edddde4b14ce42647430a78ced9e7b7"
 dependencies = [
+ "once_cell",
  "wasm-bindgen",
 ]
 
@@ -1582,9 +1532,9 @@ dependencies = [
 
 [[package]]
 name = "litemap"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "643cb0b8d4fcc284004d5fd0d67ccf61dfffadb7f75e1e71bc420f4688a3a704"
+checksum = "4ee93343901ab17bd981295f2cf0026d4ad018c7c31ba84549a4ddbb47a45104"
 
 [[package]]
 name = "litrs"
@@ -1871,12 +1821,9 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
 name = "onceinit"
-version = "0.0.5"
+version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e15627afd8e933c820641816869e6310da7c0dfa315698958100d0da6fd7fa2a"
-dependencies = [
- "thiserror 2.0.3",
-]
+checksum = "064eaddbd74e7db39b7f5156c0ba664b5025383fed6a7a16ecf0f6880fdfaa6f"
 
 [[package]]
 name = "option-ext"
@@ -1983,9 +1930,9 @@ checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 
 [[package]]
 name = "png"
-version = "0.17.14"
+version = "0.17.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52f9d46a34a05a6a57566bc2bfae066ef07585a6e3fa30fbbdff5936380623f0"
+checksum = "b67582bd5b65bdff614270e2ea89a1cf15bef71245cc1e5f7ea126977144211d"
 dependencies = [
  "bitflags 1.3.2",
  "crc32fast",
@@ -2016,6 +1963,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecf48c7ca261d60b74ab1a7b20da18bede46776b2e55535cb958eb595c5fa7b"
 dependencies = [
  "toml_edit",
+]
+
+[[package]]
+name = "proc-macro-error-attr2"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96de42df36bb9bba5542fe9f1a054b8cc87e172759a1868aa05c1f3acc89dfc5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
+name = "proc-macro-error2"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11ec05c52be0a07b08061f7dd003e7d7092e0472bc731b4af7bb1ef876109802"
+dependencies = [
+ "proc-macro-error-attr2",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2617,11 +2586,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.3"
+version = "2.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c006c85c7651b3cf2ada4584faa36773bd07bac24acfb39f3c431b36d7e667aa"
+checksum = "643caef17e3128658ff44d85923ef2d28af81bb71e0d67bbfe1d76f19a73e053"
 dependencies = [
- "thiserror-impl 2.0.3",
+ "thiserror-impl 2.0.5",
 ]
 
 [[package]]
@@ -2637,9 +2606,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.3"
+version = "2.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f077553d607adc1caf65430528a576c757a71ed73944b66ebb58ef2bbd243568"
+checksum = "995d0bbc9995d1f19d28b7215a9352b0fc3cd3a2d2ec95c2cadc485cdedbcdde"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2669,9 +2638,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.36"
+version = "0.3.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dfd88e563464686c916c7e46e623e520ddc6d79fa6641390f2e3fa86e83e885"
+checksum = "35e7868883861bd0e56d9ac6efcaaca0d6d5d82a2a7ec8209ff492c07cf37b21"
 dependencies = [
  "deranged",
  "itoa",
@@ -2690,9 +2659,9 @@ checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
 
 [[package]]
 name = "time-macros"
-version = "0.2.18"
+version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f252a68540fde3a3877aeea552b832b40ab9a69e318efd078774a01ddee1ccf"
+checksum = "2834e6017e3e5e4b9834939793b282bc03b37a3336245fa820e35e233e2a85de"
 dependencies = [
  "num-conv",
  "time-core",
@@ -2798,15 +2767,14 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "ureq"
-version = "2.11.0"
+version = "2.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b30e6f97efe1fa43535ee241ee76967d3ff6ff3953ebb430d8d55c5393029e7b"
+checksum = "02d1a66277ed75f640d608235660df48c8e3c19f3b4edb6a263315626cc3c01d"
 dependencies = [
  "base64",
  "cookie",
  "cookie_store",
  "flate2",
- "litemap",
  "log",
  "once_cell",
  "rustls",
@@ -2815,8 +2783,6 @@ dependencies = [
  "serde_json",
  "url",
  "webpki-roots",
- "yoke",
- "zerofrom",
 ]
 
 [[package]]
@@ -2895,9 +2861,9 @@ checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.96"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21d3b25c3ea1126a2ad5f4f9068483c2af1e64168f847abe863a526b8dbfe00b"
+checksum = "a474f6281d1d70c17ae7aa6a613c87fce69a127e2624002df63dcb39d6cf6396"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -2906,13 +2872,12 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-backend"
-version = "0.2.96"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52857d4c32e496dc6537646b5b117081e71fd2ff06de792e3577a150627db283"
+checksum = "5f89bb38646b4f81674e8f5c3fb81b562be1fd936d84320f3264486418519c79"
 dependencies = [
  "bumpalo",
  "log",
- "once_cell",
  "proc-macro2",
  "quote",
  "syn",
@@ -2921,9 +2886,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.96"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "920b0ffe069571ebbfc9ddc0b36ba305ef65577c94b06262ed793716a1afd981"
+checksum = "2cc6181fd9a7492eef6fef1f33961e3695e4579b9872a6f7c83aee556666d4fe"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -2931,9 +2896,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.96"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf59002391099644be3524e23b781fa43d2be0c5aa0719a18c0731b9d195cab6"
+checksum = "30d7a95b763d3c45903ed6c81f156801839e5ee968bb07e534c44df0fcd330c2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2944,9 +2909,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.96"
+version = "0.2.99"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5047c5392700766601942795a436d7d2599af60dcc3cc1248c9120bfb0827b0"
+checksum = "943aab3fdaaa029a6e0271b35ea10b72b943135afe9bffca82384098ad0e06a6"
 
 [[package]]
 name = "webpki-roots"
@@ -3321,9 +3286,9 @@ dependencies = [
 
 [[package]]
 name = "yoke"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c5b1314b079b0930c31e3af543d8ee1757b1951ae1e1565ec704403a7240ca5"
+checksum = "120e6aef9aa629e3d4f52dc8cc43a015c7724194c97dfaf45180d2daf2b77f40"
 dependencies = [
  "serde",
  "stable_deref_trait",
@@ -3366,9 +3331,9 @@ dependencies = [
 
 [[package]]
 name = "zerofrom"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91ec111ce797d0e0784a1116d0ddcdbea84322cd79e5d5ad173daeba4f93ab55"
+checksum = "cff3ee08c995dee1859d998dea82f7374f2826091dd9cd47def953cae446cd2e"
 dependencies = [
  "zerofrom-derive",
 ]
