@@ -608,14 +608,14 @@ dependencies = [
 
 [[package]]
 name = "cxlib"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cxlib_internal",
 ]
 
 [[package]]
 name = "cxlib_activity"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "cxlib_error",
@@ -624,24 +624,25 @@ dependencies = [
  "cxlib_user",
  "cxlib_utils",
  "log",
- "percent-encoding",
  "serde",
  "ureq",
 ]
 
 [[package]]
 name = "cxlib_captcha"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cxlib_error",
  "cxlib_imageproc",
  "cxlib_obfuscate",
  "cxlib_protocol",
  "cxlib_utils",
+ "getset2",
  "hex",
  "image",
  "log",
  "onceinit",
+ "percent-encoding",
  "rand",
  "serde",
  "ureq",
@@ -649,42 +650,29 @@ dependencies = [
 
 [[package]]
 name = "cxlib_default_impl"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cxlib_activity",
- "cxlib_captcha",
- "cxlib_dir",
  "cxlib_error",
  "cxlib_imageproc",
- "cxlib_login",
  "cxlib_protocol",
- "cxlib_qrcode_utils",
  "cxlib_sign",
- "cxlib_signner",
  "cxlib_store",
  "cxlib_types",
  "cxlib_user",
  "cxlib_utils",
+ "image",
  "log",
- "num_enum",
- "percent-encoding",
+ "rxing",
  "serde",
  "sqlite",
- "toml",
  "ureq",
-]
-
-[[package]]
-name = "cxlib_dir"
-version = "0.2.0"
-dependencies = [
- "directories",
- "onceinit",
+ "xcap",
 ]
 
 [[package]]
 name = "cxlib_error"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "log",
  "thiserror 2.0.5",
@@ -693,29 +681,22 @@ dependencies = [
 
 [[package]]
 name = "cxlib_imageproc"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "image",
  "imageproc",
  "num-traits",
- "ureq",
 ]
 
 [[package]]
 name = "cxlib_internal"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cxlib_activity",
  "cxlib_captcha",
  "cxlib_default_impl",
- "cxlib_dir",
  "cxlib_error",
- "cxlib_imageproc",
- "cxlib_login",
- "cxlib_pan",
- "cxlib_qrcode_utils",
  "cxlib_sign",
- "cxlib_signner",
  "cxlib_store",
  "cxlib_types",
  "cxlib_user",
@@ -723,46 +704,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxlib_login"
-version = "0.2.0"
-dependencies = [
- "cookie_store",
- "cxlib_error",
- "cxlib_protocol",
- "cxlib_utils",
- "log",
- "onceinit",
- "serde",
- "serde_json",
- "ureq",
-]
-
-[[package]]
 name = "cxlib_obfuscate"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
- "cxlib_utils",
+ "flate2",
  "proc-macro2",
  "quote",
 ]
 
 [[package]]
-name = "cxlib_pan"
-version = "0.2.0"
-dependencies = [
- "cxlib_protocol",
- "log",
- "mime_guess",
- "rand",
- "ureq",
-]
-
-[[package]]
 name = "cxlib_protocol"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
- "cxlib_dir",
  "cxlib_error",
+ "cxlib_store",
  "log",
  "onceinit",
  "serde",
@@ -770,30 +725,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxlib_qrcode_utils"
-version = "0.2.0"
-dependencies = [
- "cxlib_imageproc",
- "cxlib_protocol",
- "cxlib_utils",
- "image",
- "log",
- "rxing",
- "xcap",
-]
-
-[[package]]
 name = "cxlib_sign"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
- "chrono",
  "cxlib_activity",
  "cxlib_captcha",
  "cxlib_error",
  "cxlib_protocol",
  "cxlib_types",
  "cxlib_user",
- "cxlib_utils",
  "log",
  "num_enum",
  "percent-encoding",
@@ -802,30 +742,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "cxlib_signner"
-version = "0.2.0"
+name = "cxlib_store"
+version = "0.3.0"
 dependencies = [
- "cxlib_activity",
- "cxlib_error",
- "cxlib_sign",
- "cxlib_types",
- "cxlib_user",
+ "directories",
+ "onceinit",
 ]
 
 [[package]]
-name = "cxlib_store"
-version = "0.2.0"
-
-[[package]]
 name = "cxlib_types"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
- "cxlib_dir",
  "cxlib_error",
- "cxlib_pan",
  "cxlib_protocol",
  "cxlib_user",
  "log",
+ "mime_guess",
  "onceinit",
  "rand",
  "serde",
@@ -834,37 +766,37 @@ dependencies = [
 
 [[package]]
 name = "cxlib_user"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cookie_store",
- "cxlib_dir",
  "cxlib_error",
- "cxlib_login",
  "cxlib_protocol",
+ "cxlib_store",
+ "cxlib_utils",
+ "des",
+ "hex",
  "log",
+ "onceinit",
  "serde",
- "serde_json",
  "ureq",
 ]
 
 [[package]]
 name = "cxlib_utils"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
- "chrono",
- "des",
- "flate2",
- "hex",
  "inquire",
  "log",
- "percent-encoding",
+ "rxing",
  "unicode-width 0.2.0",
+ "ureq",
 ]
 
 [[package]]
 name = "cxsign"
 version = "0.5.1"
 dependencies = [
+ "chrono",
  "clap",
  "clap_complete_command",
  "cxlib",
@@ -1174,6 +1106,18 @@ dependencies = [
  "libc",
  "wasi",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "getset2"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0103f4beaf538e75e289af484af18866b472a22f33b1d9697ec1849f3918a200"
+dependencies = [
+ "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1877,12 +1821,9 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
 name = "onceinit"
-version = "0.0.5"
+version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e15627afd8e933c820641816869e6310da7c0dfa315698958100d0da6fd7fa2a"
-dependencies = [
- "thiserror 2.0.5",
-]
+checksum = "064eaddbd74e7db39b7f5156c0ba664b5025383fed6a7a16ecf0f6880fdfaa6f"
 
 [[package]]
 name = "option-ext"
@@ -2022,6 +1963,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecf48c7ca261d60b74ab1a7b20da18bede46776b2e55535cb958eb595c5fa7b"
 dependencies = [
  "toml_edit",
+]
+
+[[package]]
+name = "proc-macro-error-attr2"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96de42df36bb9bba5542fe9f1a054b8cc87e172759a1868aa05c1f3acc89dfc5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
+name = "proc-macro-error2"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11ec05c52be0a07b08061f7dd003e7d7092e0472bc731b4af7bb1ef876109802"
+dependencies = [
+ "proc-macro-error-attr2",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -39,6 +39,7 @@ cxlib = { path = "cxlib" }
 env_logger = "0.11"
 inquire = "0.7"
 log = { version = "0.4", features = ["release_max_level_info"] }
+chrono = "0.4"
 
 [profile.release]
 panic = "abort"

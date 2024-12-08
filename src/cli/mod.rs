@@ -16,6 +16,7 @@
 pub mod arg;
 pub mod location;
 
+use self::arg::CliArgs;
 use cxlib::{
     activity::{Activity, RawSign},
     default_impl::{
@@ -27,14 +28,11 @@ use cxlib::{
         store::{AccountTable, DataBase},
     },
     error::Error,
-    sign::{SignResult, SignTrait},
-    signner::SignnerTrait,
+    sign::{SignResult, SignTrait, SignnerTrait},
     user::Session,
 };
 use log::{info, warn};
 use std::collections::HashMap;
-
-use self::arg::CliArgs;
 
 fn match_signs(
     raw_sign: RawSign,
@@ -116,7 +114,7 @@ fn match_signs(
         }
     }
     if !sign_results.is_empty() {
-        info!("签到活动[{}]签到结果：", sign.as_inner().name);
+        info!("签到活动[{}]签到结果：", sign.as_raw().name);
         for (session, sign_result) in sign_results {
             if let SignResult::Fail { msg } = sign_result {
                 warn!(
@@ -196,7 +194,10 @@ pub fn do_sign(
             "即将处理签到：[{}], id 为 {}, 开始时间为 {}, 课程为 {} / {} / {}",
             sign.name,
             sign.active_id,
-            cxlib::utils::time_string_from_mills(sign.start_time_mills),
+            chrono::DateTime::from_timestamp_millis(sign.start_time_mills as i64)
+                .unwrap()
+                .naive_local()
+                .to_string(),
             sign.course.get_class_id(),
             sign.course.get_id(),
             sign.course.get_name()

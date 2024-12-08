@@ -19,12 +19,11 @@ mod cli;
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
-use cxlib::login::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper};
 use cxlib::{
     activity::{Activity, RawSign},
     default_impl::store::{AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable},
     sign::SignTrait,
-    user::Session,
+    user::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, Session},
 };
 use log::{error, info, warn};
 use std::collections::HashMap;
@@ -52,7 +51,7 @@ pub fn run() {
     let mut builder = env_logger::Builder::from_env(env);
     builder.target(env_logger::Target::Stderr);
     builder.init();
-    cxlib::dir::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
+    cxlib::store::Dir::set_config_dir_info("TEST_CXSIGN", "up.workso", "Worksoup", "cxsign");
     let args = <Args as clap::Parser>::parse();
     let Args {
         command,
@@ -297,7 +296,7 @@ pub fn run() {
             MainCommand::WhereIsConfig => {
                 println!(
                     "{}",
-                    &cxlib::dir::Dir::get_config_dir()
+                    &cxlib::store::Dir::get_config_dir()
                         .into_os_string()
                         .to_string_lossy()
                         .to_string()

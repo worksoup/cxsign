@@ -14,9 +14,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use clap::Subcommand;
-use cxlib::dir::AppInfo;
 use cxlib::{
     default_impl::store::{AccountTable, AliasTable, DataBase, DataBaseTableTrait, LocationTable},
+    store::AppInfo,
     types::{Location, LocationWithRange},
 };
 use log::{error, warn};
