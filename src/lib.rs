@@ -237,7 +237,7 @@ pub fn run() {
                         .get(&course)
                         .and_then(|course| {
                             sessions.values().next().and_then(|session| {
-                                Activity::get_course_activities(&db, session, course).ok()
+                                Activity::get_course_activities(&db, session, course, true).ok()
                             })
                         })
                         .map(|a| {

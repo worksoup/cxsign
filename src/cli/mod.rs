@@ -39,7 +39,7 @@ fn match_signs(
     db: &DataBase,
     sessions: &[Session],
     cli_args: &CliArgs,
-) -> Result<(), Box<Error>> {
+) -> Result<(), Error> {
     let sign_name = raw_sign.name.clone();
     let mut sign = if sessions.is_empty() {
         warn!("无法判断签到[{sign_name}]的签到类型。");
