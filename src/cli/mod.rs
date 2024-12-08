@@ -15,6 +15,7 @@
 
 pub mod arg;
 
+use self::arg::CliArgs;
 use cxlib::{
     activity::{Activity, RawSign},
     default_impl::{
@@ -32,9 +33,8 @@ use cxlib::{
 };
 use log::{info, warn};
 use std::collections::HashMap;
+use std::time::Duration;
 use xdsign_data::LOCATIONS;
-
-use self::arg::CliArgs;
 
 pub struct XdsignLocationInfoGetter;
 
@@ -201,10 +201,11 @@ pub fn do_sign(
             "即将处理签到：[{}], id 为 {}, 开始时间为 {}, 课程为 {} / {} / {}",
             sign.name,
             sign.active_id,
-            chrono::DateTime::from_timestamp_millis(sign.start_time_mills as i64)
-                .unwrap()
-                .naive_local()
-                .to_string(),
+            chrono::DateTime::<chrono::Local>::from(
+                std::time::UNIX_EPOCH + Duration::from_millis(sign.start_time_mills)
+            )
+            .format("%+")
+            .to_string(),
             sign.course.get_class_id(),
             sign.course.get_id(),
             sign.course.get_name()
