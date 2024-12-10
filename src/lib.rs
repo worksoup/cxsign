@@ -28,6 +28,7 @@ use cxlib::{
     types::Location,
     user::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, LoginSolvers, Session},
 };
+use cxlib_captcha::CaptchaType;
 use log::{error, info, warn};
 use std::{collections::HashMap, io::stdout};
 use x_l4rs::IDSLoginImpl;
@@ -65,6 +66,12 @@ fn init_output() -> indicatif::MultiProgress {
     multi
 }
 fn init_function() {
+    if let Some(captcha_type) = std::env::var("CX_CAPTCHA_TYPE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+    {
+        let _ = CaptchaType::set_global_default(&captcha_type);
+    }
     Dir::set_config_dir_info("TEST_XDSIGN", "rt.lea", "Leart", "xdsign");
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
