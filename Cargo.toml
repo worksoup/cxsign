@@ -56,8 +56,8 @@ xdsign_data = { git = "https://github.com/learturely/xdsign_data.git" }
 
 [profile.release]
 panic = "abort"
-codegen-units = 1
-lto = "fat"
+#codegen-units = 1
+#lto = "fat"
 strip = "symbols"
 
 [target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
