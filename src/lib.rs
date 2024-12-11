@@ -21,11 +21,11 @@ use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxlib::{
     activity::{Activity, RawSign},
+    captcha::CaptchaType,
     default_impl::store::{AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable},
     sign::SignTrait,
     user::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, Session},
 };
-use cxlib_captcha::CaptchaType;
 use log::{error, info, warn};
 use std::collections::HashMap;
 use std::io::stdout;
