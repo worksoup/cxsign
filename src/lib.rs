@@ -20,6 +20,7 @@ mod xddcc;
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
+use cxlib::utils::time_it_and_print_result;
 use cxlib::{
     activity::{Activity, RawSign},
     captcha::CaptchaType,
