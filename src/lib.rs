@@ -22,13 +22,13 @@ use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxlib::{
     activity::{Activity, RawSign},
+    captcha::CaptchaType,
     default_impl::store::{AccountTable, DataBase, ExcludeTable},
     sign::SignTrait,
     store::Dir,
     types::Location,
     user::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, LoginSolvers, Session},
 };
-use cxlib_captcha::CaptchaType;
 use log::{error, info, warn};
 use std::{collections::HashMap, io::stdout};
 use x_l4rs::IDSLoginImpl;
