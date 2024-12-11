@@ -20,6 +20,7 @@ mod xddcc;
 // static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
+use cxlib::utils::time_it_and_print_result;
 use cxlib::{
     activity::{Activity, RawSign},
     captcha::CaptchaType,
@@ -76,11 +77,13 @@ fn init_function() {
     Location::set_boxed_location_preprocessor(Box::new(LocationPreprocessor))
         .unwrap_or_else(|e| error!("{e}"));
     let login_solver = IDSLoginImpl::TARGET_LEARNING.get_login_solver(|a, b| {
-        Ok(cxlib::imageproc::find_sub_image(
-            a,
-            b,
-            cxlib::imageproc::slide_solvers::find_min_sum_of_squared_errors,
-        ))
+        time_it_and_print_result(|| {
+            Ok(cxlib::imageproc::find_sub_image(
+                a,
+                b,
+                cxlib::imageproc::slide_solvers::find_max_cross_correlation_normalized,
+            ))
+        })
     });
     let login_type = login_solver.login_type().to_owned();
     LoginSolvers::register(login_solver)
