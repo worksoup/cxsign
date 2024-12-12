@@ -6687,7 +6687,7 @@ checksum = "ec107c4503ea0b4a98ef47356329af139c0a4f7750e621cf2973cd3385ebcb3d"
 [[package]]
 name = "x_l4rs"
 version = "0.0.1"
-source = "git+https://github.com/learturely/x_l4rs.git#6eda688f7b64e23daf7401330349e631b093b643"
+source = "git+https://github.com/learturely/x_l4rs.git#ae8644739cff141ac3009f23bf5f2aa0e80cf26d"
 dependencies = [
  "base64",
  "cookie_store",
@@ -6695,7 +6695,6 @@ dependencies = [
  "cxlib_imageproc",
  "cxlib_protocol",
  "cxlib_user",
- "cxlib_utils",
  "image 0.25.5",
  "log",
  "onceinit",
@@ -6755,7 +6754,7 @@ checksum = "0ef33da6b1660b4ddbfb3aef0ade110c8b8a781a3b6382fa5f2b5b040fd55f61"
 [[package]]
 name = "xddcc"
 version = "0.0.1"
-source = "git+https://github.com/learturely/xddcc.git#461a3205fe0222ea469fce01598cdb10c4a40292"
+source = "git+https://github.com/learturely/xddcc.git#a5c5120ae842b3804b8d1b7a0bc1cd5e25fcac2f"
 dependencies = [
  "chrono",
  "cxlib_user",
