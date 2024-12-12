@@ -145,8 +145,7 @@ pub fn do_sign(
     } else {
         (AccountTable::get_sessions(&db), false)
     };
-    let activities =
-        Activity::get_all_activities(&db, sessions.values(), false).map_err(Error::from)?;
+    let activities = Activity::get_all_activities(&db, sessions.values(), false)?;
     let (valid_signs, other_signs): (
         HashMap<RawSign, Vec<Session>>,
         HashMap<RawSign, Vec<Session>>,

@@ -21,6 +21,7 @@ use clap::CommandFactory;
 use cli::arg::{AccountSubCommand, Args, MainCommand};
 use cxlib::{
     activity::{Activity, RawSign},
+    captcha::CaptchaType,
     default_impl::store::{AccountTable, AliasTable, DataBase, ExcludeTable, LocationTable},
     sign::SignTrait,
     user::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, Session},
@@ -47,6 +48,12 @@ const NOTICE: &str = r#"
 
 "#;
 pub fn run() {
+    if let Some(captcha_type) = std::env::var("CX_CAPTCHA_TYPE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+    {
+        let _ = CaptchaType::set_global_default(&captcha_type);
+    }
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     let mut builder = env_logger::Builder::from_env(env);
     builder.target(env_logger::Target::Stderr);

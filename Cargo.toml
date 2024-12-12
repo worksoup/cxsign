@@ -24,11 +24,18 @@ crate-type = ["lib", "cdylib", "staticlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["completions"]
+default = ["completions", "ui_solver"]
+all_ui_solver = ["slide_ui_solver", "ui_solver", "obstacle_ui_solver"]
+ui_solver = ["rotate_ui_solver", "icon_click_ui_solver", "text_click_ui_solver"]
 completions = ["completion-nu", "completion-carapace", "completion-fig"]
 completion-nu = ["clap_complete_command", "clap_complete_command/nushell"]
 completion-carapace = ["clap_complete_command", "clap_complete_command/carapace"]
 completion-fig = ["clap_complete_command", "clap_complete_command/fig"]
+slide_ui_solver = ["cxlib_captcha/slide_ui_solver"]
+rotate_ui_solver = ["cxlib_captcha/rotate_ui_solver"]
+obstacle_ui_solver = ["cxlib_captcha/obstacle_ui_solver"]
+icon_click_ui_solver = ["cxlib_captcha/icon_click_ui_solver"]
+text_click_ui_solver = ["cxlib_captcha/text_click_ui_solver"]
 
 [dependencies]
 # tikv-jemallocator = "0.5"
@@ -43,6 +50,9 @@ chrono = "0.4"
 
 [profile.release]
 panic = "abort"
-codegen-units = 1
-lto = "fat"
+#codegen-units = 1
+#lto = "fat"
 strip = "symbols"
+
+[target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
+cxlib_captcha = { path = "./cxlib/crates/cxlib_captcha" }
