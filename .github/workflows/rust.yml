@@ -32,8 +32,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Install libdbus-1-dev
-        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
+      - name: Install Deps
+        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev libxcb1-dev
       - name: Install latest nightly
         uses: crusty-pie/toolchain@v1
         with:
@@ -64,9 +64,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Install libdbus-1-dev
+      - name: Install Deps
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
+        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev libxcb1-dev
       - name: Install latest nightly
         uses: crusty-pie/toolchain@v1
         with:
