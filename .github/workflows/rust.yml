@@ -30,8 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install libdbus-1-dev
-        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
+      - name: Install Deps
+        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev libxcb1-dev
       - name: Install latest nightly
         uses: crusty-pie/toolchain@v1
         with:
@@ -60,9 +60,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - name: Install libdbus-1-dev
+      - name: Install Deps
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev
+        run: sudo apt update && sudo apt-get install -yqq libdbus-1-dev libxcb1-dev
       - name: Install latest nightly
         uses: crusty-pie/toolchain@v1
         with:
