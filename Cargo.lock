@@ -1454,7 +1454,7 @@ dependencies = [
  "hex",
  "image 0.25.5",
  "log",
- "onceinit 0.0.10",
+ "onceinit",
  "rand 0.8.5",
  "serde",
  "ureq",
@@ -1490,7 +1490,7 @@ version = "0.3.0"
 source = "git+https://github.com/worksoup/cxlib.git#ee4a207dd3eb426cc7817de899ce4b6542f95734"
 dependencies = [
  "log",
- "onceinit 0.0.10",
+ "onceinit",
  "thiserror 2.0.7",
  "ureq",
 ]
@@ -1545,7 +1545,7 @@ dependencies = [
  "cxlib_store",
  "log",
  "mime_guess",
- "onceinit 0.0.10",
+ "onceinit",
  "percent-encoding",
  "rand 0.8.5",
  "serde",
@@ -1576,7 +1576,7 @@ version = "0.3.0"
 source = "git+https://github.com/worksoup/cxlib.git#ee4a207dd3eb426cc7817de899ce4b6542f95734"
 dependencies = [
  "directories",
- "onceinit 0.0.10",
+ "onceinit",
 ]
 
 [[package]]
@@ -1588,7 +1588,7 @@ dependencies = [
  "cxlib_protocol",
  "cxlib_user",
  "log",
- "onceinit 0.0.10",
+ "onceinit",
  "rand 0.8.5",
  "serde",
  "ureq",
@@ -1607,7 +1607,7 @@ dependencies = [
  "des",
  "hex",
  "log",
- "onceinit 0.0.10",
+ "onceinit",
  "serde",
  "ureq",
 ]
@@ -4010,12 +4010,6 @@ dependencies = [
  "critical-section",
  "portable-atomic",
 ]
-
-[[package]]
-name = "onceinit"
-version = "0.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "064eaddbd74e7db39b7f5156c0ba664b5025383fed6a7a16ecf0f6880fdfaa6f"
 
 [[package]]
 name = "onceinit"
@@ -6695,7 +6689,7 @@ checksum = "ec107c4503ea0b4a98ef47356329af139c0a4f7750e621cf2973cd3385ebcb3d"
 [[package]]
 name = "x_l4rs"
 version = "0.0.1"
-source = "git+https://github.com/learturely/x_l4rs.git#ae8644739cff141ac3009f23bf5f2aa0e80cf26d"
+source = "git+https://github.com/learturely/x_l4rs.git#8347c82e7c342c4ee7cbbe25280bffb0fa661707"
 dependencies = [
  "base64",
  "cookie_store",
@@ -6705,7 +6699,7 @@ dependencies = [
  "cxlib_user",
  "image 0.25.5",
  "log",
- "onceinit 0.0.7",
+ "onceinit",
  "percent-encoding",
  "rand 0.8.5",
  "rust-crypto",
