@@ -27,8 +27,7 @@ use cxlib::{
     user::{DefaultLoginSolver, LoginSolverTrait, LoginSolverWrapper, Session},
 };
 use log::{error, info, warn};
-use std::collections::HashMap;
-use std::io::stdout;
+use std::{collections::HashMap, io::stdout};
 
 const NOTICE: &str = r#"
     
