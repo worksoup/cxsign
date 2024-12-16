@@ -1598,7 +1598,7 @@ dependencies = [
 
 [[package]]
 name = "cxsign"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "chrono",
  "clap",
