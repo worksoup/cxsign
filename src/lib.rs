@@ -78,11 +78,18 @@ fn init_function() {
         .unwrap_or_else(|e| error!("{e}"));
     let login_solver = IDSLoginImpl::TARGET_LEARNING.get_login_solver(|a, b| {
         time_it_and_print_result(|| {
-            Ok(cxlib::imageproc::find_sub_image(
-                a,
-                b,
-                cxlib::imageproc::slide_solvers::find_max_cross_correlation_normalized,
-            ))
+            use cxlib::imageproc::{
+                find_sub_image,
+                match_template::{match_template_for_slide, MatchTemplateMethod},
+            };
+            Ok(find_sub_image(a, b, |a, b, mask| {
+                match_template_for_slide(
+                    a,
+                    b,
+                    MatchTemplateMethod::CrossCorrelationNormalized,
+                    mask,
+                )
+            }))
         })
     });
     let login_type = login_solver.login_type().to_owned();
