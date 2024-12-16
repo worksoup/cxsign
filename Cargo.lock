@@ -746,9 +746,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "captcha_dataset_marker"
+name = "captcha_solver_ui"
 version = "0.0.1"
-source = "git+https://github.com/worksoup/captcha_dataset_marker.git#b48b8be6c91330662086ddf32af10a98200615f9"
+source = "git+https://github.com/worksoup/captcha_solver_ui.git#4a536a0cd9c563bb2c4f2aadf12dbe1f0f8e5b2a"
 dependencies = [
  "image 0.25.5",
  "slint",
@@ -771,9 +771,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.3"
+version = "1.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27f657647bcff5394bf56c7317665bbf790a137a50eaaa5c6bfbb9e27a518f2d"
+checksum = "9157bbaa6b165880c27a4293a474c91cdcf265cc68cc829bf10be0964a391caf"
 dependencies = [
  "jobserver",
  "libc",
@@ -1306,9 +1306,9 @@ checksum = "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b"
 
 [[package]]
 name = "crossbeam-deque"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "613f8cc01fe9cf1a3eb3d7f488fd2fa8388403e97039e2f73692932e291a770d"
+checksum = "9dd111b7b7f7d55b72c0a6ae361660ee5853c9af73f70c3c2ef6858b950e2e51"
 dependencies = [
  "crossbeam-epoch",
  "crossbeam-utils",
@@ -1325,9 +1325,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.20"
+version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
+checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crossterm"
@@ -1428,7 +1428,7 @@ dependencies = [
 name = "cxlib_captcha"
 version = "0.3.0"
 dependencies = [
- "captcha_dataset_marker",
+ "captcha_solver_ui",
  "cxlib_error",
  "cxlib_imageproc",
  "cxlib_obfuscate",
@@ -1464,6 +1464,7 @@ dependencies = [
  "serde",
  "sqlite",
  "xcap",
+ "yapt",
 ]
 
 [[package]]
@@ -1472,7 +1473,7 @@ version = "0.3.0"
 dependencies = [
  "log",
  "onceinit",
- "thiserror 2.0.6",
+ "thiserror 2.0.7",
  "ureq",
 ]
 
@@ -1483,6 +1484,8 @@ dependencies = [
  "image 0.25.5",
  "imageproc",
  "num-traits",
+ "rayon",
+ "yapt",
 ]
 
 [[package]]
@@ -1500,7 +1503,7 @@ dependencies = [
  "cxlib_types",
  "cxlib_user",
  "cxlib_utils",
- "thiserror 2.0.6",
+ "thiserror 2.0.7",
 ]
 
 [[package]]
@@ -1589,14 +1592,13 @@ version = "0.3.0"
 dependencies = [
  "inquire",
  "log",
- "rxing",
  "unicode-width 0.2.0",
  "ureq",
 ]
 
 [[package]]
 name = "cxsign"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "chrono",
  "clap",
@@ -3940,9 +3942,9 @@ dependencies = [
 
 [[package]]
 name = "onceinit"
-version = "0.0.7"
+version = "0.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "064eaddbd74e7db39b7f5156c0ba664b5025383fed6a7a16ecf0f6880fdfaa6f"
+checksum = "96898011266e1fcfb5f7deacbdf805af70f69e50ba478d003ebcfc92d2179a1d"
 
 [[package]]
 name = "option-ext"
@@ -4610,9 +4612,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-pki-types"
-version = "1.10.0"
+version = "1.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16f1201b3c9a7ee8039bcadc17b7e605e2945b27eee7631788c1bd2b0643674b"
+checksum = "d2bf47e6ff922db3825eb750c4e2ff784c6ff8fb9e13046ef6a1d1c5401b0b37"
 
 [[package]]
 name = "rustls-webpki"
@@ -4739,9 +4741,9 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "1.0.23"
+version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61697e0a1c7e512e84a621326239844a24d8207b4669b41bc18b32ea5cbf988b"
+checksum = "3cb6eb87a131f756572d7fb904f6e7b68633f09cca868c5df1c4b8d1a694bbba"
 
 [[package]]
 name = "serde"
@@ -5217,9 +5219,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.32.1"
+version = "0.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c33cd241af0f2e9e3b5c32163b873b29956890b5342e6745b917ce9d490f4af"
+checksum = "948512566b1895f93b1592c7574baeb2de842f224f2aab158799ecadb8ebbb46"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -5298,11 +5300,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.6"
+version = "2.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fec2a1820ebd077e2b90c4df007bebf344cd394098a13c563957d0afc83ea47"
+checksum = "93605438cbd668185516ab499d589afb7ee1859ea3d5fc8f6b0755e1c7443767"
 dependencies = [
- "thiserror-impl 2.0.6",
+ "thiserror-impl 2.0.7",
 ]
 
 [[package]]
@@ -5318,9 +5320,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.6"
+version = "2.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d65750cab40f4ff1929fb1ba509e9914eb756131cef4210da8d5d700d26f6312"
+checksum = "e1d8749b4531af2117677a5fcd12b1348a3fe2b81e36e61ffeac5c4aa3273e36"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6535,9 +6537,9 @@ dependencies = [
 
 [[package]]
 name = "xcap"
-version = "0.0.14"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1107223d8283abdd9f22bad27cf36562ef7d3941d82360c75c303656b7dfcb66"
+checksum = "3f3802a57f4cb8c8606e2af6b873529cf54c69ebccfa0e5e7fe9e0d7d0d6ae97"
 dependencies = [
  "core-foundation 0.10.0",
  "core-graphics 0.24.0",
@@ -6546,7 +6548,7 @@ dependencies = [
  "log",
  "percent-encoding",
  "sysinfo",
- "thiserror 1.0.69",
+ "thiserror 2.0.7",
  "windows 0.58.0",
  "xcb",
 ]
@@ -6623,7 +6625,11 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 [[package]]
 name = "yapt"
 version = "0.0.1"
-source = "git+https://github.com/worksoup/yapt.git#14bd1b4f384d77bed614620381872bab48cbb9bf"
+source = "git+https://github.com/worksoup/yapt.git#f7ff6edcd5f3094fb232f8d72f24f410419ad77c"
+dependencies = [
+ "imageproc",
+ "num-traits",
+]
 
 [[package]]
 name = "yoke"
@@ -6835,9 +6841,9 @@ dependencies = [
 
 [[package]]
 name = "zune-jpeg"
-version = "0.4.13"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16099418600b4d8f028622f73ff6e3deaabdff330fb9a2a131dea781ee8b0768"
+checksum = "99a5bab8d7dedf81405c4bb1f2b83ea057643d9cb28778cea9eecddeedd2e028"
 dependencies = [
  "zune-core",
 ]
