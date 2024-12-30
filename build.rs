@@ -11,7 +11,7 @@ fn main() {
     const LOGO_ICO: &str = "res/logo.ico";
     const LOGO_SVG: &str = "res/logo.svg";
     const SVG_SIZE: f32 = 64.0;
-    if !fs::metadata(LOGO_ICO).is_ok() {
+    if fs::metadata(LOGO_ICO).is_err() {
         const ICO_SIZE: [u32; 6] = [16, 32, 48, 64, 128, 256];
         let svg_data = fs::read(LOGO_SVG).unwrap();
         let tree = Tree::from_data(&svg_data, &Options::default()).unwrap();
