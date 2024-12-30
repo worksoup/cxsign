@@ -56,3 +56,8 @@ strip = "symbols"
 
 [target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
 cxlib_captcha = { path = "./cxlib/crates/cxlib_captcha" }
+
+[build-dependencies]
+resvg = "0.44"
+ico = "0.3"
+embed-resource = "3.0"
