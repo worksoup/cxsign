@@ -3,6 +3,7 @@
 /notes
 /.vscode
 /.cargo
-/res
+/res/*.ico
+/res/*.png
 node_modules
 src-tauri/
