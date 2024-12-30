@@ -24,9 +24,9 @@ fn main() {
                 Transform::from_row(scale, 0.0, 0.0, scale, 0.0, 0.0),
                 &mut pixmap.as_mut(),
             );
-            pixmap
-                .save_png(format!("res/logo_{0}x{0}.png", size))
-                .unwrap();
+            // pixmap
+            //     .save_png(format!("res/logo_{0}x{0}.png", size))
+            //     .unwrap();
             let png_data = pixmap.encode_png().unwrap();
             let image = IconImage::read_png(&*png_data).unwrap();
             icon.add_entry(IconDirEntry::encode_as_png(&image).unwrap());
