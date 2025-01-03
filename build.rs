@@ -9,7 +9,10 @@ fn need_icon() -> bool {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     matches!(target_os.as_str(), "windows")
 }
-fn main() {
+fn handle_resource() {
+    println!("cargo:rerun-if-changed={LOGO_RC}");
+    println!("cargo:rerun-if-changed={LOGO_SVG}");
+    println!("cargo:rerun-if-changed={LOGO_ICO}");
     if !need_icon() {
         return;
     }
@@ -43,7 +46,7 @@ fn main() {
     embed_resource::compile(LOGO_RC, embed_resource::NONE)
         .manifest_optional()
         .unwrap();
-    println!("cargo:rerun-if-changed={LOGO_RC}");
-    println!("cargo:rerun-if-changed={LOGO_SVG}");
-    println!("cargo:rerun-if-changed={LOGO_ICO}");
+}
+fn main() {
+    handle_resource();
 }
