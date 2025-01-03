@@ -5,8 +5,14 @@ use resvg::{
     tiny_skia::Pixmap,
     usvg::{Options, Transform, Tree},
 };
-
+fn need_icon() -> bool {
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+    matches!(target_os.as_str(), "windows")
+}
 fn main() {
+    if !need_icon() {
+        return;
+    }
     const LOGO_RC: &str = "res/logo.rc";
     const LOGO_ICO: &str = "res/logo.ico";
     const LOGO_SVG: &str = "res/logo.svg";
